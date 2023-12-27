@@ -33,10 +33,10 @@ export class InputSystem implements IGameSystem {
 
   private handleKeyboardDownEvent(e: KeyboardEvent) {
     console.log('key down', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
-    this.game.eventbus.emit('keyDown', e)
+    this.game.eventbus.emit('keyboard.keyDown', e)
   }
 
   private handleKeyboardUpEvent(e: KeyboardEvent) {
-    this.game.eventbus.emit('keyUp', e)
+    this.game.eventbus.emit('keyboard.keyUp', e)
   }
 }

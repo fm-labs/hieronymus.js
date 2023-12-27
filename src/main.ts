@@ -10,6 +10,7 @@ import { getCellIndex } from '../lib/utils/gridutil.ts'
 import { InputSystem } from '../lib/systems/InputSystem.ts'
 import { loadSpritesheet, loadSpritesheetByName } from '../lib/kernel/loader.ts'
 import { GamepadInputSystem } from '../lib/systems/GamepadInputSystem.ts'
+import { HeroSystem } from '../lib/systems/HeroSystem.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -70,8 +71,9 @@ game.addSystem(new IsoGridSystem(tsize))
 game.addSystem(new IsoObjectSystem(tsize))
 game.addSystem(new InputSystem())
 game.addSystem(new GamepadInputSystem())
-game.addSystem(new WebUiSystem())
+//game.addSystem(new WebUiSystem())
 game.addSystem(new InfoSystem())
+game.addSystem(new HeroSystem())
 
 // @todo move to game or renderer class
 window.addEventListener('resize', () => {

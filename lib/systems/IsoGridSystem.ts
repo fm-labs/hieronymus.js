@@ -205,6 +205,6 @@ export class IsoGridSystem implements IGameSystem {
       this.game.height / 2 - gridHeight / 2,
     )
 
-    this.dirty = false
+    this.dirty = true
   }
 }

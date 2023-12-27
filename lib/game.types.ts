@@ -84,3 +84,23 @@ type SpriteImage = {
   sprite: SpriteInfo
   image: HTMLImageElement
 }
+
+/** INPUT TYPES **/
+
+type GamepadInputEvent = {}
+
+type GamepadStickChangeEvent = GamepadInputEvent & {
+  stickLeft: boolean
+  stickRight: boolean
+  stickUp: boolean
+  stickDown: boolean
+}
+
+type GamepadButtonChangeEvent = GamepadInputEvent & {
+  button: number
+  state: ButtonState
+}
+
+type ButtonState = 'pressed' | 'released'
+
+type MoveDirection = 'up' | 'down' | 'left' | 'right'

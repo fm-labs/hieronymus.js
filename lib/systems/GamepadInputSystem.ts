@@ -82,6 +82,36 @@ export class GamepadInputSystem implements IGameSystem {
       console.log('Down pressed')
     }
 
+    const stick = {
+      stickLeft: stickX < -stickThreshold,
+      stickRight: stickX > stickThreshold,
+      stickUp: stickY < -stickThreshold,
+      stickDown: stickY > stickThreshold,
+    }
+
+    if (stick.stickLeft || stick.stickRight || stick.stickUp || stick.stickDown) {
+      this.game.eventbus.emit('gamepad.stickChange', stick)
+    }
+
+    // const {
+    //   0: buttonA,
+    //   1: buttonB,
+    //   2: buttonX,
+    //   3: buttonY,
+    //   4: leftBumper,
+    //   5: rightBumper,
+    //   6: leftTrigger,
+    //   7: rightTrigger,
+    //   8: select,
+    //   9: start,
+    //   10: leftStick,
+    //   11: rightStick,
+    //   12: up,
+    //   13: down,
+    //   14: left,
+    //   15: right,
+    // } = buttons
+
     // // Check A and B buttons
     // if (buttons[0].pressed) {
     //   console.log('A button pressed')
@@ -95,6 +125,7 @@ export class GamepadInputSystem implements IGameSystem {
     for (let i = 0; i < buttons.length; i++) {
       if (buttons[i].pressed) {
         console.log(`Button ${i} pressed`)
+        this.game.eventbus.emit('gamepad.buttonPress', { button: i, state: 'pressed' })
       }
     }
   }
