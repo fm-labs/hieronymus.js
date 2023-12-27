@@ -1,27 +1,3 @@
-export function drawTile(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  color: string,
-) {
-  ctx.beginPath()
-  ctx.moveTo(x, y)
-  ctx.lineTo(x + width / 2, y - height / 2)
-  ctx.lineTo(x + width, y)
-  ctx.lineTo(x + width / 2, y + height / 2)
-  ctx.closePath()
-
-  // Fill the tile with a color
-  ctx.fillStyle = color
-  ctx.fill()
-
-  // Stroke the tile with a border
-  ctx.strokeStyle = '#282828'
-  ctx.stroke()
-}
-
 export const drawBackground = (
   ctx: CanvasRenderingContext2D,
   world: World,
@@ -49,7 +25,11 @@ export const drawBackground = (
   // }
 }
 
-export const drawGrid = (ctx: CanvasRenderingContext2D, world: World, props: WorldRenderProps) => {
+export const drawWorldGrid = (
+  ctx: CanvasRenderingContext2D,
+  world: World,
+  props: WorldRenderProps,
+) => {
   const cellSize = props.cellSize
   const width = world.width * cellSize
   const height = world.height * cellSize
@@ -66,7 +46,7 @@ export const drawGrid = (ctx: CanvasRenderingContext2D, world: World, props: Wor
   ctx.stroke()
 }
 
-export const drawCell = (
+export const drawWorldCell = (
   ctx: CanvasRenderingContext2D,
   cell: WorldCell,
   props: WorldRenderProps,
@@ -135,8 +115,8 @@ export const drawWorld = (
   ctx.translate(camera.offset.x, camera.offset.y)
   //ctx.moveTo(camera.offset.x, camera.offset.y)
   //drawBackground(ctx, world, props, bg)
-  drawGrid(ctx, world, props)
-  world.cells.forEach((cell) => drawCell(ctx, cell, props, spritesheet))
+  drawWorldGrid(ctx, world, props)
+  world.cells.forEach((cell) => drawWorldCell(ctx, cell, props, spritesheet))
   ctx.translate(-camera.offset.x, -camera.offset.y)
   //ctx.moveTo(0,0)
 

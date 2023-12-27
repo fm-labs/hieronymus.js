@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sprite Example</title>
+  <link rel='stylesheet' href='aaa_iso_buildings.css'>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .spritesheet--item-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .spritesheet--item {
+      margin: 2px;
+      border: 1px dashed #c44242;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spritesheet Example aaa_iso_buildings</h1>
+  <p>Spritesheet image: aaa_iso_buildings.png</p>
+  <img src='aaa_iso_buildings.png' alt='aaa_iso_buildings.png'>
+  <hr />
+  <div class='spritesheet--item-container'>
+    <div class='spritesheet--item spritesheet-aaa_iso_buildings skyscraper02'></div>
+  </div>
+  <hr />
+  <h3>Stylesheet</h3>
+  <pre>.spritesheet-aaa_iso_buildings {
+  background-repeat: no-repeat;
+  background-image: url('aaa_iso_buildings.png');
+}
+
+.spritesheet-aaa_iso_buildings.skyscraper02 {
+  background-position: -0px 0px;
+  width: 300px;
+  height: 248px;
+}
+
+</pre>
+</body>
+</html>

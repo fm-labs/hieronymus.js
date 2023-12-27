@@ -7,18 +7,14 @@ export const loadHtmlImage = (url: string): Promise<HTMLImageElement> => {
   })
 }
 
-export const loadSpritesheet = async (
-  url: string,
-): Promise<{ image: HTMLImageElement; sprites: any[]; url: string }> => {
+export const loadSpritesheet = async (url: string): Promise<SpritesheetImage> => {
   const image = await loadHtmlImage(url)
   const mapUrl = url.replace('.png', '.json')
   const sprites = await fetch(mapUrl).then((res) => res.json())
   return { url, image, sprites }
 }
 
-export const loadSpritesheetByName = async (
-  name: string,
-): Promise<{ image: HTMLImageElement; sprites: any[]; url: string }> => {
+export const loadSpritesheetByName = async (name: string): Promise<SpritesheetImage> => {
   const url = `/assets/2d/${name}/${name}.png`
   const image = await loadHtmlImage(url)
   const mapUrl = url.replace('.png', '.json')
