@@ -14,6 +14,7 @@ export const mapCellCordsToIndex = (col: number, row: number, gridWidth: number)
  * @param world
  * @param col
  * @param row
+ * @deprecated
  */
 export const getWorldCell = (world: World, col: number, row: number): WorldCell | undefined => {
   const idx = mapCellCordsToIndex(col, row, world.width)
@@ -57,6 +58,13 @@ export function getTileIndexFromIsometricGridPosition(
 
 /** ISOMETRIC GRID */
 
+/**
+ * Get the isometric grid position
+ * @param x
+ * @param y
+ * @param tileWidth
+ * @deprecated Use IsometricGridProjection instead
+ */
 export function getIsometricGridPosition(x: number, y: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
   const tileWidthHalf = tileWidth / 2
@@ -66,6 +74,13 @@ export function getIsometricGridPosition(x: number, y: number, tileWidth: number
   return { col, row }
 }
 
+/**
+ * Get the isometric screen position
+ * @param col
+ * @param row
+ * @param tileWidth
+ * @deprecated Use IsometricGridProjection instead
+ */
 export function getIsometricScreenPosition(col: number, row: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
   //const x = col * (tileWidth / 2) - row * (tileWidth / 2)
@@ -79,6 +94,13 @@ export function getIsometricScreenPosition(col: number, row: number, tileWidth: 
 
 /** ORTHOGONAL GRID */
 
+/**
+ * Get the orthogonal screen position
+ * @param col
+ * @param row
+ * @param tileSize
+ * @deprecated Use OrthogonalGridProjection instead
+ */
 export function getOrthogonalScreenPosition(col: number, row: number, tileSize: number) {
   const tileWidth = tileSize
   const tileHeight = tileSize
@@ -87,6 +109,13 @@ export function getOrthogonalScreenPosition(col: number, row: number, tileSize: 
   return { x, y }
 }
 
+/**
+ * Get the orthogonal grid position
+ * @param x
+ * @param y
+ * @param tileSize
+ * @deprecated Use OrthogonalGridProjection instead
+ */
 export function getOrthogonalGridPosition(x: number, y: number, tileSize: number) {
   const tileWidth = tileSize
   const tileHeight = tileSize

@@ -1,4 +1,5 @@
 import { loadSpritesheet, loadSpritesheetByName } from './loader.ts'
+import { EventBus } from './eventbus.ts'
 
 export class Game implements IGame {
   /**
@@ -26,6 +27,11 @@ export class Game implements IGame {
    * The loaded spritesheets.
    */
   public spritesheets: SpritesheetImage[] = []
+
+  /**
+   * The event bus.
+   */
+  public eventbus: EventBus = new EventBus()
 
   public width: number
   public height: number
@@ -99,42 +105,47 @@ export class Game implements IGame {
     })
   }
 
-  public async run() {
-    console.log('RUN GAME')
+  // fps
+  public lastFrameTime = 0
+  public frameCount = 0
+  public fps = 0
+  public deltaTime = 0
 
-    const spritesheetLoaderSuccessHandler = (spritesheet: any) => {
-      console.log(`Spritesheet loaded from ${spritesheet.url}`)
-      return spritesheet
+  public tick(currentTime: number) {
+    // if (!currentTime) {
+    //   currentTime = Date.now()
+    // }
+    // Convert time to seconds
+    //currentTime *= 0.001;
+
+    // Calculate the difference in seconds
+    this.deltaTime = currentTime - this.lastFrameTime
+    //lastFrameTime = currentTime;
+
+    // Increment the frame count
+    this.frameCount++
+
+    // Update FPS every second
+    if (this.deltaTime >= 1000) {
+      this.fps = this.frameCount
+      this.frameCount = 0
+      this.lastFrameTime = currentTime
+      //console.log('FPS', this.fps)
     }
 
-    this.spritesheets.push(
-      //await loadSpritesheet('map_pack/map_pack.png'),
-      await loadSpritesheet('/aaa_iso_buildings/aaa_iso_buildings.png').then(
-        spritesheetLoaderSuccessHandler,
-      ),
-      //await loadSpritesheetByName('isometric_tiles_base').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_blocks').then(spritesheetLoaderSuccessHandler),
-      //await loadSpritesheetByName('isometric_minigolf').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_modular_buildings').then(
-        spritesheetLoaderSuccessHandler,
-      ),
-      await loadSpritesheetByName('isometric_modular_roads').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_nature').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_space_interior').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_tiles_base').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_tiles_buildings').then(
-        spritesheetLoaderSuccessHandler,
-      ),
-      await loadSpritesheetByName('isometric_tiles_city').then(spritesheetLoaderSuccessHandler),
-      //await loadSpritesheetByName('isometric_tiles_vehicles').then(spritesheetLoaderSuccessHandler),
-      //await loadSpritesheet('isometric_watercraft').then(spritesheetLoaderSuccessHandler),
-      await loadSpritesheetByName('isometric_vector_roads_base').then(
-        spritesheetLoaderSuccessHandler,
-      ),
-      await loadSpritesheetByName('isometric_vector_roads_water').then(
-        spritesheetLoaderSuccessHandler,
-      ),
-    )
+    this.systems.forEach((system) => {
+      if (system.update) {
+        system.update(this.deltaTime)
+      }
+    })
+
+    this.draw()
+
+    requestAnimationFrame(this.tick.bind(this))
+  }
+
+  public async run() {
+    console.log('RUN GAME')
 
     //start systems
     this.systems.forEach((system) => {
@@ -144,7 +155,7 @@ export class Game implements IGame {
     })
 
     // start game loop
-    this.draw()
+    this.tick(0)
   }
 
   async saveState(state: any) {}

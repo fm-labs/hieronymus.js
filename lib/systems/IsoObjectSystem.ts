@@ -1,10 +1,12 @@
-import { objectDict } from '../objectDict.ts'
-import { getCellIndex, getIsometricCellCords } from '../../lib/kernel/util.ts'
+import { objectDict } from '../../src/objectDict.ts'
+import { getCellIndex, getIsometricCellCords } from '../utils/gridutil.ts'
 
 export class IsoObjectSystem implements IGameSystem {
   public name = 'IsoObjectSystem'
   private game!: IGame
   private objects: any[] = []
+
+  private _selectedSpriteImage: any | undefined
 
   public onLoad(game: IGame) {
     console.log('IsoObjectSystem.onLoad')
@@ -23,6 +25,14 @@ export class IsoObjectSystem implements IGameSystem {
 
   public start() {
     console.log('IsoObjectSystem.start')
+
+    this.game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
+
+    const self = this
+    this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
+      console.log('The selected sprite image changed', selectedSpriteImage)
+      self._selectedSpriteImage = selectedSpriteImage
+    })
   }
 
   public stop() {
@@ -30,11 +40,25 @@ export class IsoObjectSystem implements IGameSystem {
   }
 
   public update() {
-    console.log('IsoObjectSystem.update')
+    //console.log('IsoObjectSystem.update')
+  }
+
+  private handleCellClick({ index, col, row }: any) {
+    console.log('clicked cell', index, this._selectedSpriteImage)
+
+    if (this._selectedSpriteImage) {
+      const obj = {
+        col: col,
+        row: row,
+        spriteRef: this._selectedSpriteImage,
+      }
+      console.log('Update Object', index, obj)
+      this.objects[index] = obj
+    }
   }
 
   public draw(mainCtx: CanvasRenderingContext2D) {
-    console.log('IsoObjectSystem.draw')
+    //console.log('IsoObjectSystem.draw')
 
     const objCanvas = document.createElement('canvas')
     const objCtx = objCanvas.getContext('2d')!
@@ -59,6 +83,7 @@ export class IsoObjectSystem implements IGameSystem {
         const objIdx = getCellIndex(c, r, cols)
         const obj = this.objects[objIdx]
         if (!obj) continue
+
         const { col, row, spriteRef } = obj
         const { spriteSheetName, spriteIndex } = spriteRef
         const spritesheet = this.game.spritesheets.find((s) => s.url === spriteSheetName)

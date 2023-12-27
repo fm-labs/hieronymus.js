@@ -1,5 +1,5 @@
-import { drawIsoTile } from '../../lib/kernel/drawiso.ts'
-import { getIsometricScreenPosition, getOrthogonalScreenPosition } from '../../lib/kernel/util.ts'
+import { drawIsoTile } from '../draw2d/drawiso.ts'
+import { getIsometricScreenPosition, getOrthogonalScreenPosition } from '../utils/gridutil.ts'
 
 export interface OrthogonalGridTile extends Grid2DCell {
   col: number

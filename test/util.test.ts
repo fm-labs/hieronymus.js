@@ -4,7 +4,7 @@ import {
   getIsometricScreenPosition,
   getOrthogonalGridPosition,
   getOrthogonalScreenPosition,
-} from '../lib/kernel/util'
+} from '../lib/utils/gridutil'
 
 test('getOrthogonalTilePosition', () => {
   expect(getOrthogonalScreenPosition(0, 0, 32)).toStrictEqual({ x: 0, y: 0 })

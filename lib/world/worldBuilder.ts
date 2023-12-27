@@ -1,4 +1,4 @@
-import { mapCellCordsToIndex } from './util.ts'
+import { mapCellCordsToIndex } from '../utils/gridutil.ts'
 
 export const worldBuilder: WorldBuilder = ({
   width,

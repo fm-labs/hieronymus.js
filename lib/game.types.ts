@@ -1,18 +1,66 @@
+/** GAME ENGINE TYPES **/
+
 interface IGame {
   $container: HTMLDivElement
   $canvas: HTMLCanvasElement
   spritesheets: SpritesheetImage[]
   width: number
   height: number
+
+  // events
+  eventbus: IEventBus
+
+  // @todo move to Grid2D renderer
   twidth: number
   theight: number
   cols: number
   rows: number
   cells: Grid2DCell[]
-  //getTileIndexFromCoords: (x: number, y: number) => number
+
   run: () => void
+  tick: (deltaTime: number) => void
   draw: () => void
+
+  // fps
+  fps: number
+  frameCount: number
+  lastFrameTime: number
+  deltaTime: number
 }
+
+interface IGameSystem {
+  name: string
+  onLoad?: (game: IGame) => void
+  onUnload?: (game: IGame) => void
+  start?: () => void
+  stop?: () => void
+  update?: (deltaTime: number) => void
+  draw?: (ctx: CanvasRenderingContext2D) => void
+}
+
+/** EVENT TYPES **/
+
+interface IEventBus {
+  on: (eventName: string, callback: (e: any) => void) => void
+  off: (eventName: string, callback: (e: any) => void) => void
+  emit: (eventName: string, e: any) => void
+}
+
+/** GRID TYPES **/
+
+type Grid2DCell = {
+  col: number
+  row: number
+  props?: any
+  color: string
+}
+
+interface IGrid2DProjection {
+  mapGridToScreen(col: number, row: number): { x: number; y: number }
+  mapScreenToGrid(x: number, y: number): { col: number; row: number }
+}
+
+/** ASSET TYPES **/
 
 type AssetImage = {
   url: string
@@ -37,21 +85,4 @@ type SpriteImage = {
   url: string
   sprite: SpriteInfo
   image: HTMLImageElement
-}
-
-type Grid2DCell = {
-  col: number
-  row: number
-  props?: any
-  color: string
-}
-
-interface IGameSystem {
-  name: string
-  onLoad?: (game: IGame) => void
-  onUnload?: (game: IGame) => void
-  start?: () => void
-  stop?: () => void
-  update?: (deltaTime: number) => void
-  draw?: (ctx: CanvasRenderingContext2D) => void
 }

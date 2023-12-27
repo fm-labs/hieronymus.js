@@ -1,24 +1,8 @@
-import {
-  getIsometricGridPosition,
-  getTileIndexFromIsometricGridPosition,
-} from '../../lib/kernel/util.ts'
-
-// random colors
-const colors = [
-  '#ff0000',
-  '#00ff00',
-  '#0000ff',
-  '#ffff00',
-  '#00ffff',
-  '#ff00ff',
-  '#ffffff',
-  '#000000',
-]
-
 export class WebUiSystem implements IGameSystem {
   public name = 'WebUiSystem'
   private game!: IGame
   private uiDiv!: HTMLDivElement
+  private controlsDiv!: HTMLDivElement
   private dirty = true
   private selectedSpriteImage: any = null
 
@@ -47,41 +31,21 @@ export class WebUiSystem implements IGameSystem {
     this.uiDiv = uiDiv
     this.game.$container.appendChild(uiDiv)
 
-    const mainCanvas = this.game.$canvas
-    mainCanvas.addEventListener('click', (e) => {
-      const rect = mainCanvas.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-
-      // const spriteIndex = getSpriteIndex(x, y)
-      // console.log('spriteIndex', x, y, spriteIndex)
-      // //syslog('spriteIndex', x, y, spriteIndex)
-      // if (spriteIndex >= 0) {
-      //   console.log('sprite clicked', spritesheet1.sprites[spriteIndex])
-      //   return
-      // }
-
-      //const pos = getIsometricGridPosition(x, y, this.game.twidth)
-      const index = getTileIndexFromIsometricGridPosition(x, y, this.game.twidth, this.game.cols)
-      console.log('clicked tile', index, this.selectedSpriteImage)
-      if (index >= 0) {
-        const randomColorIndex = Math.floor(Math.random() * colors.length)
-        this.game.cells[index].color = colors[randomColorIndex] // Change the color of the clicked tile
-        // lastClickedTileInfo = getTilePath(tiles[index])
-
-        // if (selectedSpriteImage) {
-        //   const objIdx = getCellIndex(tiles[index].col, tiles[index].row)
-        //   const obj = {
-        //     col: tiles[index].col,
-        //     row: tiles[index].row,
-        //     spriteRef: selectedSpriteImage,
-        //   }
-        //   objects[objIdx] = obj
-        //   console.log('Object', objIdx, obj)
-        // }
-      }
-      this.game.draw() // Redraw all the tiles to reflect the color change
-    })
+    const controlsDiv = document.createElement('div')
+    controlsDiv.id = 'controlsDiv'
+    controlsDiv.style.position = 'absolute'
+    controlsDiv.style.top = '0px'
+    controlsDiv.style.right = '0px'
+    controlsDiv.style.width = '320px'
+    controlsDiv.style.height = '100vh'
+    controlsDiv.style.overflowY = 'scroll'
+    //controlsDiv.style.pointerEvents = 'none'
+    //controlsDiv.style.display = 'flex'
+    //controlsDiv.style.flexDirection = 'row'
+    controlsDiv.style.backgroundColor = 'rgba(215,6,6,0.2)'
+    //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
+    this.controlsDiv = controlsDiv
+    this.game.$container.appendChild(controlsDiv)
   }
 
   public onUnload() {
@@ -96,13 +60,13 @@ export class WebUiSystem implements IGameSystem {
     console.log('WebUiSystem.stop')
   }
 
-  public update() {
-    console.log('WebUiSystem.update')
-  }
+  // public update() {
+  //   console.log('WebUiSystem.update')
+  // }
 
   public draw() {
-    console.log('WebUiSystem.draw')
     if (!this.dirty) return
+    console.log('WebUiSystem.draw')
 
     const spriteWidth = 32
     const spriteHeight = 32
@@ -147,6 +111,7 @@ export class WebUiSystem implements IGameSystem {
         spriteDiv.dataset.spriteIndex = spriteIdx.toString()
         spriteDiv.dataset.spriteSheetName = spritesheet.url.toString()
         spriteDiv.onclick = (ev) => {
+          console.log('sprite clicked', ev)
           //const $el = ev.target as HTMLDivElement
           const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
           const spritesheetName = spriteDiv.dataset.spriteSheetName!
@@ -159,6 +124,8 @@ export class WebUiSystem implements IGameSystem {
               spriteIndex: spriteIdx,
             }
             console.log('selectedSpriteImage', self.selectedSpriteImage)
+            self.game.eventbus.emit('editor.selectedSpriteImage', self.selectedSpriteImage)
+            //self.game.editor.state['editor.selectedSpriteImage'] = self.selectedSpriteImage
           }
           self.dirty = true
           self.draw()

@@ -4,7 +4,7 @@ import { smileyWorldConfig } from './worlds/smiley/smiley.world.ts'
 import { elbaWorldConfig } from './worlds/elba/elba.world.ts'
 import { devWorldConfig } from './worlds/dev/dev.world.ts'
 import { sandboxWorldConfig } from './worlds/sandbox/sandbox.world.ts'
-import { worldBuilder } from "../lib/kernel/worldBuilder.ts";
+import { worldBuilder } from '../lib/world/worldBuilder.ts'
 
 export const worldConfigs: WorldConfig[] = [
   defaultWorldConfig,

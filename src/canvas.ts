@@ -1,4 +1,4 @@
-import { WorldRenderer2d } from '../lib/kernel/renderer2d.ts'
+import { WorldRenderer2d } from '../lib/world/renderer2d.ts'
 import { spritesheets } from './sprites.ts'
 import { elbaWorldConfig } from './worlds/elba/elba.world.ts'
 

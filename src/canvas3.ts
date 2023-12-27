@@ -1,6 +1,6 @@
 import { loadSpritesheet, loadSpritesheetByName } from '../lib/kernel/loader.ts'
 
-import { drawIsoTile } from '../lib/kernel/drawiso.ts'
+import { drawIsoTile } from '../lib/draw2d/drawiso.ts'
 
 export async function setupCanvas3(container: HTMLDivElement) {
   const canvasWidth = window.innerWidth

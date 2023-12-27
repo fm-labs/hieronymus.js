@@ -14,6 +14,11 @@ export const loadSpritesheet = async (url: string): Promise<SpritesheetImage> =>
   return { url, image, sprites }
 }
 
+/**
+ * Load a kenney repacked spritesheet by name
+ * @param name
+ * @deprecated Use loadSpritesheet instead
+ */
 export const loadSpritesheetByName = async (name: string): Promise<SpritesheetImage> => {
   const url = `/assets/2d/${name}/${name}.png`
   const image = await loadHtmlImage(url)
