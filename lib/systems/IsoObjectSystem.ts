@@ -1,12 +1,20 @@
 import { objectDict } from '../../src/objectDict.ts'
-import { getCellIndex, getIsometricCellCords } from '../utils/gridutil.ts'
+import { getCellIndex, getIsometricScreenPosition } from '../utils/gridutil.ts'
+import { DimetricGridProjection } from '../map/projection.ts'
 
 export class IsoObjectSystem implements IGameSystem {
   public name = 'IsoObjectSystem'
+  private tsize: number
+  private projection: IGrid2DProjection
   private game!: IGame
   private objects: any[] = []
 
   private _selectedSpriteImage: any | undefined
+
+  constructor(tileSize: number) {
+    this.tsize = tileSize
+    this.projection = new DimetricGridProjection(tileSize)
+  }
 
   public onLoad(game: IGame) {
     console.log('IsoObjectSystem.onLoad')
@@ -28,10 +36,9 @@ export class IsoObjectSystem implements IGameSystem {
 
     this.game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
 
-    const self = this
     this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
       console.log('The selected sprite image changed', selectedSpriteImage)
-      self._selectedSpriteImage = selectedSpriteImage
+      this._selectedSpriteImage = selectedSpriteImage
     })
   }
 
@@ -44,7 +51,7 @@ export class IsoObjectSystem implements IGameSystem {
   }
 
   private handleCellClick({ index, col, row }: any) {
-    console.log('clicked cell', index, this._selectedSpriteImage)
+    console.log('[IsoObjects] clicked cell', index, col, row, this._selectedSpriteImage)
 
     if (this._selectedSpriteImage) {
       const obj = {
@@ -60,25 +67,31 @@ export class IsoObjectSystem implements IGameSystem {
   public draw(mainCtx: CanvasRenderingContext2D) {
     //console.log('IsoObjectSystem.draw')
 
-    const objCanvas = document.createElement('canvas')
-    const objCtx = objCanvas.getContext('2d')!
-    objCanvas.width = this.game.width
-    objCanvas.height = this.game.height
-
-    const twidth = this.game.twidth
-    const theight = this.game.theight
     const cols = this.game.cols
     const rows = this.game.rows
-    //const objects: any[] = []
+
+    const tsize = this.tsize
+    const twidth = tsize
+    const theight = tsize / 2
+
+    const gridWidth = cols * twidth
+    const gridHeight = rows * theight
+
+    const objCanvas = document.createElement('canvas')
+    const objCtx = objCanvas.getContext('2d')!
+    objCanvas.width = gridWidth
+    objCanvas.height = gridHeight
 
     // draw the objects
     console.log('draw objects')
 
     objCtx.reset()
-    objCtx.clearRect(0, 0, this.game.width, this.game.height)
-    objCtx.translate(this.game.width / 2 - (rows / 2) * twidth, this.game.height / 2)
+    objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height)
 
-    for (let c = cols - 1; c >= 0; c--) {
+    objCtx.save()
+    objCtx.translate(objCanvas.width / 2, 0)
+
+    for (let c = 0; c < cols; c++) {
       for (let r = 0; r < rows; r++) {
         const objIdx = getCellIndex(c, r, cols)
         const obj = this.objects[objIdx]
@@ -117,16 +130,23 @@ export class IsoObjectSystem implements IGameSystem {
           sprite.height,
         )
 
-        //const tileIdx = col * rows + row
-        //const tpath = getTilePath(tiles[tileIdx])
-        //const tpoint0 = tpath[0]
-        const tpoint0 = getIsometricCellCords(col, row, this.game.twidth)
-
+        const tpos = this.projection.mapGridToScreen(col, row)
         const ratio = sprite.width / sprite.height
-        const imgW = Math.min(sprite.width, twidth)
-        const imgH = imgW / ratio
-        const offsetX = twidth / 2 - imgW / 2
-        const offsetY = -imgH + theight / 2
+
+        let imgW = sprite.width
+        let imgH = imgW / ratio
+
+        //console.log('sprite', spriteIndex, ratio, imgW, imgH)
+
+        // adjust width to fit the tile
+        if (ratio < 1) {
+        } else if (ratio < 1.5) {
+          imgW = twidth
+          imgH = imgW / (twidth / sprite.height)
+        }
+
+        const offsetX = -(imgW / 2)
+        const offsetY = -imgH + theight
 
         objCtx.drawImage(
           spriteCanvas,
@@ -134,16 +154,26 @@ export class IsoObjectSystem implements IGameSystem {
           0,
           sprite.width,
           sprite.height,
-          tpoint0.x + offsetX,
-          tpoint0.y + offsetY,
+          tpos.x + offsetX,
+          tpos.y + offsetY,
           imgW,
           imgH,
         )
         objCtx.strokeStyle = 'rgba(115,255,0,0.84)'
-        objCtx.strokeRect(tpoint0.x + offsetX, tpoint0.y + offsetY, imgW, imgH)
+        objCtx.strokeRect(tpos.x + offsetX, tpos.y + offsetY, imgW, imgH)
       }
     }
 
-    mainCtx.drawImage(objCanvas, 0, 0)
+    // mainCtx.clearRect(
+    //   this.game.width / 2 - gridWidth / 2,
+    //   this.game.height / 2 - gridHeight / 2,
+    //   gridWidth,
+    //   gridHeight,
+    // )
+    mainCtx.drawImage(
+      objCanvas,
+      this.game.width / 2 - gridWidth / 2,
+      this.game.height / 2 - gridHeight / 2,
+    )
   }
 }

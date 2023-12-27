@@ -11,8 +11,6 @@ interface IGame {
   eventbus: IEventBus
 
   // @todo move to Grid2D renderer
-  twidth: number
-  theight: number
   cols: number
   rows: number
   cells: Grid2DCell[]

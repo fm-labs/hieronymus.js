@@ -20,8 +20,8 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 // map.addCell(3, 0, { type: 'grass' })
 // map.addCell(4, 0, { type: 'grass' })
 // map.addCell(5, 0, { type: 'grass' })
-
-const game = new Game(app, 10, 10, 128)
+const tsize = 128
+const game = new Game(app, 10, 10)
 
 // Init spritesheets
 const spritesheetLoaderSuccessHandler = (spritesheet: any) => {
@@ -66,8 +66,8 @@ game.cells = cells
 
 //game.addSystem(new DebugSystem())
 //game.addSystem(new OrthogonalGridSystem())
-game.addSystem(new IsoGridSystem(128))
-game.addSystem(new IsoObjectSystem())
+game.addSystem(new IsoGridSystem(tsize))
+game.addSystem(new IsoObjectSystem(tsize))
 game.addSystem(new InputSystem())
 game.addSystem(new GamepadInputSystem())
 game.addSystem(new WebUiSystem())

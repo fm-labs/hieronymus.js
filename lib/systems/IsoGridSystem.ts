@@ -75,98 +75,13 @@ export class IsoGridSystem implements IGameSystem {
   //   console.log('IsoGridSystem.update')
   // }
 
-  public draw(mainCtx: CanvasRenderingContext2D) {
-    if (!this.dirty) return
-    console.log('IsoGridSystem.draw')
-
-    const cols = this.game.cols
-    const rows = this.game.rows
-
-    const tsize = this.tsize
-    const twidth = tsize
-    const theight = tsize / 2
-
-    const gridWidth = cols * twidth
-    const gridHeight = rows * theight
-
-    const gridCanvas = document.createElement('canvas')
-    gridCanvas.width = gridWidth
-    gridCanvas.height = gridHeight
-
-    //const gridCtx = gridCanvas.getContext('2d')!
-    const gridCtx = mainCtx
-    gridCtx.save()
-    gridCtx.translate(this.game.width / 2, this.game.height / 2 - gridHeight / 2)
-
-    // draw the grid
-    //gridCtx.reset()
-    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height)
-
-    //gridCtx.translate(gridCanvas.width / 2, 0)
-    for (const cell of this.game.cells) {
-      // @todo move to 'update' method
-      //const screenPos = getIsometricScreenPosition(cell.col, cell.row, this.game.twidth)
-      const screenPos = this.projection.mapGridToScreen(cell.col, cell.row)
-      const tile = {
-        ...cell,
-        //x: cell.col * (this.game.twidth / 2) + cell.row * (this.game.twidth / 2),
-        //y: cell.row * (this.game.theight / 2) - cell.col * (this.game.theight / 2),
-        x: screenPos.x,
-        y: screenPos.y,
-      }
-      drawIsoTile(
-        gridCtx,
-        tile.x,
-        tile.y,
-        this.game.twidth,
-        this.game.theight,
-        tile.color,
-        `[${cell.col},${cell.row}]`,
-      )
-    }
-
-    // draw a dot at the corner of each cell
-    for (let i = 0; i < this.game.cols; i++) {
-      for (let j = 0; j < this.game.rows; j++) {
-        //const { x, y } = getIsometricCellCords(i, j, this.game.twidth)
-        //const { x, y } = getIsometricScreenPosition(i, j, this.game.twidth)
-        const { x, y } = this.projection.mapGridToScreen(i, j)
-        gridCtx.fillStyle = 'red'
-        gridCtx.fillRect(x - 1, y - 1, 2, 2)
-      }
-    }
-
-    gridCtx.translate(-gridWidth / 2, 0)
-    //gridCtx.translate(0, 0)
-    gridCtx.strokeStyle = 'orange'
-    gridCtx.strokeRect(1, 1, gridCanvas.width - 1, gridCanvas.height - 1)
-
-    gridCtx.fillStyle = 'white'
-    gridCtx.fillText(`${gridCanvas.width}/${gridCanvas.height}`, 0, 10)
-
-    gridCtx.restore()
-    // mainCtx.clearRect(
-    //   this.game.width / 2 - gridWidth / 2,
-    //   this.game.height / 2 - gridHeight / 2,
-    //   gridWidth,
-    //   gridHeight,
-    // )
-    // mainCtx.drawImage(
-    //   gridCanvas,
-    //   this.game.width / 2 - gridWidth / 2,
-    //   this.game.height / 2 - gridHeight / 2,
-    // )
-
-    this.dirty = false
-  }
-
   private handleMouseMove(e: MouseEvent) {
     const mainCanvas = this.game.$canvas
     const rect = mainCanvas.getBoundingClientRect()
 
     //@todo calculate offsets using projection
     const offsetX = mainCanvas.width / 2
-    const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * this.game.theight
+    const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * (this.tsize / 2)
     const x = e.clientX - rect.left - offsetX
     const y = e.clientY - rect.top - offsetY
     const pos = this.projection.mapScreenToGrid(x, y)
@@ -191,7 +106,7 @@ export class IsoGridSystem implements IGameSystem {
     const mainCanvas = this.game.$canvas
     const rect = mainCanvas.getBoundingClientRect()
     const offsetX = mainCanvas.width / 2
-    const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * this.game.theight
+    const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * (this.tsize / 2)
     const x = e.clientX - rect.left - offsetX
     const y = e.clientY - rect.top - offsetY
     const pos = this.projection.mapScreenToGrid(x, y)
@@ -216,5 +131,80 @@ export class IsoGridSystem implements IGameSystem {
       this.game.cells[index].color = colors[randomColorIndex] // Change the color of the clicked tile
     }
     this.dirty = true
+  }
+
+  public draw(mainCtx: CanvasRenderingContext2D) {
+    if (!this.dirty) return
+    console.log('IsoGridSystem.draw')
+
+    const cols = this.game.cols
+    const rows = this.game.rows
+
+    const tsize = this.tsize
+    const twidth = tsize
+    const theight = tsize / 2
+
+    const gridWidth = cols * twidth
+    const gridHeight = rows * theight
+
+    const gridCanvas = document.createElement('canvas')
+    gridCanvas.width = gridWidth
+    gridCanvas.height = gridHeight
+
+    const gridCtx = gridCanvas.getContext('2d')!
+    //const gridCtx = mainCtx
+    //gridCtx.save()
+    //gridCtx.translate(this.game.width / 2, this.game.height / 2 - gridHeight / 2)
+
+    // draw the grid
+    gridCtx.reset()
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height)
+
+    gridCtx.save()
+    gridCtx.translate(gridCanvas.width / 2, 0)
+
+    for (const cell of this.game.cells) {
+      // @todo move to 'update' method
+      const screenPos = this.projection.mapGridToScreen(cell.col, cell.row)
+      const tile = {
+        ...cell,
+        x: screenPos.x,
+        y: screenPos.y,
+      }
+      drawIsoTile(gridCtx, tile.x, tile.y, twidth, theight, tile.color, `[${cell.col},${cell.row}]`)
+    }
+
+    // draw a dot at the corner of each cell
+    for (let i = 0; i < this.game.cols; i++) {
+      for (let j = 0; j < this.game.rows; j++) {
+        const { x, y } = this.projection.mapGridToScreen(i, j)
+        gridCtx.fillStyle = 'red'
+        gridCtx.fillRect(x - 1, y - 1, 2, 2)
+      }
+    }
+
+    gridCtx.translate(-gridWidth / 2, 0)
+    //gridCtx.translate(0, 0)
+    gridCtx.strokeStyle = 'orange'
+    gridCtx.strokeRect(1, 1, gridCanvas.width - 1, gridCanvas.height - 1)
+
+    gridCtx.fillStyle = 'white'
+    gridCtx.fillText(`${gridCanvas.width}/${gridCanvas.height}`, 0, 10)
+
+    gridCtx.restore()
+
+    mainCtx.clearRect(
+      this.game.width / 2 - gridWidth / 2,
+      this.game.height / 2 - gridHeight / 2,
+      gridWidth,
+      gridHeight,
+    )
+    mainCtx.drawImage(
+      gridCanvas,
+      this.game.width / 2 - gridWidth / 2,
+      this.game.height / 2 - gridHeight / 2,
+    )
+
+    this.dirty = false
   }
 }

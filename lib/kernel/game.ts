@@ -1,4 +1,3 @@
-import { loadSpritesheet, loadSpritesheetByName } from './loader.ts'
 import { EventBus } from './eventbus.ts'
 
 export class Game implements IGame {
@@ -35,19 +34,15 @@ export class Game implements IGame {
 
   public width: number
   public height: number
-  public twidth: number
-  public theight: number
 
   public cols: number
   public rows: number
   public cells: Grid2DCell[] = []
 
-  constructor($container: HTMLDivElement, cols: number, rows: number, tsize: number) {
+  constructor($container: HTMLDivElement, cols: number, rows: number) {
     //@todo make game dimensions configurable
     this.cols = cols
     this.rows = rows
-    this.twidth = tsize
-    this.theight = tsize / 2
 
     this.$container = $container
     this.$container.style.position = 'absolute'
