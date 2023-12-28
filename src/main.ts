@@ -71,7 +71,7 @@ game.addSystem(new IsoGridSystem(tsize))
 game.addSystem(new IsoObjectSystem(tsize))
 game.addSystem(new InputSystem())
 game.addSystem(new GamepadInputSystem())
-//game.addSystem(new WebUiSystem())
+game.addSystem(new WebUiSystem())
 game.addSystem(new InfoSystem())
 game.addSystem(new HeroSystem())
 

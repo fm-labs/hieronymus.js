@@ -69,7 +69,19 @@ export class HeroSystem implements IGameSystem {
     }
   }
 
-  private handleGamepadButtonChangeEvent(e: GamepadButtonChangeEvent) {}
+  private handleGamepadButtonChangeEvent(e: GamepadButtonChangeEvent) {
+    console.log('button change', e)
+
+    if (e.button === 0) {
+      this.hero.speed += 64
+    } else if (e.button === 1) {
+      this.hero.speed -= 128
+    } else if (e.button === 2) {
+      this.hero.color = randomColor()
+    } else if (e.button === 3) {
+      this.hero.speed = 256
+    }
+  }
 
   public move(direction?: MoveDirection) {
     const movementDelta = 1 / 30

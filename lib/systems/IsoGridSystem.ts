@@ -62,7 +62,7 @@ export class IsoGridSystem implements IGameSystem {
       console.log('[IsoGrid] key down', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
     })
     this.game.eventbus.on('hero.move', (hero) => {
-      console.log('Hero position changeed changed', hero)
+      //console.log('Hero position changeed changed', hero)
       this.dirty = true
     })
     // this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {

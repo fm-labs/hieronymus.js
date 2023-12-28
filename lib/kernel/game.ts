@@ -52,8 +52,8 @@ export class Game implements IGame {
     //@todo make game dimensions configurable
     this.cols = cols
     this.rows = rows
-    this.width = this.camera.width * 0.8
-    this.height = this.camera.height * 0.8
+    this.width = this.camera.width
+    this.height = this.camera.height
 
     this.$container = $container
     this.$container.style.position = 'absolute'
