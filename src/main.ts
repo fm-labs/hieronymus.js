@@ -22,7 +22,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 // map.addCell(4, 0, { type: 'grass' })
 // map.addCell(5, 0, { type: 'grass' })
 const tsize = 128
-const game = new Game(app, 10, 10)
+const game = new Game(app, 30, 30)
 
 // Init spritesheets
 const spritesheetLoaderSuccessHandler = (spritesheet: any) => {

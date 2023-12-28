@@ -1,13 +1,3 @@
-type Camera = {
-  offset: Point
-  zoom: number
-}
-
-type Point = {
-  x: number
-  y: number
-}
-
 interface WorldBuilderProps {
   name: string
   label?: string

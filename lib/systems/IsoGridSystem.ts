@@ -52,23 +52,33 @@ export class IsoGridSystem implements IGameSystem {
 
   public start() {
     console.log('IsoGridSystem.start')
-    this.game.eventbus.on('keyDown', (e: KeyboardEvent) => {
-      console.log('[IsoGrid] key down', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
-      if (e.key === 'ArrowLeft') {
-        console.log('ArrowLeft')
-      }
-    })
 
+    // Register DOM events
     this.game.$canvas.addEventListener('mousemove', this.handleMouseMove.bind(this))
     this.game.$canvas.addEventListener('click', this.handleMouseClick.bind(this))
 
-    this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
-      console.log('The selected sprite image changed', selectedSpriteImage)
+    // Register game events
+    this.game.eventbus.on('keyboard.keyDown', (e: KeyboardEvent) => {
+      console.log('[IsoGrid] key down', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
     })
+    this.game.eventbus.on('hero.move', (hero) => {
+      console.log('Hero position changeed changed', hero)
+      this.dirty = true
+    })
+    // this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
+    //   console.log('The selected sprite image changed', selectedSpriteImage)
+    // })
   }
 
   public stop() {
     console.log('IsoGridSystem.stop')
+
+    // Unregister DOM events
+    this.game.$canvas.removeEventListener('mousemove', this.handleMouseMove.bind(this))
+    this.game.$canvas.removeEventListener('click', this.handleMouseClick.bind(this))
+
+    // Unregister game events
+    //this.game.eventbus.off('editor.selectedSpriteImage')
   }
 
   // public update() {
@@ -82,8 +92,8 @@ export class IsoGridSystem implements IGameSystem {
     //@todo calculate offsets using projection
     const offsetX = mainCanvas.width / 2
     const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * (this.tsize / 2)
-    const x = e.clientX - rect.left - offsetX
-    const y = e.clientY - rect.top - offsetY
+    const x = e.clientX - rect.left - offsetX + this.game.camera.offset.x
+    const y = e.clientY - rect.top - offsetY + this.game.camera.offset.y
     const pos = this.projection.mapScreenToGrid(x, y)
     const index = getCellIndex(pos.col, pos.row, this.game.cols)
 
@@ -107,8 +117,8 @@ export class IsoGridSystem implements IGameSystem {
     const rect = mainCanvas.getBoundingClientRect()
     const offsetX = mainCanvas.width / 2
     const offsetY = mainCanvas.height / 2 - (this.game.cols / 2) * (this.tsize / 2)
-    const x = e.clientX - rect.left - offsetX
-    const y = e.clientY - rect.top - offsetY
+    const x = e.clientX - rect.left - offsetX + this.game.camera.offset.x
+    const y = e.clientY - rect.top - offsetY + this.game.camera.offset.y
     const pos = this.projection.mapScreenToGrid(x, y)
     const index = getCellIndex(pos.col, pos.row, this.game.cols)
 
@@ -161,7 +171,10 @@ export class IsoGridSystem implements IGameSystem {
     gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height)
 
     gridCtx.save()
-    gridCtx.translate(gridCanvas.width / 2, 0)
+    gridCtx.translate(
+      gridCanvas.width / 2 - this.game.camera.offset.x,
+      0 - this.game.camera.offset.y,
+    )
 
     for (const cell of this.game.cells) {
       // @todo move to 'update' method
@@ -205,6 +218,6 @@ export class IsoGridSystem implements IGameSystem {
       this.game.height / 2 - gridHeight / 2,
     )
 
-    this.dirty = true
+    this.dirty = false
   }
 }

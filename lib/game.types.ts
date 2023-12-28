@@ -10,6 +10,10 @@ interface IGame {
   // events
   eventbus: IEventBus
 
+  // camera
+  camera: Camera2D
+
+  // grid
   // @todo move to Grid2D renderer
   cols: number
   rows: number
@@ -104,3 +108,19 @@ type GamepadButtonChangeEvent = GamepadInputEvent & {
 type ButtonState = 'pressed' | 'released'
 
 type MoveDirection = 'up' | 'down' | 'left' | 'right'
+
+/** CAMERA TYPES **/
+
+type Camera2D = {
+  offset: Point2D
+  width: number
+  height: number
+  zoom: number
+  //depth: number
+  //angle: number
+}
+
+type Point2D = {
+  x: number
+  y: number
+}

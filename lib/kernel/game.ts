@@ -39,10 +39,21 @@ export class Game implements IGame {
   public rows: number
   public cells: Grid2DCell[] = []
 
+  public camera: Camera2D = {
+    offset: { x: 0, y: 0 },
+    width: 1920,
+    height: 780,
+    //depth: 0,
+    //angle: 0,
+    zoom: 1,
+  }
+
   constructor($container: HTMLDivElement, cols: number, rows: number) {
     //@todo make game dimensions configurable
     this.cols = cols
     this.rows = rows
+    this.width = this.camera.width * 0.8
+    this.height = this.camera.height * 0.8
 
     this.$container = $container
     this.$container.style.position = 'absolute'
@@ -50,11 +61,12 @@ export class Game implements IGame {
     this.$container.style.left = '0px'
     this.$container.style.width = '100vw'
     this.$container.style.height = '100vh'
-    this.width = $container.clientWidth
-    this.height = $container.clientHeight
+    //this.width = $container.clientWidth
+    //this.height = $container.clientHeight
 
     // canvas
     const $canvas = document.createElement('canvas')
+    //$canvas.style.left = '320px'
     $canvas.width = this.width
     $canvas.height = this.height
     this.$canvas = $canvas

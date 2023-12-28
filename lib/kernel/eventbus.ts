@@ -26,7 +26,7 @@ export class EventBus {
   // Dispatch an event
   emit(event: string, ...args: any[]): void {
     const eventListeners = this.listeners[event] || []
-    console.log('EventBus.emit', event, args, eventListeners.length)
+    //console.log('EventBus.emit', event, args, eventListeners.length)
     if (eventListeners) {
       for (const listener of eventListeners) {
         listener(...args)

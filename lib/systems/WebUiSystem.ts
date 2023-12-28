@@ -26,7 +26,7 @@ export class WebUiSystem implements IGameSystem {
     //uiDiv.style.pointerEvents = 'none'
     //uiDiv.style.display = 'flex'
     //uiDiv.style.flexDirection = 'row'
-    //uiDiv.style.backgroundColor = 'rgba(215,6,6,0.2)'
+    uiDiv.style.backgroundColor = 'rgba(30,30,30,0.9)'
     //uiDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.uiDiv = uiDiv
     this.game.$container.appendChild(uiDiv)
@@ -103,7 +103,6 @@ export class WebUiSystem implements IGameSystem {
           spriteHeight,
         )
 
-        const self = this
         const spriteDiv = document.createElement('div')
         spriteDiv.title = `${spritesheet.url} ${sprite.name} (${sprite.x}, ${sprite.y})`
         spriteDiv.style.width = `${spriteWidth}px`
@@ -115,20 +114,20 @@ export class WebUiSystem implements IGameSystem {
           //const $el = ev.target as HTMLDivElement
           const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
           const spritesheetName = spriteDiv.dataset.spriteSheetName!
-          const spritesheet = self.game?.spritesheets.find((s) => s.url === spritesheetName)
+          const spritesheet = this.game?.spritesheets.find((s) => s.url === spritesheetName)
           //syslog('sprite clicked', ev, spritesheetName, spriteIdx)
           if (spritesheet) {
             console.log('spritesheet found', spritesheet)
-            self.selectedSpriteImage = {
+            this.selectedSpriteImage = {
               spriteSheetName: spritesheet.url,
               spriteIndex: spriteIdx,
             }
-            console.log('selectedSpriteImage', self.selectedSpriteImage)
-            self.game.eventbus.emit('editor.selectedSpriteImage', self.selectedSpriteImage)
-            //self.game.editor.state['editor.selectedSpriteImage'] = self.selectedSpriteImage
+            console.log('selectedSpriteImage', this.selectedSpriteImage)
+            this.game.eventbus.emit('editor.selectedSpriteImage', this.selectedSpriteImage)
+            //this.game.editor.state['editor.selectedSpriteImage'] = this.selectedSpriteImage
           }
-          self.dirty = true
-          self.draw()
+          this.dirty = true
+          this.draw()
         }
 
         if (

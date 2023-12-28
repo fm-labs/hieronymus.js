@@ -83,7 +83,7 @@ export class IsoObjectSystem implements IGameSystem {
     objCanvas.height = gridHeight
 
     // draw the objects
-    console.log('draw objects')
+    //console.log('draw objects')
 
     objCtx.reset()
     objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height)

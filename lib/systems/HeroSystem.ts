@@ -14,6 +14,7 @@ export class HeroSystem implements IGameSystem {
     direction: 'down',
     moving: false,
   }
+  private dirty: boolean = true
 
   public onLoad(game: IGame) {
     console.log('HeroSystem.onLoad')
@@ -42,8 +43,6 @@ export class HeroSystem implements IGameSystem {
     }
   }
 
-  private handleGamepadButtonChangeEvent(e: GamepadButtonChangeEvent) {}
-
   private handleKeyboardDownEvent(e: KeyboardEvent) {
     console.log('[Hero]', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
 
@@ -70,6 +69,8 @@ export class HeroSystem implements IGameSystem {
     }
   }
 
+  private handleGamepadButtonChangeEvent(e: GamepadButtonChangeEvent) {}
+
   public move(direction?: MoveDirection) {
     const movementDelta = 1 / 30
     const speed = this.hero.speed
@@ -80,29 +81,43 @@ export class HeroSystem implements IGameSystem {
         this.hero.y -= (speed * movementDelta) / 2
         this.hero.direction = 'left'
         this.hero.moving = true
+
+        this.game.camera.offset.x -= speed * movementDelta
+        this.game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'right':
         this.hero.x += speed * movementDelta
         this.hero.y += (speed * movementDelta) / 2
         this.hero.direction = 'right'
         this.hero.moving = true
+
+        this.game.camera.offset.x += speed * movementDelta
+        this.game.camera.offset.y += (speed * movementDelta) / 2
         break
       case 'up':
         this.hero.x += speed * movementDelta
         this.hero.y -= (speed * movementDelta) / 2
         this.hero.direction = 'up'
         this.hero.moving = true
+
+        this.game.camera.offset.x += speed * movementDelta
+        this.game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'down':
         this.hero.x -= speed * movementDelta
         this.hero.y += (speed * movementDelta) / 2
         this.hero.direction = 'down'
         this.hero.moving = true
+
+        this.game.camera.offset.x -= speed * movementDelta
+        this.game.camera.offset.y += (speed * movementDelta) / 2
         break
       default:
         this.hero.moving = false
         break
     }
+
+    this.game.eventbus.emit('hero.move', this.hero)
   }
 
   public onUnload() {
@@ -119,10 +134,11 @@ export class HeroSystem implements IGameSystem {
 
   public update(deltaTime: number) {
     //console.log('HeroSystem.update')
+    if (Math.max(deltaTime, 1000) <= 1000) return
 
-    if (Math.max(deltaTime, 1000) > 1000) {
-      this.hero.color = randomColor()
-    }
+    this.hero.color = randomColor()
+    this.game.eventbus.emit('hero.update', this.hero)
+    this.dirty = true
   }
 
   public draw(mainCtx: CanvasRenderingContext2D) {
@@ -151,6 +167,7 @@ export class HeroSystem implements IGameSystem {
       this.game.width / 2 - gridWidth / 2,
       this.game.height / 2 - gridHeight / 2,
     )
-    //mainCtx.drawImage(heroCanvas, this.game.width / 2, this.game.height / 2)
+
+    this.dirty = false
   }
 }
