@@ -1,30 +1,23 @@
-import { objectDict } from '../../src/objectDict.ts'
-import { getCellIndex, getIsometricScreenPosition } from '../utils/gridutil.ts'
+import { getCellIndex } from '../utils/gridutil.ts'
 import { DimetricGridProjection } from '../map/projection.ts'
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
-export class IsoObjectSystem implements IGameSystem {
+export class IsoObjectSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'IsoObjectSystem'
-  private game!: IGame
-  private tsize: number
+  private readonly tsize: number
   private projection: IGrid2DProjection
   private objects: any[] = []
   private dirty = true
   private _selectedSpriteImage: any | undefined
 
-  constructor(tileSize: number) {
+  constructor(game: IGame, tileSize: number) {
+    super(game)
     this.tsize = tileSize
     this.projection = new DimetricGridProjection(tileSize)
   }
 
-  public onLoad(game: IGame) {
+  public onLoad() {
     console.log('IsoObjectSystem.onLoad')
-    this.game = game
-
-    // init objects
-    objectDict.forEach((obj) => {
-      const objIdx = getCellIndex(obj.col, obj.row, this.game.cols)
-      //this.objects[objIdx] = obj
-    })
   }
 
   public onUnload() {
@@ -34,14 +27,14 @@ export class IsoObjectSystem implements IGameSystem {
   public start() {
     console.log('IsoObjectSystem.start')
 
-    this.game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
+    this._game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
 
-    this.game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
+    this._game.eventbus.on('editor.selectedSpriteImage', (selectedSpriteImage) => {
       //console.log('The selected sprite image changed', selectedSpriteImage)
       this._selectedSpriteImage = selectedSpriteImage
     })
 
-    this.game.eventbus.on('hero.move', (hero) => {
+    this._game.eventbus.on('hero.move', (hero) => {
       //console.log('Hero position changed changed', hero)
       this.dirty = true
     })
@@ -68,7 +61,7 @@ export class IsoObjectSystem implements IGameSystem {
       this.objects[index] = obj
       this.dirty = true
 
-      this.game.eventbus.emit('object.update', obj)
+      this._game.eventbus.emit('object.update', obj)
     }
   }
 
@@ -76,8 +69,8 @@ export class IsoObjectSystem implements IGameSystem {
     if (!this.dirty) return
     console.log('IsoObjectSystem.draw')
 
-    const cols = this.game.cols
-    const rows = this.game.rows
+    const cols = this._game.cols
+    const rows = this._game.rows
 
     const tsize = this.tsize
     const twidth = tsize
@@ -108,7 +101,7 @@ export class IsoObjectSystem implements IGameSystem {
 
         const { col, row, spriteRef } = obj
         const { spriteSheetName, spriteIndex } = spriteRef
-        const spritesheet = this.game.spritesheets.find((s) => s.url === spriteSheetName)
+        const spritesheet = this._game.spritesheets.find((s) => s.url === spriteSheetName)
         if (!spritesheet) {
           console.log(`Spritesheet not found: ${spriteSheetName}`)
           return
@@ -142,20 +135,19 @@ export class IsoObjectSystem implements IGameSystem {
         const tpos = this.projection.mapGridToScreen(col, row)
         const ratio = sprite.width / sprite.height
 
-        let imgW = Math.min(sprite.width, twidth)
-        let imgH = imgW / ratio
+        const imgW = Math.min(sprite.width, twidth)
+        const imgH = imgW / ratio
 
         // adjust width to fit the tile
-        if (ratio < 1) {
-          imgW = twidth
-          imgH = imgW / (twidth / sprite.height)
-        } else if (ratio < 1.5) {
-        }
+        // if (ratio < 1) {
+        //   imgW = twidth
+        //   imgH = imgW / (twidth / sprite.height)
+        // }
 
         console.log('sprite', objIdx, spriteIndex, ratio, imgW, imgH)
 
-        const offsetX = -(imgW / 2) - this.game.camera.offset.x
-        const offsetY = -imgH + theight - this.game.camera.offset.y
+        const offsetX = -(imgW / 2) - this._game.camera.offset.x
+        const offsetY = -imgH + theight - this._game.camera.offset.y
 
         objCtx.drawImage(
           spriteCanvas,
@@ -173,16 +165,10 @@ export class IsoObjectSystem implements IGameSystem {
       }
     }
 
-    // mainCtx.clearRect(
-    //   this.game.width / 2 - gridWidth / 2,
-    //   this.game.height / 2 - gridHeight / 2,
-    //   gridWidth,
-    //   gridHeight,
-    // )
     mainCtx.drawImage(
       objCanvas,
-      this.game.width / 2 - gridWidth / 2,
-      this.game.height / 2 - gridHeight / 2,
+      this._game.width / 2 - gridWidth / 2,
+      this._game.height / 2 - gridHeight / 2,
     )
 
     this.dirty = false

@@ -1,4 +1,4 @@
-import { loadSpritesheet, loadSpritesheetByName } from '../lib/kernel/loader.ts'
+import { loadSpritesheetImage, loadKenneySpritesheetImage } from '../lib/kernel/loader.ts'
 
 import { drawIsoTile } from '../lib/draw2d/drawiso.ts'
 
@@ -33,27 +33,33 @@ export async function setupCanvas3(container: HTMLDivElement) {
 
   spritesheets.push(
     //await loadSpritesheet('map_pack/map_pack.png'),
-    await loadSpritesheet('/aaa_iso_buildings/aaa_iso_buildings.png').then(
+    await loadSpritesheetImage('/aaa_iso_buildings/aaa_iso_buildings.png').then(
       spritesheetLoaderSuccessHandler,
     ),
     //await loadSpritesheetByName('isometric_tiles_base').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_blocks').then(spritesheetLoaderSuccessHandler),
+    await loadKenneySpritesheetImage('isometric_blocks').then(spritesheetLoaderSuccessHandler),
     //await loadSpritesheetByName('isometric_minigolf').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_modular_buildings').then(
+    await loadKenneySpritesheetImage('isometric_modular_buildings').then(
       spritesheetLoaderSuccessHandler,
     ),
-    await loadSpritesheetByName('isometric_modular_roads').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_nature').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_space_interior').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_tiles_base').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_tiles_buildings').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_tiles_city').then(spritesheetLoaderSuccessHandler),
+    await loadKenneySpritesheetImage('isometric_modular_roads').then(
+      spritesheetLoaderSuccessHandler,
+    ),
+    await loadKenneySpritesheetImage('isometric_nature').then(spritesheetLoaderSuccessHandler),
+    await loadKenneySpritesheetImage('isometric_space_interior').then(
+      spritesheetLoaderSuccessHandler,
+    ),
+    await loadKenneySpritesheetImage('isometric_tiles_base').then(spritesheetLoaderSuccessHandler),
+    await loadKenneySpritesheetImage('isometric_tiles_buildings').then(
+      spritesheetLoaderSuccessHandler,
+    ),
+    await loadKenneySpritesheetImage('isometric_tiles_city').then(spritesheetLoaderSuccessHandler),
     //await loadSpritesheetByName('isometric_tiles_vehicles').then(spritesheetLoaderSuccessHandler),
     //await loadSpritesheet('isometric_watercraft').then(spritesheetLoaderSuccessHandler),
-    await loadSpritesheetByName('isometric_vector_roads_base').then(
+    await loadKenneySpritesheetImage('isometric_vector_roads_base').then(
       spritesheetLoaderSuccessHandler,
     ),
-    await loadSpritesheetByName('isometric_vector_roads_water').then(
+    await loadKenneySpritesheetImage('isometric_vector_roads_water').then(
       spritesheetLoaderSuccessHandler,
     ),
   )

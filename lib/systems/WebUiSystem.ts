@@ -1,19 +1,23 @@
-export class WebUiSystem implements IGameSystem {
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+
+export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'WebUiSystem'
-  private game!: IGame
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
   private dirty = true
   private selectedSpriteImage: any = null
 
-  public onLoad(game: IGame) {
+  constructor(game: IGame) {
+    super(game)
+  }
+
+  public onLoad() {
     console.log('WebUiSystem.onLoad')
-    this.game = game
 
     const uiCanvas = document.createElement('canvas')
-    const uiCtx = uiCanvas.getContext('2d')!
-    uiCanvas.width = game.width
-    uiCanvas.height = game.height
+    //const uiCtx = uiCanvas.getContext('2d')!
+    uiCanvas.width = this._game.width
+    uiCanvas.height = this._game.height
 
     const uiDiv = document.createElement('div')
     uiDiv.id = 'uiDiv'
@@ -29,7 +33,7 @@ export class WebUiSystem implements IGameSystem {
     uiDiv.style.backgroundColor = 'rgba(30,30,30,0.9)'
     //uiDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.uiDiv = uiDiv
-    this.game.$container.appendChild(uiDiv)
+    this._game.$container.appendChild(uiDiv)
 
     const controlsDiv = document.createElement('div')
     controlsDiv.id = 'controlsDiv'
@@ -45,7 +49,7 @@ export class WebUiSystem implements IGameSystem {
     controlsDiv.style.backgroundColor = 'rgba(215,6,6,0.2)'
     //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.controlsDiv = controlsDiv
-    this.game.$container.appendChild(controlsDiv)
+    this._game.$container.appendChild(controlsDiv)
   }
 
   public onUnload() {
@@ -73,7 +77,7 @@ export class WebUiSystem implements IGameSystem {
 
     this.uiDiv.innerHTML = ''
 
-    this.game?.spritesheets.forEach((spritesheet: any) => {
+    this._game?.spritesheets.forEach((spritesheet: any) => {
       const spritesContainer = document.createElement('div')
       spritesContainer.style.display = 'flex'
       spritesContainer.style.flexDirection = 'row'
@@ -107,6 +111,8 @@ export class WebUiSystem implements IGameSystem {
         spriteDiv.title = `${spritesheet.url} ${sprite.name} (${sprite.x}, ${sprite.y})`
         spriteDiv.style.width = `${spriteWidth}px`
         spriteDiv.style.height = `${spriteHeight}px`
+        spriteDiv.style.border = '1px solid rgba(255,255,255,1)'
+        spriteDiv.style.borderWidth = '0 1px 1px 0'
         spriteDiv.dataset.spriteIndex = spriteIdx.toString()
         spriteDiv.dataset.spriteSheetName = spritesheet.url.toString()
         spriteDiv.onclick = (ev) => {
@@ -114,7 +120,7 @@ export class WebUiSystem implements IGameSystem {
           //const $el = ev.target as HTMLDivElement
           const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
           const spritesheetName = spriteDiv.dataset.spriteSheetName!
-          const spritesheet = this.game?.spritesheets.find((s) => s.url === spritesheetName)
+          const spritesheet = this._game?.spritesheets.find((s) => s.url === spritesheetName)
           //syslog('sprite clicked', ev, spritesheetName, spriteIdx)
           if (spritesheet) {
             console.log('spritesheet found', spritesheet)
@@ -123,7 +129,7 @@ export class WebUiSystem implements IGameSystem {
               spriteIndex: spriteIdx,
             }
             console.log('selectedSpriteImage', this.selectedSpriteImage)
-            this.game.eventbus.emit('editor.selectedSpriteImage', this.selectedSpriteImage)
+            this._game.eventbus.emit('editor.selectedSpriteImage', this.selectedSpriteImage)
             //this.game.editor.state['editor.selectedSpriteImage'] = this.selectedSpriteImage
           }
           this.dirty = true
@@ -142,6 +148,45 @@ export class WebUiSystem implements IGameSystem {
         spritesContainer.appendChild(spriteDiv)
       })
       this.uiDiv.appendChild(spritesContainer)
+
+      // controls
+      this.controlsDiv.innerHTML = ''
+
+      const button1 = document.createElement('button')
+      button1.textContent = 'Save'
+      button1.onclick = () => {
+        console.log('save')
+        this._game.eventbus.emit('editor.save', {})
+      }
+      this.controlsDiv.appendChild(button1)
+
+      const button2 = document.createElement('button')
+      button2.textContent = 'Restore'
+      button2.onclick = () => {
+        console.log('restore')
+        this._game.eventbus.emit('editor.restore', {})
+      }
+      this.controlsDiv.appendChild(button2)
+
+      this.controlsDiv.appendChild(document.createElement('hr'))
+
+      const button3 = document.createElement('button')
+      button3.textContent = 'Reset camera'
+      button3.onclick = () => {
+        console.log('reset camera')
+        this._game.eventbus.emit('camera.reset', {})
+      }
+      this.controlsDiv.appendChild(button3)
+
+      this.controlsDiv.appendChild(document.createElement('hr'))
+
+      const button4 = document.createElement('button')
+      button4.textContent = 'Select'
+      button4.onclick = () => {
+        console.log('select cell')
+        this._game.eventbus.emit('editor.set_mode', { mode: 'select' })
+      }
+      this.controlsDiv.appendChild(button4)
     })
 
     this.dirty = false

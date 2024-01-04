@@ -43,7 +43,7 @@ type WorldCell = {
   alive: boolean
   properties?: any
   //tick?: (cell: WorldCell, world: World) => void
-  sprite?: Sprite //@deprecated
+  sprite?: any //Sprite //@deprecated
   layers?: WorldCellLayer[]
 }
 
@@ -52,11 +52,11 @@ type WorldCellLayer = {
   //label?: string
   fillColor?: string
   strokeColor?: string
-  sprite?: Sprite
+  sprite?: any //Sprite
   //properties?: any
 }
 
-type WorldCellSelection = Point[]
+type WorldCellSelection = Point2D[]
 
 // type StandardCell = WorldCell & { type: "STANDARD" }
 // type VirtualCell = WorldCell & { type: "VIRTUAL" }
@@ -68,7 +68,7 @@ interface WorldRendererProps extends WorldRenderProps {
 
 interface WorldResources {
   backgroundImage?: string
-  spritesheets?: Spritesheet[]
+  //spritesheets?: Spritesheet[]
   //images?: ImageSprite[]
 }
 
@@ -77,7 +77,7 @@ interface WorldRenderProps {
   cellSize: number
   canvasWidth: number
   canvasHeight: number
-  camera?: Camera
+  camera?: Camera2D
   backgroundImage?: string
   //spritesheets?: Spritesheet[]
 }
@@ -85,24 +85,4 @@ interface WorldRenderProps {
 type WorldConfig = {
   world: WorldBuilderProps
   render: WorldRenderProps
-}
-
-type Spritesheet = {
-  name: string
-  image: string
-  sprites: Sprite[]
-  styles?: string
-}
-
-type Sprite = {
-  spriteSheet?: string
-  name: string
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-type ImageSprite = Sprite & {
-  image: HTMLImageElement
 }

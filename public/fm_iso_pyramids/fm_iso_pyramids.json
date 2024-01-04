@@ -1,0 +1,72 @@
+[
+  {
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid01-removebg-preview"
+  },
+  {
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid02-removebg-preview"
+  },
+  {
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid03-removebg-preview"
+  },
+  {
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid04-removebg-preview"
+  },
+  {
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid05-removebg-preview"
+  },
+  {
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid07-removebg-preview"
+  },
+  {
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid08-removebg-preview"
+  },
+  {
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid09-removebg-preview"
+  },
+  {
+    "x": 0,
+    "y": 1000,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid10-removebg-preview"
+  },
+  {
+    "x": 500,
+    "y": 1000,
+    "width": 500,
+    "height": 500,
+    "name": "pyramid12-removebg-preview"
+  }
+]

@@ -1,6 +1,9 @@
 import { EventBus } from './eventbus.ts'
+import { getCellIndex } from '../utils/gridutil.ts'
 
 export class Game implements IGame {
+  private readonly config: GameConfig
+
   /**
    * The container element for the game.
    */
@@ -25,7 +28,7 @@ export class Game implements IGame {
   /**
    * The loaded spritesheets.
    */
-  public spritesheets: SpritesheetImage[] = []
+  public spritesheets: HtmlSpritesheetImage[] = []
 
   /**
    * The event bus.
@@ -47,34 +50,49 @@ export class Game implements IGame {
     //angle: 0,
     zoom: 1,
   }
+  private gameRunning: boolean = false
 
-  constructor($container: HTMLDivElement, cols: number, rows: number) {
-    //@todo make game dimensions configurable
-    this.cols = cols
-    this.rows = rows
+  constructor($container: HTMLDivElement, config: GameConfig) {
+    this.config = config
+
+    this.cols = this.config.columns
+    this.rows = this.config.rows
+
+    // Camera
     this.width = this.camera.width
     this.height = this.camera.height
 
+    // container
     this.$container = $container
     this.$container.style.position = 'absolute'
     this.$container.style.top = '0px'
     this.$container.style.left = '0px'
     this.$container.style.width = '100vw'
     this.$container.style.height = '100vh'
-    //this.width = $container.clientWidth
-    //this.height = $container.clientHeight
 
     // canvas
     const $canvas = document.createElement('canvas')
-    //$canvas.style.left = '320px'
     $canvas.width = this.width
     $canvas.height = this.height
     this.$canvas = $canvas
     this.$container.appendChild($canvas)
 
-    // logging
+    // log container
     const logDiv = document.createElement('div')
     this.logDiv = logDiv
+
+    // Init grid cells
+    const cells: Grid2DCell[] = []
+    for (let c = 0; c < this.cols; c++) {
+      for (let r = 0; r < this.rows; r++) {
+        const idx = getCellIndex(c, r, this.cols)
+        const cell = { idx: idx, col: c, row: r, color: 'rgb(88,220,220)' }
+        cells[idx] = cell
+      }
+    }
+    this.cells = cells
+
+    this.tick = this.tick.bind(this)
 
     console.log('Game constructor', this.cols, this.rows, this.width, this.height)
   }
@@ -89,7 +107,7 @@ export class Game implements IGame {
   public addSystem(system: IGameSystem) {
     try {
       if (system.onLoad) {
-        system.onLoad(this)
+        system.onLoad()
       }
       this.systems.push(system)
     } catch (err) {
@@ -148,11 +166,37 @@ export class Game implements IGame {
 
     this.draw()
 
-    requestAnimationFrame(this.tick.bind(this))
+    if (!this.gameRunning) return
+    requestAnimationFrame(this.tick)
   }
 
   public async run() {
     console.log('RUN GAME')
+
+    // create resource and entity indices
+    let spriteGid = 0
+    const spriteIdx: any[] = []
+    this.spritesheets.forEach((spritesheet, spritesheetId) => {
+      spritesheet.sprites.forEach((sprite) => {
+        spriteGid++
+        spriteIdx[spriteGid] = {
+          gid: spriteGid,
+          spritesheetId: spritesheetId,
+          spritesheetSource: spritesheet.url,
+          ...sprite,
+        }
+        console.log(
+          spriteGid,
+          spritesheetId,
+          sprite.name,
+          sprite.x,
+          sprite.y,
+          sprite.width,
+          sprite.height,
+        )
+      })
+    })
+    //console.log(spriteIdx)
 
     //start systems
     this.systems.forEach((system) => {
@@ -162,7 +206,23 @@ export class Game implements IGame {
     })
 
     // start game loop
-    this.tick(0)
+    this.gameRunning = true
+    // setTimeout(() => {
+    //   this.stop()
+    // }, 15000)
+    // console.log('STOPPING GAME in 15 seconds')
+    requestAnimationFrame(this.tick)
+  }
+
+  public stop() {
+    console.info('STOP GAME')
+    this.gameRunning = false
+    // stop systems
+    this.systems.forEach((system) => {
+      if (system.stop) {
+        system.stop()
+      }
+    })
   }
 
   async saveState(state: any) {}

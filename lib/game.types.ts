@@ -3,7 +3,7 @@
 interface IGame {
   $container: HTMLDivElement
   $canvas: HTMLCanvasElement
-  spritesheets: SpritesheetImage[]
+  spritesheets: HtmlSpritesheetImage[]
   width: number
   height: number
 
@@ -30,10 +30,15 @@ interface IGame {
   deltaTime: number
 }
 
+type GameConfig = {
+  columns: number
+  rows: number
+}
+
 interface IGameSystem {
   name: string
-  onLoad?: (game: IGame) => void
-  onUnload?: (game: IGame) => void
+  onLoad?: () => void
+  onUnload?: () => void
   start?: () => void
   stop?: () => void
   update?: (deltaTime: number) => void
@@ -63,37 +68,74 @@ interface IGrid2DProjection {
 }
 
 /** ASSET TYPES **/
+type GameAssetType = 'SPRITESHEET' | 'TILESET' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FONT'
 
-type AssetImage = {
-  url: string
-  image: HTMLImageElement
-}
-
-type SpritesheetImage = {
-  url: string
-  sprites: any[]
-  image: HTMLImageElement
-}
-
-type SpriteInfo = {
-  name?: string
+type SpritesheetItem = {
+  id: number
+  name: string
   x: number
   y: number
   width: number
   height: number
 }
 
-type SpriteImage = {
+type GameAsset = {
+  nextgid: number
+  type: GameAssetType
+  name: string
+  src: string
+}
+
+type ImageAsset = GameAsset & {
+  type: 'IMAGE'
+}
+
+type SpritesheetAsset = ImageAsset & {
+  type: 'SPRITESHEET'
+  sprites: SpritesheetItem[]
+}
+
+type TilesetAsset = ImageAsset & {
+  type: 'TILESET'
+  columns: number
+  rows: number
+}
+
+type AudioAsset = GameAsset & {
+  type: 'AUDIO'
+}
+
+type VideoAsset = GameAsset & {
+  type: 'VIDEO'
+}
+
+type HtmlImage = {
   url: string
-  sprite: SpriteInfo
   image: HTMLImageElement
+}
+
+type HtmlSpritesheetImage = HtmlImage & {
+  url: string
+  sprites: SpritesheetItem[]
+}
+
+type HtmlTilesetImage = HtmlImage & {
+  url: string
+}
+
+type HtmlSpriteImage = HtmlImage & {
+  url: string
+  sprite: SpritesheetItem
 }
 
 /** INPUT TYPES **/
 
-type GamepadInputEvent = {}
+type GamepadInputEvent = {
+  name: string
+}
 
 type GamepadStickChangeEvent = GamepadInputEvent & {
+  name: 'gamepad.stick_change'
   stickLeft: boolean
   stickRight: boolean
   stickUp: boolean
@@ -101,6 +143,7 @@ type GamepadStickChangeEvent = GamepadInputEvent & {
 }
 
 type GamepadButtonChangeEvent = GamepadInputEvent & {
+  name: 'gamepad.button_change'
   button: number
   state: ButtonState
 }

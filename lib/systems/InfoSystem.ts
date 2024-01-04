@@ -1,11 +1,15 @@
-export class InfoSystem implements IGameSystem {
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+
+export class InfoSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'InfoSystem'
-  private game!: IGame
   private dirty = true
 
-  public onLoad(game: IGame) {
+  constructor(game: IGame) {
+    super(game)
+  }
+
+  public onLoad() {
     console.log('InfoSystem.onLoad')
-    this.game = game
 
     // const systemDiv = document.createElement('div')
     // systemDiv.id = 'systemDiv'
@@ -51,12 +55,12 @@ export class InfoSystem implements IGameSystem {
     // draw FPS
     mainCtx.save()
     mainCtx.fillStyle = 'green'
-    mainCtx.fillRect(this.game.width - 150, 0, 150, 20)
+    mainCtx.fillRect(this._game.width - 150, 0, 150, 20)
     mainCtx.fillStyle = 'white'
     mainCtx.font = '14px sans-serif'
     mainCtx.fillText(
-      `${this.game.frameCount}/${this.game.deltaTime.toFixed(3)} ms/${this.game.fps} fps`,
-      this.game.width - 145,
+      `${this._game.frameCount}/${this._game.deltaTime.toFixed(3)} ms/${this._game.fps} fps`,
+      this._game.width - 145,
       16,
     )
     mainCtx.restore()

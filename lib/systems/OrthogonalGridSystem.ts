@@ -1,5 +1,6 @@
 import { drawIsoTile } from '../draw2d/drawiso.ts'
 import { getIsometricScreenPosition, getOrthogonalScreenPosition } from '../utils/gridutil.ts'
+import { DimetricGridProjection, OrthogonalGridProjection } from '../map/projection.ts'
 
 export interface OrthogonalGridTile extends Grid2DCell {
   col: number
@@ -12,12 +13,17 @@ export interface OrthogonalGridTile extends Grid2DCell {
 export class OrthogonalGridSystem implements IGameSystem {
   public name = 'OrthogonalGridSystem'
   private game!: IGame
+  private projection: OrthogonalGridProjection
+  private tsize: number
+
+  constructor(tileSize: number) {
+    this.tsize = tileSize
+    this.projection = new OrthogonalGridProjection(tileSize)
+  }
 
   public onLoad(game: IGame) {
     console.log('OrthogonalGridSystem.onLoad')
     this.game = game
-
-    //this.tiles = tiles
   }
 
   public onUnload() {
@@ -108,7 +114,7 @@ export class OrthogonalGridSystem implements IGameSystem {
 
     for (const cell of this.game.cells) {
       // @todo move to 'update' method
-      const pos = getOrthogonalScreenPosition(cell.col, cell.row, this.game.twidth)
+      const pos = getOrthogonalScreenPosition(cell.col, cell.row, this.tsize)
     }
     gridCtx.transform(1, 0, 0, 1, 0, 0)
     mainCtx.drawImage(gridCanvas, 0, 0)

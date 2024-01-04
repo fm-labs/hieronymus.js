@@ -1,4 +1,6 @@
-export class DebugSystem implements IGameSystem {
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+
+export class DebugSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'DebugSystem'
 
   public onLoad() {

@@ -1,8 +1,10 @@
 const DEFAULT_SPRITE_SHEET_NAME = 'map_pack'
 
-const defaultCamera: Camera = {
+const defaultCamera: Camera2D = {
   offset: { x: 0, y: 0 },
   zoom: 1,
+  width: 800,
+  height: 600,
 }
 
 const defaultCellRenderer2d = (
@@ -76,8 +78,8 @@ export class WorldRenderer2d {
   private ctx: CanvasRenderingContext2D
   private world: World
   private props: WorldRenderProps
-  private camera: Camera
-  private player: Point
+  private camera: Camera2D
+  private player: Point2D
   private images: Record<string, HTMLImageElement> = {}
   //private layers: Record<string, HTMLCanvasElement> = {};
   private selection: WorldCellSelection = []
@@ -111,7 +113,7 @@ export class WorldRenderer2d {
     this.selection = selection
   }
 
-  public setPlayer(player: Point) {
+  public setPlayer(player: Point2D) {
     this.player = player
   }
 

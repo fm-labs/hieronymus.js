@@ -1,0 +1,65 @@
+.spritesheet-fm_iso_pyramids {
+  background-repeat: no-repeat;
+  background-image: url('fm_iso_pyramids.png');
+}
+
+.spritesheet-fm_iso_pyramids.pyramid01-removebg-preview {
+  background-position: -0px 0px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid02-removebg-preview {
+  background-position: -500px 0px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid03-removebg-preview {
+  background-position: -1000px 0px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid04-removebg-preview {
+  background-position: -1500px 0px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid05-removebg-preview {
+  background-position: -0px 500px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid07-removebg-preview {
+  background-position: -500px 500px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid08-removebg-preview {
+  background-position: -1000px 500px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid09-removebg-preview {
+  background-position: -1500px 500px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid10-removebg-preview {
+  background-position: -0px 1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.spritesheet-fm_iso_pyramids.pyramid12-removebg-preview {
+  background-position: -500px 1000px;
+  width: 500px;
+  height: 500px;
+}
+
