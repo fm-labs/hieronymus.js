@@ -1,31 +1,30 @@
 import { getCellIndex } from '../utils/gridutil.ts'
-import { DimetricGridProjection } from '../map/projection.ts'
 import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
-export class IsoObjectSystem extends AbstractBaseSystem implements IGameSystem {
-  public name = 'IsoObjectSystem'
+export class EntitySystem extends AbstractBaseSystem implements IGameSystem {
+  public name = 'EntitySystem'
   private readonly tsize: number
   private projection: IGrid2DProjection
   private objects: any[] = []
   private dirty = true
   private _selectedSpriteImage: any | undefined
 
-  constructor(game: IGame, tileSize: number) {
+  constructor(game: IGame) {
     super(game)
-    this.tsize = tileSize
-    this.projection = new DimetricGridProjection(tileSize)
+    this.tsize = this._game.config.tileSize
+    this.projection = this._game.projection
   }
 
   public onLoad() {
-    console.log('IsoObjectSystem.onLoad')
+    console.log('EntitySystem.onLoad')
   }
 
   public onUnload() {
-    console.log('IsoObjectSystem.onUnload')
+    console.log('EntitySystem.onUnload')
   }
 
   public start() {
-    console.log('IsoObjectSystem.start')
+    console.log('EntitySystem.start')
 
     this._game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
 
@@ -41,15 +40,15 @@ export class IsoObjectSystem extends AbstractBaseSystem implements IGameSystem {
   }
 
   public stop() {
-    console.log('IsoObjectSystem.stop')
+    console.log('EntitySystem.stop')
   }
 
   public update() {
-    //console.log('IsoObjectSystem.update')
+    //console.log('EntitySystem.update')
   }
 
   private handleCellClick({ index, col, row }: any) {
-    console.log('[IsoObjects] clicked cell', index, col, row, this._selectedSpriteImage)
+    console.log('[Entitys] clicked cell', index, col, row, this._selectedSpriteImage)
 
     if (this._selectedSpriteImage) {
       const obj = {
@@ -67,7 +66,7 @@ export class IsoObjectSystem extends AbstractBaseSystem implements IGameSystem {
 
   public draw(mainCtx: CanvasRenderingContext2D) {
     if (!this.dirty) return
-    console.log('IsoObjectSystem.draw')
+    console.log('EntitySystem.draw')
 
     const cols = this._game.cols
     const rows = this._game.rows

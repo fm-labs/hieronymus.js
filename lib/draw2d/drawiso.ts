@@ -4,7 +4,8 @@ export function drawIsoTile(
   y: number,
   width: number,
   height: number,
-  color: string,
+  fillColor: string,
+  strokeColor: string,
   text?: string,
 ) {
   ctx.save()
@@ -17,18 +18,18 @@ export function drawIsoTile(
   ctx.closePath()
 
   // Fill the tile with a color
-  ctx.fillStyle = color
-  ctx.fill()
+  //ctx.fillStyle = fillColor
+  //ctx.fill()
 
   // Stroke the tile with a border
-  ctx.strokeStyle = '#282828'
+  ctx.strokeStyle = strokeColor
   ctx.stroke()
 
   ctx.fillStyle = 'rgba(255,0,0,0.92)'
   ctx.fillText(`${x},${y}`, x, y)
 
   if (text) {
-    ctx.fillStyle = 'black'
+    ctx.fillStyle = 'white'
     ctx.fillText(text, x - 10, y + height / 2)
   }
   ctx.restore()

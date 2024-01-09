@@ -1,11 +1,20 @@
 import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { getCellCordsFromIndex, getCellIndex } from '../utils/gridutil.ts'
 
 export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'WebUiSystem'
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
+  private infoDiv!: HTMLDivElement
   private dirty = true
-  private selectedSpriteImage: any = null
+
+  private _hoveredCellIdx: number | undefined
+  private _hoverTimer: any | undefined
+
+  private _selectedCellIdx: number | undefined
+  private _selectedLayerIdx: number | undefined
+  private _selectedSpriteIndex: number | undefined
+  private _selection: IMapSelection | undefined
 
   constructor(game: IGame) {
     super(game)
@@ -13,6 +22,18 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
   public onLoad() {
     console.log('WebUiSystem.onLoad')
+
+    const infoDiv = document.createElement('div')
+    infoDiv.id = 'infoDiv'
+    infoDiv.style.position = 'fixed'
+    infoDiv.style.bottom = '10px'
+    infoDiv.style.right = '70px'
+    infoDiv.style.background = 'black'
+    infoDiv.style.padding = '0.1rem'
+    infoDiv.style.fontFamily = 'monospace'
+    infoDiv.style.fontSize = '10px'
+    this.infoDiv = infoDiv
+    this._game.$container.appendChild(this.infoDiv)
 
     const uiCanvas = document.createElement('canvas')
     //const uiCtx = uiCanvas.getContext('2d')!
@@ -50,10 +71,18 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.controlsDiv = controlsDiv
     this._game.$container.appendChild(controlsDiv)
+
+    // Register DOM events
+    this._game.$canvas.addEventListener('mousemove', this.handleMouseMove.bind(this))
+    this._game.$canvas.addEventListener('click', this.handleMouseClick.bind(this))
   }
 
   public onUnload() {
     console.log('WebUiSystem.onUnload')
+
+    // Unregister DOM events
+    this._game.$canvas.removeEventListener('mousemove', this.handleMouseMove.bind(this))
+    this._game.$canvas.removeEventListener('click', this.handleMouseClick.bind(this))
   }
 
   public start() {
@@ -72,123 +101,274 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     if (!this.dirty) return
     console.log('WebUiSystem.draw')
 
-    const spriteWidth = 32
-    const spriteHeight = 32
+    const spriteWidth = 48
+    const spriteHeight = 48
 
     this.uiDiv.innerHTML = ''
 
-    this._game?.spritesheets.forEach((spritesheet: any) => {
-      const spritesContainer = document.createElement('div')
-      spritesContainer.style.display = 'flex'
-      spritesContainer.style.flexDirection = 'row'
-      spritesContainer.style.flexWrap = 'wrap'
-      spritesContainer.style.width = 320 + 'px'
-      //spritesContainer.style.height = 100 + '%'
-      spritesContainer.style.borderTop = '5px solid red'
+    const spritesContainer = document.createElement('div')
+    spritesContainer.style.display = 'flex'
+    spritesContainer.style.flexDirection = 'row'
+    spritesContainer.style.flexWrap = 'wrap'
+    spritesContainer.style.width = 320 + 'px'
+    //spritesContainer.style.height = 100 + '%'
+    spritesContainer.style.borderTop = '5px solid blue'
+    this._game.resources.sprites.forEach((spriteImage: HtmlSpriteImage, spriteIdx) => {
+      const { x, y, width, height } = spriteImage.sprite
+      const spriteCanvas = document.createElement('canvas')
+      spriteCanvas.width = spriteWidth
+      spriteCanvas.height = spriteHeight
+      spriteCanvas.style.position = 'relative'
+      const spriteCanvasCtx = spriteCanvas.getContext('2d')!
+      spriteCanvasCtx.drawImage(
+        spriteImage.image,
+        x,
+        y,
+        width,
+        height,
+        0,
+        0,
+        spriteWidth,
+        spriteHeight,
+      )
 
-      let spriteIdx = -1
-      spritesheet.sprites.forEach((sprite: any) => {
-        spriteIdx++
-        const { x, y, width, height } = sprite
-        const spriteCanvas = document.createElement('canvas')
-        spriteCanvas.width = spriteWidth
-        spriteCanvas.height = spriteHeight
-        spriteCanvas.style.position = 'relative'
-        const spriteCanvasCtx = spriteCanvas.getContext('2d')!
-        spriteCanvasCtx.drawImage(
-          spritesheet.image,
-          x,
-          y,
-          width,
-          height,
-          0,
-          0,
-          spriteWidth,
-          spriteHeight,
-        )
+      const spriteDiv = document.createElement('div')
+      spriteDiv.title = `${spriteImage.url} ${spriteImage.sprite.name} (${x}, ${y})`
+      spriteDiv.style.width = `${spriteWidth}px`
+      spriteDiv.style.height = `${spriteHeight}px`
+      spriteDiv.style.border = '1px solid rgba(255,255,255,1)'
+      spriteDiv.style.borderWidth = '0 1px 1px 0'
+      spriteDiv.dataset.spriteIndex = spriteIdx.toString()
+      //spriteDiv.dataset.spriteSheetName = spriteImage.url.toString()
+      spriteDiv.onclick = (ev) => {
+        //const $el = ev.target as HTMLDivElement
+        const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
+        console.log('sprite clicked', spriteIdx, ev)
 
-        const spriteDiv = document.createElement('div')
-        spriteDiv.title = `${spritesheet.url} ${sprite.name} (${sprite.x}, ${sprite.y})`
-        spriteDiv.style.width = `${spriteWidth}px`
-        spriteDiv.style.height = `${spriteHeight}px`
-        spriteDiv.style.border = '1px solid rgba(255,255,255,1)'
-        spriteDiv.style.borderWidth = '0 1px 1px 0'
-        spriteDiv.dataset.spriteIndex = spriteIdx.toString()
-        spriteDiv.dataset.spriteSheetName = spritesheet.url.toString()
-        spriteDiv.onclick = (ev) => {
-          console.log('sprite clicked', ev)
-          //const $el = ev.target as HTMLDivElement
-          const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
-          const spritesheetName = spriteDiv.dataset.spriteSheetName!
-          const spritesheet = this._game?.spritesheets.find((s) => s.url === spritesheetName)
-          //syslog('sprite clicked', ev, spritesheetName, spriteIdx)
-          if (spritesheet) {
-            console.log('spritesheet found', spritesheet)
-            this.selectedSpriteImage = {
-              spriteSheetName: spritesheet.url,
-              spriteIndex: spriteIdx,
-            }
-            console.log('selectedSpriteImage', this.selectedSpriteImage)
-            this._game.eventbus.emit('editor.selectedSpriteImage', this.selectedSpriteImage)
-            //this.game.editor.state['editor.selectedSpriteImage'] = this.selectedSpriteImage
+        this._selectedSpriteIndex = spriteIdx
+        this._game.eventbus.emit('editor.selectSprite', { index: spriteIdx })
+
+        this.dirty = true
+        this.draw()
+      }
+      if (this._selectedSpriteIndex === spriteIdx) {
+        //spriteDiv.style.border = '2px solid red'
+        //spriteDiv.style.borderColor = 'rgba(72,255,0,0.8)'
+        spriteDiv.style.backgroundColor = 'rgba(72,255,0,0.8)'
+      }
+      const spriteImg = document.createElement('img')
+      spriteImg.src = spriteCanvas.toDataURL('image/png')
+      spriteDiv.appendChild(spriteImg)
+      //spriteDiv.appendChild(spriteCanvas)
+
+      spritesContainer.appendChild(spriteDiv)
+    })
+    this.uiDiv.appendChild(spritesContainer)
+
+    // controls
+    this.controlsDiv.innerHTML = ''
+
+    const button1 = document.createElement('button')
+    button1.textContent = 'Save'
+    button1.onclick = () => {
+      console.log('save')
+      this._game.eventbus.emit('editor.save', {})
+    }
+    this.controlsDiv.appendChild(button1)
+
+    const button2 = document.createElement('button')
+    button2.textContent = 'Restore'
+    button2.onclick = () => {
+      console.log('restore')
+      this._game.eventbus.emit('editor.restore', {})
+    }
+    this.controlsDiv.appendChild(button2)
+
+    this.controlsDiv.appendChild(document.createElement('hr'))
+
+    const button3 = document.createElement('button')
+    button3.textContent = 'Reset camera'
+    button3.onclick = () => {
+      console.log('reset camera')
+      this._game.eventbus.emit('camera.reset', {})
+    }
+    this.controlsDiv.appendChild(button3)
+
+    this.controlsDiv.appendChild(document.createElement('hr'))
+
+    const button4 = document.createElement('button')
+    button4.textContent = 'Select'
+    button4.onclick = () => {
+      console.log('select cell')
+      this._game.eventbus.emit('editor.set_mode', { mode: 'select' })
+    }
+    this.controlsDiv.appendChild(button4)
+
+    this.controlsDiv.appendChild(document.createElement('hr'))
+
+    // CELL
+    const headingCell = document.createElement('div')
+    headingCell.textContent = 'Cell'
+    this.controlsDiv.appendChild(headingCell)
+
+    if (this._selectedCellIdx !== undefined) {
+      const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this._game.config.columns)
+      const screenPos = this._game.projection.mapGridToScreen(gridPos.col, gridPos.row)
+      const cellInfo = document.createElement('div')
+      cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`
+      cellInfo.innerHTML += `<br />GridPos: ${gridPos.col},${gridPos.row}`
+      cellInfo.innerHTML += `<br />ScreenPos: ${screenPos.x},${screenPos.y}`
+      this.controlsDiv.appendChild(cellInfo)
+    }
+
+    const buttonCellClear = document.createElement('button')
+    buttonCellClear.textContent = 'Clear'
+    buttonCellClear.onclick = () => {
+      console.log('clear cell')
+      this._game.eventbus.emit('editor.clear_cell', { index: this._selectedCellIdx })
+      this._selectedCellIdx = undefined
+      this.dirty = true
+    }
+    this.controlsDiv.appendChild(buttonCellClear)
+
+    this.controlsDiv.appendChild(document.createElement('hr'))
+
+    // LAYERS
+    const headingLayers = document.createElement('div')
+    headingLayers.textContent = 'Layers'
+    this.controlsDiv.appendChild(headingLayers)
+
+    const layerInfo = document.createElement('div')
+    layerInfo.textContent = `LayerIdx: ${this._selectedLayerIdx}`
+    this.controlsDiv.appendChild(layerInfo)
+
+    this._game.worldMap.layers.forEach((layer: WorldMapLayer, layerIdx) => {
+      const layerDiv = document.createElement('div')
+      layerDiv.style.display = 'flex'
+      layerDiv.style.flexDirection = 'row'
+      layerDiv.style.justifyContent = 'space-between'
+      layerDiv.style.marginBottom = '5px'
+      layerDiv.style.padding = '2px 0'
+      layerDiv.style.borderBottom = '1px solid rgba(255,0,255,0.8)'
+
+      const layerIcons = document.createElement('div')
+      layerIcons.style.display = 'flex'
+      layerIcons.style.flexDirection = 'row'
+      layerIcons.style.justifyContent = 'flex-start'
+
+      const layerLock = document.createElement('div')
+      layerLock.textContent = layer.locked ? '🔒' : '🔓'
+      layerLock.title = layer.locked ? 'Layer is locked' : 'Layer is unlocked'
+      layerIcons.appendChild(layerLock)
+
+      const layerVisible = document.createElement('div')
+      layerVisible.textContent = layer.visible ? '👁️' : '👁️‍🗨️'
+      layerVisible.title = layer.visible ? 'Layer is visible' : 'Layer is hidden'
+      layerIcons.appendChild(layerVisible)
+
+      const layerName = document.createElement('div')
+      layerName.textContent = layer.name
+
+      const buttonSelectLayer = document.createElement('button')
+      buttonSelectLayer.textContent = 'Select'
+      buttonSelectLayer.onclick = () => {
+        console.log('select layer', layer.name)
+        this._selectedLayerIdx = layerIdx
+        this._game.eventbus.emit('editor.select_layer', { layer: layer.name })
+        this.dirty = true
+      }
+
+      const cellLayerInfo = document.createElement('div')
+      if (this._selectedCellIdx !== undefined) {
+        const entityIdx = layer.data[this._selectedCellIdx] || undefined
+        //if (entityIdx === undefined) return
+
+        cellLayerInfo.textContent = `EntityIdx: ${entityIdx || '-'}`
+
+        if (entityIdx !== undefined) {
+          const entity = this._game.entityManager.get(entityIdx)
+          if (entity) {
+            cellLayerInfo.title = JSON.stringify(entity.properties, null, 2)
           }
-          this.dirty = true
-          this.draw()
         }
-
-        if (
-          this.selectedSpriteImage &&
-          this.selectedSpriteImage.spriteSheetName === spritesheet.url &&
-          this.selectedSpriteImage.spriteIndex === spriteIdx
-        ) {
-          //spriteDiv.style.border = '2px solid red'
-          spriteDiv.style.backgroundColor = 'rgba(72,255,0,0.8)'
-        }
-        spriteDiv.appendChild(spriteCanvas)
-        spritesContainer.appendChild(spriteDiv)
-      })
-      this.uiDiv.appendChild(spritesContainer)
-
-      // controls
-      this.controlsDiv.innerHTML = ''
-
-      const button1 = document.createElement('button')
-      button1.textContent = 'Save'
-      button1.onclick = () => {
-        console.log('save')
-        this._game.eventbus.emit('editor.save', {})
       }
-      this.controlsDiv.appendChild(button1)
 
-      const button2 = document.createElement('button')
-      button2.textContent = 'Restore'
-      button2.onclick = () => {
-        console.log('restore')
-        this._game.eventbus.emit('editor.restore', {})
-      }
-      this.controlsDiv.appendChild(button2)
+      layerDiv.appendChild(layerIcons)
+      layerDiv.appendChild(layerName)
+      layerDiv.appendChild(buttonSelectLayer)
 
-      this.controlsDiv.appendChild(document.createElement('hr'))
-
-      const button3 = document.createElement('button')
-      button3.textContent = 'Reset camera'
-      button3.onclick = () => {
-        console.log('reset camera')
-        this._game.eventbus.emit('camera.reset', {})
-      }
-      this.controlsDiv.appendChild(button3)
-
-      this.controlsDiv.appendChild(document.createElement('hr'))
-
-      const button4 = document.createElement('button')
-      button4.textContent = 'Select'
-      button4.onclick = () => {
-        console.log('select cell')
-        this._game.eventbus.emit('editor.set_mode', { mode: 'select' })
-      }
-      this.controlsDiv.appendChild(button4)
+      this.controlsDiv.appendChild(layerDiv)
+      this.controlsDiv.appendChild(cellLayerInfo)
     })
 
     this.dirty = false
+  }
+
+  private handleMouseMove(e: MouseEvent) {
+    const mainCanvas = this._game.$canvas
+    const rect = mainCanvas.getBoundingClientRect()
+
+    //@todo calculate offsets using projection
+    const offsetX = mainCanvas.width / 2
+    const offsetY =
+      mainCanvas.height / 2 - (this._game.config.columns / 2) * (this._game.config.tileSize / 2)
+    const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
+    const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
+    const pos = this._game.projection.mapScreenToGrid(x, y)
+    const index = getCellIndex(pos.col, pos.row, this._game.config.columns)
+
+    if (
+      pos.col >= 0 &&
+      pos.col < this._game.config.columns &&
+      pos.row >= 0 &&
+      pos.row < this._game.config.rows
+    ) {
+      if (index != this._hoveredCellIdx) {
+        this._game.eventbus.emit('grid.cellHover', {
+          index: index,
+        })
+        //console.log('cell changed', index, this._lastCellIdx)
+        this._hoveredCellIdx = index
+        this.dirty = true
+      }
+    } else if (this._hoveredCellIdx) {
+      this._hoveredCellIdx = undefined
+      this.dirty = true
+    }
+
+    //console.log('handleMouseMove', x, y, index)
+    if (this.infoDiv) {
+      this.infoDiv.textContent = `MOUSE: ${e.clientX.toFixed(2)},${e.clientY.toFixed(2)}
+      CANVASPOS: ${x.toFixed(2)},${y.toFixed(2)}
+      GRIDPOS: [${pos.col},${pos.row}]
+      IDX: ${index},
+      SPRITE: ${this._selectedSpriteIndex}`
+    }
+  }
+
+  private handleMouseClick(e: MouseEvent) {
+    const mainCanvas = this._game.$canvas
+    const rect = mainCanvas.getBoundingClientRect()
+    const offsetX = mainCanvas.width / 2
+    const offsetY =
+      mainCanvas.height / 2 - (this._game.config.columns / 2) * (this._game.config.tileSize / 2)
+    const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
+    const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
+    const pos = this._game.projection.mapScreenToGrid(x, y)
+    const index = getCellIndex(pos.col, pos.row, this._game.config.columns)
+    if (
+      pos.col >= 0 &&
+      pos.col < this._game.config.columns &&
+      pos.row >= 0 &&
+      pos.row < this._game.config.rows
+    ) {
+      if (index != this._selectedCellIdx) {
+        console.log('clicked cell', index, pos)
+        this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
+
+        this._selectedCellIdx = index
+        this.dirty = true
+      }
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { drawIsoTile } from '../draw2d/drawiso.ts'
 import { getIsometricScreenPosition, getOrthogonalScreenPosition } from '../utils/gridutil.ts'
-import { DimetricGridProjection, OrthogonalGridProjection } from '../map/projection.ts'
+import { OrthogonalGridProjection } from '../map/projection.ts'
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
 export interface OrthogonalGridTile extends Grid2DCell {
   col: number
@@ -10,20 +11,19 @@ export interface OrthogonalGridTile extends Grid2DCell {
   color: string
 }
 
-export class OrthogonalGridSystem implements IGameSystem {
+export class OrthogonalGridSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'OrthogonalGridSystem'
-  private game!: IGame
   private projection: OrthogonalGridProjection
   private tsize: number
 
-  constructor(tileSize: number) {
+  constructor(game: IGame, tileSize: number) {
+    super(game)
     this.tsize = tileSize
     this.projection = new OrthogonalGridProjection(tileSize)
   }
 
-  public onLoad(game: IGame) {
+  public onLoad() {
     console.log('OrthogonalGridSystem.onLoad')
-    this.game = game
   }
 
   public onUnload() {
@@ -45,8 +45,8 @@ export class OrthogonalGridSystem implements IGameSystem {
   public draw(mainCtx: CanvasRenderingContext2D) {
     console.log('OrthogonalGridSystem.draw')
 
-    const cols = this.game.cols
-    const rows = this.game.rows
+    const cols = this._game.cols
+    const rows = this._game.rows
 
     const tsize = 128 // this.game.twidth
     const twidth = tsize
@@ -112,10 +112,10 @@ export class OrthogonalGridSystem implements IGameSystem {
       }
     }
 
-    for (const cell of this.game.cells) {
-      // @todo move to 'update' method
-      const pos = getOrthogonalScreenPosition(cell.col, cell.row, this.tsize)
-    }
+    // for (const cell of this.game.cells) {
+    //   // @todo move to 'update' method
+    //   const pos = getOrthogonalScreenPosition(cell.col, cell.row, this.tsize)
+    // }
     gridCtx.transform(1, 0, 0, 1, 0, 0)
     mainCtx.drawImage(gridCanvas, 0, 0)
     mainCtx.drawImage(gridCanvas2, gridWidth, 0)

@@ -1,8 +1,10 @@
-import { EventBus } from './eventbus.ts'
-import { getCellIndex } from '../utils/gridutil.ts'
+import { EventBus } from './EventBus.ts'
+import { DimetricGridProjection, OrthogonalGridProjection } from '../map/projection.ts'
+import { GameResources } from './GameResources.ts'
+import { EntityManager } from '../entity/EntityManager.ts'
 
 export class Game implements IGame {
-  private readonly config: GameConfig
+  public readonly config: GameConfig
 
   /**
    * The container element for the game.
@@ -28,7 +30,7 @@ export class Game implements IGame {
   /**
    * The loaded spritesheets.
    */
-  public spritesheets: HtmlSpritesheetImage[] = []
+  public resources: IGameResources = new GameResources()
 
   /**
    * The event bus.
@@ -38,9 +40,8 @@ export class Game implements IGame {
   public width: number
   public height: number
 
-  public cols: number
-  public rows: number
-  public cells: Grid2DCell[] = []
+  public readonly worldMap: IWorldMap
+  public readonly entityManager: IEntityManager
 
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
@@ -50,17 +51,21 @@ export class Game implements IGame {
     //angle: 0,
     zoom: 1,
   }
+  public projection: IGrid2DProjection
+
   private gameRunning: boolean = false
 
-  constructor($container: HTMLDivElement, config: GameConfig) {
+  constructor($container: HTMLDivElement, config: GameConfig, map: IWorldMap) {
+    console.log('Game constructor', config, map)
     this.config = config
-
-    this.cols = this.config.columns
-    this.rows = this.config.rows
+    this.worldMap = map
+    this.entityManager = new EntityManager()
 
     // Camera
     this.width = this.camera.width
     this.height = this.camera.height
+    this.projection = new DimetricGridProjection(this.config.tileSize)
+    //this.projection = new OrthogonalGridProjection(this.config.tileSize)
 
     // container
     this.$container = $container
@@ -81,20 +86,7 @@ export class Game implements IGame {
     const logDiv = document.createElement('div')
     this.logDiv = logDiv
 
-    // Init grid cells
-    const cells: Grid2DCell[] = []
-    for (let c = 0; c < this.cols; c++) {
-      for (let r = 0; r < this.rows; r++) {
-        const idx = getCellIndex(c, r, this.cols)
-        const cell = { idx: idx, col: c, row: r, color: 'rgb(88,220,220)' }
-        cells[idx] = cell
-      }
-    }
-    this.cells = cells
-
     this.tick = this.tick.bind(this)
-
-    console.log('Game constructor', this.cols, this.rows, this.width, this.height)
   }
 
   public updateDimensions(width: number, height: number) {
@@ -118,10 +110,6 @@ export class Game implements IGame {
 
   public draw() {
     const ctx = this.$canvas.getContext('2d')!
-
-    // render a red rectangle
-    //ctx.fillStyle = 'red'
-    //ctx.fillRect(0, 0, this.width / 2, this.height / 2)
 
     this.systems.forEach((system) => {
       if (system.draw) {
@@ -172,31 +160,6 @@ export class Game implements IGame {
 
   public async run() {
     console.log('RUN GAME')
-
-    // create resource and entity indices
-    let spriteGid = 0
-    const spriteIdx: any[] = []
-    this.spritesheets.forEach((spritesheet, spritesheetId) => {
-      spritesheet.sprites.forEach((sprite) => {
-        spriteGid++
-        spriteIdx[spriteGid] = {
-          gid: spriteGid,
-          spritesheetId: spritesheetId,
-          spritesheetSource: spritesheet.url,
-          ...sprite,
-        }
-        console.log(
-          spriteGid,
-          spritesheetId,
-          sprite.name,
-          sprite.x,
-          sprite.y,
-          sprite.width,
-          sprite.height,
-        )
-      })
-    })
-    //console.log(spriteIdx)
 
     //start systems
     this.systems.forEach((system) => {

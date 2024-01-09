@@ -29,6 +29,15 @@ export function getCellIndex(col: number, row: number, gridWidth: number): numbe
   return row * gridWidth + col
 }
 
+export function getCellCordsFromIndex(
+  index: number,
+  gridWidth: number,
+): { col: number; row: number } {
+  const col = index % gridWidth
+  const row = Math.floor(index / gridWidth)
+  return { col, row }
+}
+
 /**
  * Get the isometric cell coords
  * @param col

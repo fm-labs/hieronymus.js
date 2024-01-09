@@ -1,11 +1,14 @@
-export class InputSystem implements IGameSystem {
-  public name = 'InputSystem'
-  private game!: IGame
-  private dirty = false
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
-  public onLoad(game: IGame) {
+export class InputSystem extends AbstractBaseSystem implements IGameSystem {
+  public name = 'InputSystem'
+
+  constructor(game: IGame) {
+    super(game)
+  }
+
+  public onLoad() {
     console.log('InputSystem.onLoad')
-    this.game = game
   }
 
   public onUnload() {
@@ -27,16 +30,15 @@ export class InputSystem implements IGameSystem {
   // }
 
   public draw() {
-    if (!this.dirty) return
-    console.log('InputSystem.draw')
+    // console.log('InputSystem.draw')
   }
 
   private handleKeyboardDownEvent(e: KeyboardEvent) {
     console.log('key down', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
-    this.game.eventbus.emit('keyboard.keyDown', e)
+    this._game.eventbus.emit('keyboard.keyDown', e)
   }
 
   private handleKeyboardUpEvent(e: KeyboardEvent) {
-    this.game.eventbus.emit('keyboard.keyUp', e)
+    this._game.eventbus.emit('keyboard.keyUp', e)
   }
 }

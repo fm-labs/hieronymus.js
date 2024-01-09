@@ -1,4 +1,4 @@
-import { mapCellCordsToIndex } from '../utils/gridutil.ts'
+import { getCellIndex } from '../utils/gridutil.ts'
 
 export class WorldInstance {
   public name: string
@@ -18,7 +18,7 @@ export class WorldInstance {
   }
 
   public getCell(x: number, y: number): WorldCell | undefined {
-    const cellIdx = mapCellCordsToIndex(x, y, this.width)
+    const cellIdx = getCellIndex(x, y, this.width)
     console.log('getCell', x, y, cellIdx, this.cells[cellIdx])
     return this.cells[cellIdx]
   }
@@ -28,13 +28,13 @@ export class WorldInstance {
   }
 
   public setCell(cell: WorldCell) {
-    const cellIdx = mapCellCordsToIndex(cell.x, cell.y, this.width)
+    const cellIdx = getCellIndex(cell.x, cell.y, this.width)
     console.log('setCell', cell.x, cell.y, cellIdx, cell)
     this.cells[cellIdx] = cell
   }
 
   public setCellLayer(cell: WorldCell, layer: WorldCellLayer) {
-    const cellIdx = mapCellCordsToIndex(cell.x, cell.y, this.width)
+    const cellIdx = getCellIndex(cell.x, cell.y, this.width)
     const cellLayers = this.cells[cellIdx].layers || []
     const layerIdx = cellLayers.findIndex((l) => l.idx === layer.idx)
     if (layerIdx >= 0) {
