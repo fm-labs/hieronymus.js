@@ -106,40 +106,42 @@ interface IWorldMap {
   layers: WorldMapLayer[]
   objects: WorldMapLayerData[][]
 
-  addTile(layerId: number, col: number, row: number, properties: GameEntityProperties): void
-  setTile(layerId: number, col: number, row: number, tile: IGameEntity): void
-  getTile(layerId: number, col: number, row: number): IGameEntity | undefined
+  addTile(layerId: number, col: number, row: number, properties: GameComponentProperties): void
+  setTile(layerId: number, col: number, row: number, tile: IGameComponent): void
+  getTile(layerId: number, col: number, row: number): IGameComponent | undefined
 
-  addObject(layerId: number, obj: IGameEntity): void
-  addObjectAt(layerId: number, col: number, row: number, obj: IGameEntity): void
-  getObject(layerId: number, id: number): IGameEntity | undefined
-  updateObject(layerId: number, id: number, obj: IGameEntity): void
+  addObject(layerId: number, obj: IGameComponent): void
+  addObjectAt(layerId: number, col: number, row: number, obj: IGameComponent): void
+  getObject(layerId: number, id: number): IGameComponent | undefined
+  updateObject(layerId: number, id: number, obj: IGameComponent): void
 
   serialize(): any
 }
 
-type GameEntityProperties = {
-  x: number
-  y: number
+type GameComponentProperties = {
+  //x: number
+  //y: number
   [key: string]: any
 }
 
-type GameEntityDescription = {
-  type: string
-  name?: string
-  properties?: GameEntityProperties
-}
-
-interface IGameEntity {
-  properties?: GameEntityProperties
+interface IGameComponent {
+  properties?: GameComponentProperties
   setPosition: (x: number, y: number) => void
   update?: (deltaTime: number) => void
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
+type GameEntity = {
+  id: number
+  parentId?: number
+  name?: string
+  component: IGameComponent
+}
+
 interface IEntityManager {
-  add(entity: IGameEntity, nextId?: number): number
-  get(id: number): IGameEntity | undefined
+  add(component: IGameComponent, nextId?: number): number
+  set(id: number, entity: GameEntity): void
+  get(id: number): GameEntity | undefined
 }
 
 /** ASSET TYPES **/

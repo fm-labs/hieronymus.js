@@ -1,14 +1,12 @@
-import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
+import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 
-interface SpriteEntityProps extends GameEntityProperties {
-  x: 0
-  y: 0
-  tileSize: 0
-  spriteImage: undefined
+interface SpriteComponentProps extends GameComponentProperties {
+  tileSize: number
+  spriteImage?: HtmlSpriteImage
 }
 
-export class SpriteEntity extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameEntityProperties = {
+export class SpriteComponent extends AbstractBaseComponent implements IGameComponent {
+  public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,
     tileSize: 0,
@@ -17,9 +15,9 @@ export class SpriteEntity extends AbstractBaseEntity implements IGameEntity {
 
   public readonly name: string
 
-  constructor(properties: SpriteEntityProps) {
+  constructor(properties: SpriteComponentProps) {
     properties = properties || {}
-    super({ ...SpriteEntity.defaultProperties, ...properties })
+    super({ ...SpriteComponent.defaultProperties, ...properties })
     this.name = properties.name || 'SpriteEntity'
   }
 

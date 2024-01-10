@@ -45,8 +45,8 @@ export class OrthogonalGridSystem extends AbstractBaseSystem implements IGameSys
   public draw(mainCtx: CanvasRenderingContext2D) {
     console.log('OrthogonalGridSystem.draw')
 
-    const cols = this._game.cols
-    const rows = this._game.rows
+    const cols = this._game.worldMap.columns
+    const rows = this._game.worldMap.rows
 
     const tsize = 128 // this.game.twidth
     const twidth = tsize

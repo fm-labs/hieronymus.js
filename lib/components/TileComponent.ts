@@ -1,7 +1,7 @@
-import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
+import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 
-export class TileEntity extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameEntityProperties = {
+export class TileComponent extends AbstractBaseComponent implements IGameComponent {
+  public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,
     width: 32,
@@ -32,10 +32,10 @@ export class TileEntity extends AbstractBaseEntity implements IGameEntity {
 
   public readonly name: string
 
-  constructor(properties?: GameEntityProperties) {
+  constructor(properties?: GameComponentProperties) {
     properties = properties || {}
     super({
-      ...TileEntity.defaultProperties,
+      ...TileComponent.defaultProperties,
       ...properties,
     })
     this.name = properties.name || 'TileEntity'
@@ -50,8 +50,6 @@ export class TileEntity extends AbstractBaseEntity implements IGameEntity {
     const strokeColor = this.properties.borderColor
     const text = this.properties.text
     const textColor = this.properties.color
-
-    ctx.save()
 
     ctx.beginPath()
     ctx.moveTo(x, y)
@@ -75,7 +73,6 @@ export class TileEntity extends AbstractBaseEntity implements IGameEntity {
       ctx.fillStyle = textColor
       ctx.fillText(text, x - 10, y + height / 2)
     }
-    ctx.restore()
   }
 
   update(deltaTime: number): void {}

@@ -29,7 +29,7 @@ export const loadSpritesheetImage = async (url: string): Promise<HtmlSpritesheet
  * @deprecated Use loadSpritesheetImage instead
  */
 export const loadKenneySpritesheetImage = async (name: string): Promise<HtmlSpritesheetImage> => {
-  const url = `/assets/2d/${name}/${name}.png`
+  const url = `/assets/sprites/kenney-assets/2d/${name}/${name}.png`
   const image = await loadHtmlImage(url)
   const mapUrl = url.replace('.png', '.json')
   const sprites = await fetch(mapUrl).then(loaderSuccessHandler).catch(loaderErrorHandler)

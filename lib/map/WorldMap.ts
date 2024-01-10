@@ -1,5 +1,5 @@
-import { TileEntity } from '../entity/TileEntity.ts'
-import { EntityManager } from './EntityManager.ts'
+import { TileComponent } from '../components/TileComponent.ts'
+import { EntityManager } from '../entity/EntityManager.ts'
 import { DimetricGridProjection } from './projection.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
 
@@ -60,8 +60,12 @@ export class WorldMap implements IWorldMap {
     this.projection = new DimetricGridProjection(this.tileWidth)
   }
 
-  addTile(layerId: number, col: number, row: number, properties: GameEntityProperties) {
-    const tile = new TileEntity({ width: this.tileWidth, height: this.tileHeight, ...properties })
+  addTile(layerId: number, col: number, row: number, properties: GameComponentProperties) {
+    const tile = new TileComponent({
+      width: this.tileWidth,
+      height: this.tileHeight,
+      ...properties,
+    })
     const screenPos = this.projection.mapGridToScreen(col, row)
     tile.setPosition(screenPos.x, screenPos.y)
 
@@ -72,16 +76,21 @@ export class WorldMap implements IWorldMap {
     this.setLayerData(layerId, cellIdx, entityId)
   }
 
-  setTile(layerId: number, col: number, row: number, tile: IGameEntity) {
+  setTile(layerId: number, col: number, row: number, tile: IGameComponent) {
+    const screenPos = this.projection.mapGridToScreen(col, row)
+    tile.setPosition(screenPos.x, screenPos.y)
+
     const cellIdx = getCellIndex(col, row, this.columns)
     const entityId = this.entities.add(tile)
+
+    console.log('setTile', layerId, col, row, cellIdx, entityId)
     this.setLayerData(layerId, cellIdx, entityId)
   }
 
-  getTile(layerId: number, col: number, row: number): IGameEntity | undefined {
+  getTile(layerId: number, col: number, row: number): IGameComponent | undefined {
     const entityId = this.getLayerData(layerId, getCellIndex(col, row, this.columns))
     if (!entityId) return undefined
-    return this.entities.get(entityId)
+    return this.entities.get(entityId)?.component
   }
 
   setLayerData(layerIdx: number, cellIdx: number, data: WorldMapLayerData) {
@@ -93,28 +102,31 @@ export class WorldMap implements IWorldMap {
     return this.layers[layerIdx]?.data[cellIdx] || undefined
   }
 
-  addObject(layerId: number, obj: IGameEntity): void {
+  addObject(layerId: number, obj: IGameComponent): void {
     const entityId = this.entities.add(obj)
-    this.objects[layerId] = this.objects[layerId] || []
-    this.objects[layerId].push(entityId)
+    //this.objects[layerId] = this.objects[layerId] || []
+    //this.objects[layerId].push(entityId)
+    this.layers[layerId].data.push(entityId)
   }
 
-  addObjectAt(layerId: number, col: number, row: number, obj: IGameEntity): void {
+  addObjectAt(layerId: number, col: number, row: number, obj: IGameComponent): void {
     const screenPos = this.projection.mapGridToScreen(col, row)
     obj.setPosition(screenPos.x, screenPos.y)
 
-    const entityId = this.entities.add(obj)
-    this.objects[layerId] = this.objects[layerId] || []
-    this.objects[layerId].push(entityId)
+    //const entityId = this.entities.add(obj)
+    //this.objects[layerId] = this.objects[layerId] || []
+    //this.objects[layerId].push(entityId)
+    this.addObject(layerId, obj)
   }
 
-  getObject(layerId: number, id: number): IGameEntity | undefined {
-    const entityId = this.objects[layerId][id] || undefined
+  getObject(layerId: number, id: number): IGameComponent | undefined {
+    //const entityId = this.objects[layerId][id] || undefined
+    const entityId = this.layers[layerId].data[id] || undefined
     if (!entityId) return undefined
-    return this.entities.get(entityId)
+    return this.entities.get(entityId)?.component
   }
 
-  updateObject(layerId: number, id: number, obj: IGameEntity): void {}
+  updateObject(layerId: number, id: number, obj: IGameComponent): void {}
 
   serialize(): any {
     return {

@@ -1,8 +1,8 @@
-import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
+import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
 
-export class TextEntity extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameEntityProperties = {
+export class TextComponent extends AbstractBaseComponent implements IGameComponent {
+  public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,
     text: '',
@@ -12,9 +12,9 @@ export class TextEntity extends AbstractBaseEntity implements IGameEntity {
     orientation: 'vertical', // vertical | horizontal
     angle: degreeToRadian(-25),
   }
-  constructor(properties?: GameEntityProperties) {
+  constructor(properties?: GameComponentProperties) {
     properties = properties || {}
-    super({ ...TextEntity.defaultProperties, ...properties })
+    super({ ...TextComponent.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

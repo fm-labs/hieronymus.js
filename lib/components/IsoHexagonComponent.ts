@@ -1,17 +1,17 @@
-import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
+import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 import { drawIsometricHexagon } from '../draw2d/drawiso.ts'
 
-export class IsoHexagon extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameEntityProperties = {
+export class IsoHexagonComponent extends AbstractBaseComponent implements IGameComponent {
+  public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,
     sideLength: 32,
     depth: 16,
     tileSize: 32,
   }
-  constructor(properties?: GameEntityProperties) {
+  constructor(properties?: GameComponentProperties) {
     properties = properties || {}
-    super({ ...IsoHexagon.defaultProperties, ...properties })
+    super({ ...IsoHexagonComponent.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

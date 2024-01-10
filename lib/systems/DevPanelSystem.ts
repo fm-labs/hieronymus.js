@@ -1,0 +1,39 @@
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+
+export class DevPanelSystem extends AbstractBaseSystem implements IGameSystem {
+  public name = 'DevPanelSystem'
+
+  public onLoad() {
+    console.log('DevPanelSystem.onLoad')
+
+    const devPanelContainer = document.createElement('div')
+    devPanelContainer.style.position = 'absolute'
+    devPanelContainer.style.top = '0'
+    devPanelContainer.style.left = '0'
+    devPanelContainer.style.width = '100%'
+    devPanelContainer.style.height = '100%'
+    devPanelContainer.style.backgroundColor = 'rgba(194,64,64,0.5)'
+
+    this._game.$container.appendChild(devPanelContainer)
+  }
+
+  public onUnload() {
+    console.log('DevPanelSystem.onUnload')
+  }
+
+  public start() {
+    console.log('DevPanelSystem.start')
+  }
+
+  public stop() {
+    console.log('DevPanelSystem.stop')
+  }
+
+  public update() {
+    console.log('DevPanelSystem.update')
+  }
+
+  public draw() {
+    console.log('DevPanelSystem.draw')
+  }
+}

@@ -1,23 +1,31 @@
 export class EntityManager implements IEntityManager {
-  private readonly _entities: Map<number, IGameEntity> = new Map()
+  private readonly _entities: Map<number, GameEntity> = new Map()
   private _nextId = 1
 
   constructor() {}
 
-  add(entity: IGameEntity, nextId?: number): number {
+  add(component: IGameComponent, nextId?: number): number {
+    this._nextId++
     if (nextId) {
       if (nextId < this._nextId) throw new Error('nextId must be greater than previous')
       this._nextId = nextId
-    } else {
-      this._nextId++
     }
 
-    this._entities.set(this._nextId, entity)
+    const entity: GameEntity = {
+      id: this._nextId,
+      component,
+    }
+    this._entities.set(entity.id, entity)
     return this._nextId
   }
 
-  get(id: number): IGameEntity | undefined {
+  get(id: number): GameEntity | undefined {
     return this._entities.get(id) || undefined
+  }
+
+  set(id: number, entity: GameEntity): void {
+    entity.id = id
+    this._entities.set(id, entity)
   }
 
   // create(entity: GameEntityDescription): IGameEntity {

@@ -59,14 +59,7 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     objCanvas.width = gridWidth
     objCanvas.height = gridHeight
 
-    // draw the underground
-    // draw the ground
-    // draw the buildings
-    // draw the objects
-    // draw the overlays
-
-    // draw the objects
-    //console.log('draw objects')
+    // draw all layers
 
     objCtx.reset()
     objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height)
@@ -106,13 +99,13 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
         const entityIdx = this._game.worldMap.layers[layerIdx]?.data[cellIdx]
         if (!entityIdx) continue
 
-        const entity = this._game.worldMap.getTile(layerIdx, c, r)
-        if (!entity) continue
+        const component = this._game.worldMap.getTile(layerIdx, c, r)
+        if (!component) continue
 
-        console.log('entity', entityIdx, entity)
-        if (entity.draw) {
+        console.log('entity', entityIdx, component)
+        if (component.draw) {
           objCtx.save()
-          entity.draw(objCtx)
+          component.draw(objCtx)
           objCtx.restore()
         }
       }
@@ -120,14 +113,18 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
   }
 
   private drawObjects(layerIdx: number, objCtx: CanvasRenderingContext2D) {
-    const objects = this._game.worldMap.objects[layerIdx] || []
+    //const objects = this._game.worldMap.objects[layerIdx] || []
+    const objects = this._game.worldMap.layers[layerIdx].data || []
     console.log('drawObjects', layerIdx, objects)
-    objects.forEach((entityId) => {
+    objects.forEach((entityId, idx) => {
       const entity = this._game.worldMap.entities.get(entityId)
-      console.log('entity', entityId, entity)
-      if (entity && entity.draw) {
+      const component = entity?.component
+      //const component = this._game.worldMap.entities.get(entityId)?.component
+      //const component = this._game.worldMap.getObject(layerIdx, idx)
+      console.log('entity', entityId, component)
+      if (component && component.draw) {
         objCtx.save()
-        entity.draw(objCtx)
+        component.draw(objCtx)
         objCtx.restore()
       }
     })

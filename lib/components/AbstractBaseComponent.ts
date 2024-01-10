@@ -1,7 +1,7 @@
-export abstract class AbstractBaseEntity {
-  public readonly properties: GameEntityProperties
+export abstract class AbstractBaseComponent {
+  public readonly properties: GameComponentProperties
 
-  protected constructor(properties?: GameEntityProperties) {
+  protected constructor(properties?: GameComponentProperties) {
     this.properties = properties || {}
   }
 

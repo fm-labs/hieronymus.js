@@ -1,19 +1,25 @@
-import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
+import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 import { drawIsometricCube } from '../draw2d/drawiso.ts'
 
-export class IsoCube extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameEntityProperties = {
+interface IsoCubeProps extends GameComponentProperties {
+  width: number
+  depth: number
+  tileSize: number
+  text?: string
+}
+
+export class IsoCubeComponent extends AbstractBaseComponent implements IGameComponent {
+  public static readonly defaultProperties: IsoCubeProps = {
     x: 0,
     y: 0,
     width: 32,
-    //height: 16,
     depth: 16,
     tileSize: 32,
-    text: 'Cube',
+    text: undefined,
   }
-  constructor(properties?: GameEntityProperties) {
-    properties = properties || {}
-    super({ ...IsoCube.defaultProperties, ...properties })
+
+  constructor(properties: IsoCubeProps) {
+    super({ ...IsoCubeComponent.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
