@@ -8,6 +8,10 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   private infoDiv!: HTMLDivElement
   private dirty = true
 
+  private cols: number
+  private rows: number
+  private tileSize: number
+
   private _hoveredCellIdx: number | undefined
   private _hoverTimer: any | undefined
 
@@ -18,6 +22,10 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
   constructor(game: IGame) {
     super(game)
+
+    this.cols = this._game.worldMap.columns
+    this.rows = this._game.worldMap.rows
+    this.tileSize = this._game.worldMap.tileWidth
   }
 
   public onLoad() {
@@ -212,7 +220,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     this.controlsDiv.appendChild(headingCell)
 
     if (this._selectedCellIdx !== undefined) {
-      const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this._game.config.columns)
+      const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
       const screenPos = this._game.projection.mapGridToScreen(gridPos.col, gridPos.row)
       const cellInfo = document.createElement('div')
       cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`
@@ -286,7 +294,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
         cellLayerInfo.textContent = `EntityIdx: ${entityIdx || '-'}`
 
         if (entityIdx !== undefined) {
-          const entity = this._game.entityManager.get(entityIdx)
+          const entity = this._game.worldMap.entities.get(entityIdx)
           if (entity) {
             cellLayerInfo.title = JSON.stringify(entity.properties, null, 2)
           }
@@ -310,19 +318,13 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
     //@todo calculate offsets using projection
     const offsetX = mainCanvas.width / 2
-    const offsetY =
-      mainCanvas.height / 2 - (this._game.config.columns / 2) * (this._game.config.tileSize / 2)
+    const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
     const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
     const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
     const pos = this._game.projection.mapScreenToGrid(x, y)
-    const index = getCellIndex(pos.col, pos.row, this._game.config.columns)
+    const index = getCellIndex(pos.col, pos.row, this.cols)
 
-    if (
-      pos.col >= 0 &&
-      pos.col < this._game.config.columns &&
-      pos.row >= 0 &&
-      pos.row < this._game.config.rows
-    ) {
+    if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
       if (index != this._hoveredCellIdx) {
         this._game.eventbus.emit('grid.cellHover', {
           index: index,
@@ -350,18 +352,12 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     const mainCanvas = this._game.$canvas
     const rect = mainCanvas.getBoundingClientRect()
     const offsetX = mainCanvas.width / 2
-    const offsetY =
-      mainCanvas.height / 2 - (this._game.config.columns / 2) * (this._game.config.tileSize / 2)
+    const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
     const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
     const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
     const pos = this._game.projection.mapScreenToGrid(x, y)
-    const index = getCellIndex(pos.col, pos.row, this._game.config.columns)
-    if (
-      pos.col >= 0 &&
-      pos.col < this._game.config.columns &&
-      pos.row >= 0 &&
-      pos.row < this._game.config.rows
-    ) {
+    const index = getCellIndex(pos.col, pos.row, this.cols)
+    if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
       if (index != this._selectedCellIdx) {
         console.log('clicked cell', index, pos)
         this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })

@@ -1,13 +1,13 @@
 import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
 
 export class ObjectEntity extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameProperties<ObjectEntity> = {
+  public static readonly defaultProperties: GameEntityProperties = {
     x: 0,
     y: 0,
   }
-  constructor(game: IGame, properties?: GameProperties<ObjectEntity>) {
+  constructor(properties?: GameEntityProperties) {
     properties = properties || {}
-    super(game, { ...ObjectEntity.defaultProperties, ...properties })
+    super({ ...ObjectEntity.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

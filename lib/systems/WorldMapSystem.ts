@@ -4,12 +4,17 @@ import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'WorldMapSystem'
   private readonly tsize: number
+  private readonly cols: number
+  private readonly rows: number
+
   private dirty = true
 
   constructor(game: IGame) {
     super(game)
 
-    this.tsize = this._game.config.tileSize
+    this.cols = this._game.worldMap.columns
+    this.rows = this._game.worldMap.rows
+    this.tsize = this._game.worldMap.tileWidth
   }
 
   private handleMouseClick(e: MouseEvent) {
@@ -42,15 +47,12 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     if (!this.dirty) return
     console.log('WorldMapSystem.draw')
 
-    const cols = this._game.config.columns
-    const rows = this._game.config.rows
-
     const tsize = this.tsize
     const twidth = tsize
     const theight = tsize / 2
 
-    const gridWidth = cols * twidth
-    const gridHeight = rows * theight
+    const gridWidth = this.cols * twidth
+    const gridHeight = this.rows * theight
 
     const objCanvas = document.createElement('canvas')
     const objCtx = objCanvas.getContext('2d')!
@@ -69,7 +71,6 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     objCtx.reset()
     objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height)
 
-    objCtx.save()
     objCtx.translate(objCanvas.width / 2, 0)
 
     this._game.worldMap.layers.forEach((layer, layerIdx) => {
@@ -77,7 +78,7 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
       if (layer.type === 'OBJECTLAYER') {
         this.drawObjects(layerIdx, objCtx)
       } else if (layer.type === 'TILELAYER') {
-        this.drawObjects(layerIdx, objCtx)
+        this.drawTiles(layerIdx, objCtx)
       } else if (layer.type === 'BACKGROUND') {
         //this.drawBackground(layerIdx, objCtx)
       } else if (layer.type === 'OVERLAY') {
@@ -94,85 +95,41 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     this.dirty = false
   }
 
-  private drawObjects(layerIdx: number, objCtx: CanvasRenderingContext2D) {
+  private drawTiles(layerIdx: number, objCtx: CanvasRenderingContext2D) {
     const tsize = this.tsize
     const twidth = tsize
     const theight = tsize / 2
 
-    for (let c = 0; c < this._game.config.columns; c++) {
-      for (let r = 0; r < this._game.config.rows; r++) {
-        const cellIdx = getCellIndex(c, r, this._game.config.columns)
+    for (let c = 0; c < this.cols; c++) {
+      for (let r = 0; r < this.rows; r++) {
+        const cellIdx = getCellIndex(c, r, this.cols)
         const entityIdx = this._game.worldMap.layers[layerIdx]?.data[cellIdx]
         if (!entityIdx) continue
 
-        const entity = this._game.entityManager.get(entityIdx)
+        const entity = this._game.worldMap.getTile(layerIdx, c, r)
         if (!entity) continue
 
         console.log('entity', entityIdx, entity)
         if (entity.draw) {
+          objCtx.save()
           entity.draw(objCtx)
+          objCtx.restore()
         }
-
-        /*
-        const spriteIdx = this._game.worldMap.layers[layerIdx]?.data[cellIdx]
-        if (!spriteIdx) continue
-
-        const spriteImage = this._game.resources.sprites[spriteIdx]
-        if (!spriteImage) {
-          console.log(`Sprite not found: ${spriteIdx}`)
-          continue
-        }
-
-        const sprite = spriteImage.sprite
-        const spriteCanvas = document.createElement('canvas')
-        spriteCanvas.width = sprite.width
-        spriteCanvas.height = sprite.height
-        const spriteCanvasCtx = spriteCanvas.getContext('2d')!
-        spriteCanvasCtx.drawImage(
-          spriteImage.image,
-          sprite.x,
-          sprite.y,
-          sprite.width,
-          sprite.height,
-          0,
-          0,
-          sprite.width,
-          sprite.height,
-        )
-
-        const tpos = this.projection.mapGridToScreen(c, r)
-        const ratio = sprite.width / sprite.height
-
-        const imgW = Math.min(sprite.width, twidth)
-        const imgH = imgW / ratio
-
-        // adjust width to fit the tile
-        // if (ratio < 1) {
-        //   imgW = twidth
-        //   imgH = imgW / (twidth / sprite.height)
-        // }
-        //console.log('sprite', cellIdx, spriteIdx, ratio, imgW, imgH)
-
-        const offsetX = -(imgW / 2) - this._game.camera.offset.x
-        const offsetY = -imgH + theight - this._game.camera.offset.y
-
-        objCtx.drawImage(
-          spriteCanvas,
-          0,
-          0,
-          sprite.width,
-          sprite.height,
-          tpos.x + offsetX,
-          tpos.y + offsetY,
-          imgW,
-          imgH,
-        )
-        //objCtx.strokeStyle = 'rgba(115,255,0,0.84)'
-        //objCtx.strokeRect(tpos.x + offsetX, tpos.y + offsetY, imgW, imgH)
-      */
       }
     }
   }
 
-  private drawTiles(layerIdx: number, objCtx: CanvasRenderingContext2D) {}
+  private drawObjects(layerIdx: number, objCtx: CanvasRenderingContext2D) {
+    const objects = this._game.worldMap.objects[layerIdx] || []
+    console.log('drawObjects', layerIdx, objects)
+    objects.forEach((entityId) => {
+      const entity = this._game.worldMap.entities.get(entityId)
+      console.log('entity', entityId, entity)
+      if (entity && entity.draw) {
+        objCtx.save()
+        entity.draw(objCtx)
+        objCtx.restore()
+      }
+    })
+  }
 }

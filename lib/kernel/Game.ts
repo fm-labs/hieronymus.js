@@ -1,7 +1,6 @@
 import { EventBus } from './EventBus.ts'
-import { DimetricGridProjection, OrthogonalGridProjection } from '../map/projection.ts'
+import { DimetricGridProjection } from '../map/projection.ts'
 import { GameResources } from './GameResources.ts'
-import { EntityManager } from '../entity/EntityManager.ts'
 
 export class Game implements IGame {
   public readonly config: GameConfig
@@ -41,7 +40,6 @@ export class Game implements IGame {
   public height: number
 
   public readonly worldMap: IWorldMap
-  public readonly entityManager: IEntityManager
 
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
@@ -56,16 +54,14 @@ export class Game implements IGame {
   private gameRunning: boolean = false
 
   constructor($container: HTMLDivElement, config: GameConfig, map: IWorldMap) {
-    console.log('Game constructor', config, map)
+    console.log('Game constructor', map)
     this.config = config
     this.worldMap = map
-    this.entityManager = new EntityManager()
 
     // Camera
     this.width = this.camera.width
     this.height = this.camera.height
-    this.projection = new DimetricGridProjection(this.config.tileSize)
-    //this.projection = new OrthogonalGridProjection(this.config.tileSize)
+    this.projection = new DimetricGridProjection(map.tileWidth)
 
     // container
     this.$container = $container

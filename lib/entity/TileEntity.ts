@@ -1,7 +1,7 @@
 import { AbstractBaseEntity } from './AbstractBaseEntity.ts'
 
 export class TileEntity extends AbstractBaseEntity implements IGameEntity {
-  public static readonly defaultProperties: GameProperties<TileEntity> = {
+  public static readonly defaultProperties: GameEntityProperties = {
     x: 0,
     y: 0,
     width: 32,
@@ -32,12 +32,10 @@ export class TileEntity extends AbstractBaseEntity implements IGameEntity {
 
   public readonly name: string
 
-  constructor(game: IGame, properties?: GameProperties<TileEntity>) {
+  constructor(properties?: GameEntityProperties) {
     properties = properties || {}
-    super(game, {
+    super({
       ...TileEntity.defaultProperties,
-      width: game.config.tileSize,
-      height: game.config.tileSize / 2,
       ...properties,
     })
     this.name = properties.name || 'TileEntity'

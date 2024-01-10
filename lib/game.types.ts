@@ -24,7 +24,6 @@ interface IGame {
 
   // world
   worldMap: IWorldMap
-  entityManager: IEntityManager
 
   run: () => void
   tick: (deltaTime: number) => void
@@ -38,6 +37,12 @@ interface IGame {
 }
 
 type GameConfig = {
+  //columns: number
+  //rows: number
+  //tileSize: number
+}
+
+type WorldMapConfig = {
   columns: number
   rows: number
   tileSize: number
@@ -94,25 +99,40 @@ type WorldMapLayerData = number
 interface IWorldMap {
   columns: number
   rows: number
-  layers: WorldMapLayer[]
+  tileWidth: number
+  tileHeight: number
 
-  setUnderground(cellIdx: number, data: WorldMapLayerData): void
-  setGround(cellIdx: number, data: WorldMapLayerData): void
-  setTile(cellIdx: number, data: WorldMapLayerData): void
-  setObject(cellIdx: number, data: WorldMapLayerData): void
-  setLayerData(layerIdx: number, cellIdx: number, data: WorldMapLayerData): void
-  getLayerData(layerIdx: number, cellIdx: number): WorldMapLayerData | undefined
+  entities: IEntityManager
+  layers: WorldMapLayer[]
+  objects: WorldMapLayerData[][]
+
+  addTile(layerId: number, col: number, row: number, properties: GameEntityProperties): void
+  setTile(layerId: number, col: number, row: number, tile: IGameEntity): void
+  getTile(layerId: number, col: number, row: number): IGameEntity | undefined
+
+  addObject(layerId: number, obj: IGameEntity): void
+  addObjectAt(layerId: number, col: number, row: number, obj: IGameEntity): void
+  getObject(layerId: number, id: number): IGameEntity | undefined
+  updateObject(layerId: number, id: number, obj: IGameEntity): void
+
   serialize(): any
 }
 
-type GameProperties<T extends IGameEntity> = {
+type GameEntityProperties = {
+  x: number
+  y: number
   [key: string]: any
 }
 
-interface IGameEntity {
-  //id: number
+type GameEntityDescription = {
+  type: string
   name?: string
-  properties?: GameProperties<any>
+  properties?: GameEntityProperties
+}
+
+interface IGameEntity {
+  properties?: GameEntityProperties
+  setPosition: (x: number, y: number) => void
   update?: (deltaTime: number) => void
   draw?: (ctx: CanvasRenderingContext2D) => void
 }

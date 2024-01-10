@@ -9,7 +9,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
   constructor(game: IGame) {
     super(game)
 
-    this.tsize = this._game.config.tileSize
+    this.tsize = this._game.worldMap.tileWidth
   }
 
   public onLoad() {
@@ -54,8 +54,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     if (!this.dirty) return
     console.log('GridSystem.draw')
 
-    const cols = this._game.config.columns
-    const rows = this._game.config.rows
+    const cols = this._game.worldMap.columns
+    const rows = this._game.worldMap.rows
 
     const tsize = this.tsize
     const twidth = tsize
@@ -85,8 +85,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     )
 
     // draw a dot at the corner of each cell
-    for (let i = 0; i < this._game.config.columns; i++) {
-      for (let j = 0; j < this._game.config.rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
         const { x, y } = this._game.projection.mapGridToScreen(i, j)
 
         const tileColor = gridColor
@@ -115,6 +115,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
 
     gridCtx.restore()
 
+    // draw the grid in the center of the canvas
     mainCtx.clearRect(
       this._game.width / 2 - gridWidth / 2,
       this._game.height / 2 - gridHeight / 2,

@@ -13,54 +13,61 @@ import { EntityManager } from '../lib/entity/EntityManager.ts'
 import { TileEntity } from '../lib/entity/TileEntity.ts'
 import { getCellIndex } from '../lib/utils/gridutil.ts'
 import { SpriteEntity } from '../lib/entity/SpriteEntity.ts'
+import { IsoCube } from '../lib/entity/IsoCube.ts'
+import { IsoHexagon } from '../lib/entity/IsoHexagon.ts'
+import { TextEntity } from '../lib/entity/TextEntity.ts'
+import { ObjectEntity } from '../lib/entity/ObjectEntity.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 // init world
-const worldMap = new WorldMap(3, 3)
+const worldConfig: WorldMapConfig = { columns: 9, rows: 9, tileSize: 128 }
+const worldMap = new WorldMap(worldConfig)
 
 // Init game
-const gameConfig: GameConfig = { columns: 3, rows: 3, tileSize: 128 }
-const game = new Game(app, gameConfig, worldMap)
+const game = new Game(app, {}, worldMap)
 
 // Init spritesheets
 await game.resources.loadSpritesheet('/fm_iso_buildings/fm_iso_buildings.png', 1)
 await game.resources.loadSpritesheet('/fm_iso_pyramids/fm_iso_pyramids.png', 32)
 
-// Init entities
-const tileRed = game.entityManager.add(
-  new TileEntity(game, { col: 1, row: 1, backgroundColor: 'rgba(255,0,106,0.5)' }),
-)
-const tileBlue = game.entityManager.add(
-  new TileEntity(game, { col: 2, row: 2, backgroundColor: 'rgba(0,81,255,0.5)' }),
-)
+// tile layer
+game.worldMap.addTile(0, 0, 0, { backgroundColor: 'rgba(255,242,0,0.27)' })
+game.worldMap.addTile(0, 1, 0, { backgroundColor: 'rgba(255,0,106,0.5)' })
+game.worldMap.addTile(0, 0, 1, { backgroundColor: 'rgba(0,81,255,0.5)' })
+game.worldMap.addTile(0, 1, 1, {})
 
-const spriteEntity0 = game.entityManager.add(
-  new SpriteEntity(game, { col: 0, row: 1, spriteId: 6 }),
+// ground layer
+game.worldMap.setTile(2, 0, 0, new SpriteEntity({ spriteImage: game.resources.getSprite(6) }))
+game.worldMap.setTile(2, 1, 0, new SpriteEntity({ spriteImage: game.resources.getSprite(7) }))
+game.worldMap.setTile(2, 0, 1, new SpriteEntity({ spriteImage: game.resources.getSprite(8) }))
+
+// object layer
+game.worldMap.addObjectAt(
+  3,
+  1,
+  1,
+  new IsoCube({
+    tileSize: game.worldMap.tileWidth,
+    width: game.worldMap.tileWidth / 2,
+    depth: 32,
+    text: 'M4',
+  }),
 )
-const spriteEntity1 = game.entityManager.add(
-  new SpriteEntity(game, { col: 1, row: 1, spriteId: 7 }),
+game.worldMap.addObjectAt(
+  3,
+  2,
+  1,
+  new IsoHexagon({
+    tileSize: game.worldMap.tileWidth,
+    width: game.worldMap.tileWidth / 2,
+    depth: 32,
+  }),
 )
-
-// Build world
-game.worldMap.setTile(getCellIndex(1, 1, game.config.columns), tileRed)
-game.worldMap.setTile(getCellIndex(2, 2, game.config.columns), tileBlue)
-//game.worldMap.setTile(3, tileBlue)
-
-game.worldMap.setObject(getCellIndex(0, 1, game.config.columns), spriteEntity0)
-game.worldMap.setObject(getCellIndex(1, 1, game.config.columns), spriteEntity1)
-
-//game.worldMap.setObject(4, 1)
-// game.worldMap.setObject(1, 1)
-// game.worldMap.setObject(2, 1)
-// game.worldMap.setObject(3, 2)
-// game.worldMap.setObject(4, 2)
-// game.worldMap.setObject(5, 3)
-// game.worldMap.setObject(6, 4)
-//game.worldMap.setObject(7, 4)
-//game.worldMap.setObject(8, 5)
+game.worldMap.addObjectAt(3, 2, 2, new TextEntity({ text: 'Hello World!' }))
 
 console.log(game.worldMap.layers)
+console.log(game.worldMap.objects)
 
 // game.addSystem(new DebugSystem())
 // game.addSystem(new OrthogonalGridSystem())
