@@ -6,98 +6,27 @@ import { EntitySystem } from '../lib/systems/EntitySystem.ts'
 import { GamepadInputSystem } from '../lib/systems/GamepadInputSystem.ts'
 import { HeroSystem } from '../lib/systems/HeroSystem.ts'
 import { WebUiSystem } from '../lib/systems/WebUiSystem.ts'
-import { WorldMap } from '../lib/map/WorldMap.ts'
 import { WorldMapSystem } from '../lib/systems/WorldMapSystem.ts'
 import './style.css'
-import { SpriteComponent } from '../lib/components/SpriteComponent.ts'
-import { IsoCubeComponent } from '../lib/components/IsoCubeComponent.ts'
-import { IsoHexagonComponent } from '../lib/components/IsoHexagonComponent.ts'
-import { TileComponent } from '../lib/components/TileComponent.ts'
-import { TextComponent } from '../lib/components/TextComponent.ts'
+import awsWorldBuilder from './worlds/aws/aws.world.ts'
+import { GameResourcesManager } from '../lib/kernel/GameResourcesManager.ts'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
-// init world
-const worldConfig: WorldMapConfig = { columns: 9, rows: 9, tileSize: 128 }
-const worldMap = new WorldMap(worldConfig)
+// Init world
+const resources = new GameResourcesManager()
+const worldMap = await awsWorldBuilder(resources)
 
 // Init game
-const game = new Game(app, {}, worldMap)
-
-// Init spritesheets
-await game.resources.loadSpritesheet('/assets/sprites/fm_iso_buildings/fm_iso_buildings.png', 1)
-await game.resources.loadSpritesheet('/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png', 32)
-
-// tile layer
-game.worldMap.addTile(0, 0, 0, { backgroundColor: 'rgba(255,242,0,0.27)' })
-game.worldMap.addTile(0, 1, 0, { backgroundColor: 'rgba(255,0,106,0.5)' })
-game.worldMap.addTile(0, 0, 1, { backgroundColor: 'rgba(0,81,255,0.5)' })
-game.worldMap.addTile(0, 1, 1, {})
-
-// ground layer
-game.worldMap.setTile(
-  2,
-  0,
-  0,
-  new SpriteComponent({
-    tileSize: game.worldMap.tileWidth,
-    spriteImage: game.resources.getSprite(6),
-  }),
-)
-game.worldMap.setTile(
-  2,
-  1,
-  0,
-  new SpriteComponent({
-    tileSize: game.worldMap.tileWidth,
-    spriteImage: game.resources.getSprite(7),
-  }),
-)
-game.worldMap.setTile(
-  2,
-  0,
-  1,
-  new SpriteComponent({
-    tileSize: game.worldMap.tileWidth,
-    spriteImage: game.resources.getSprite(8),
-  }),
-)
-
-// object layer
-game.worldMap.addObjectAt(
-  3,
-  1,
-  1,
-  new IsoCubeComponent({
-    tileSize: game.worldMap.tileWidth,
-    width: game.worldMap.tileWidth / 2,
-    depth: 32,
-    text: 'M4',
-  }),
-)
-game.worldMap.addObjectAt(
-  3,
-  2,
-  1,
-  new IsoHexagonComponent({
-    tileSize: game.worldMap.tileWidth,
-    width: game.worldMap.tileWidth / 2,
-    depth: 32,
-  }),
-)
-game.worldMap.addObjectAt(3, 2, 2, new TextComponent({ text: 'Hello World!' }))
-
-console.log(game.worldMap.layers)
-console.log(game.worldMap.objects)
+const gameConfig = { name: 'My Game' }
+const game = new Game(app, gameConfig, worldMap, resources)
 
 // game.addSystem(new DebugSystem())
 // game.addSystem(new OrthogonalGridSystem())
 game.addSystem(new GridSystem(game))
-//game.addSystem(new EntitySystem(game))
 game.addSystem(new WorldMapSystem(game))
 // game.addSystem(new InputSystem())
 // game.addSystem(new GamepadInputSystem())
 game.addSystem(new WebUiSystem(game))
-// game.addSystem(new WebUiSystem2(game))
 game.addSystem(new InfoSystem(game))
 // game.addSystem(new HeroSystem())
 

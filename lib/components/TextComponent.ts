@@ -1,8 +1,18 @@
 import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
 
+interface TextComponentProps extends GameComponentProperties {
+  text: string
+  font?: string
+  color?: string
+  direction?: CanvasDirection
+  orientation?: 'vertical' | 'horizontal'
+  skewOrientation?: 'upright' | 'flat'
+  //angle: number
+}
+
 export class TextComponent extends AbstractBaseComponent implements IGameComponent {
-  public static readonly defaultProperties: GameComponentProperties = {
+  public static readonly defaultProperties: TextComponentProps = {
     x: 0,
     y: 0,
     text: '',
@@ -10,10 +20,9 @@ export class TextComponent extends AbstractBaseComponent implements IGameCompone
     color: 'yellow',
     direction: 'ltr',
     orientation: 'vertical', // vertical | horizontal
-    angle: degreeToRadian(-25),
+    skewOrientation: 'flat', // upright | flat
   }
-  constructor(properties?: GameComponentProperties) {
-    properties = properties || {}
+  constructor(properties: TextComponentProps) {
     super({ ...TextComponent.defaultProperties, ...properties })
   }
 
@@ -26,14 +35,34 @@ export class TextComponent extends AbstractBaseComponent implements IGameCompone
     const orientation = this.properties.orientation
     const font = this.properties.font
 
-    const angle = orientation === 'vertical' ? degreeToRadian(-25) : degreeToRadian(25)
+    //const angle = degreeToRadian(26.565)
+    const angle = Math.atan(Math.sin(degreeToRadian(30)))
+    const rotationAngle = orientation === 'vertical' ? -angle : angle
+    let skewAngle = 0
+    if (this.properties.skewOrientation === 'flat') {
+      skewAngle = orientation === 'vertical' ? 0.75 : -0.75
+    } else {
+      skewAngle = orientation === 'vertical' ? -angle : angle
+    }
 
-    ctx.translate(x, y)
-    ctx.direction = 'ltr'
+    //ctx.save()
+    //ctx.direction = 'ltr'
     ctx.fillStyle = color
     ctx.font = font
-    ctx.rotate(angle)
+    ctx.translate(x, y)
+    ctx.rotate(rotationAngle)
+    ctx.transform(1, 0, skewAngle, 1, 0, 0)
+    //ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.fillText(text, 0, 0)
+    //ctx.restore()
+
+    //ctx.setTransform(1, 0.8, 0, 1, 0, 0)
+    //ctx.transform(1, 0, 0, 1, 0, 0)
+    //ctx.beginPath()
+    //ctx.arc(0, 0, 20, 0, 2 * Math.PI)
+    //ctx.closePath()
+    //ctx.fill()
+    //ctx.restore()
   }
 
   update(deltaTime: number): void {}

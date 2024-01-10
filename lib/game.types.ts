@@ -4,27 +4,22 @@ interface IGame {
   $container: HTMLDivElement
   $canvas: HTMLCanvasElement
 
-  resources: IGameResources
-
   // config
   config: GameConfig
+
+  // world
+  worldMap: IWorldMap
+  resources: IGameResources
 
   // events
   eventbus: IEventBus
 
   // camera & projection
   camera: Camera2D
-  projection: IGrid2DProjection
   width: number
   height: number
 
-  // grid
-  //cols: number
-  //rows: number
-
-  // world
-  worldMap: IWorldMap
-
+  // systems
   run: () => void
   tick: (deltaTime: number) => void
   draw: () => void
@@ -37,15 +32,14 @@ interface IGame {
 }
 
 type GameConfig = {
-  //columns: number
-  //rows: number
-  //tileSize: number
+  name?: string
 }
 
 type WorldMapConfig = {
   columns: number
   rows: number
   tileSize: number
+  projection: 'orthogonal' | 'isometric' | 'dimetric'
 }
 
 interface IGameSystem {
@@ -101,6 +95,8 @@ interface IWorldMap {
   rows: number
   tileWidth: number
   tileHeight: number
+
+  projection: IGrid2DProjection
 
   entities: IEntityManager
   layers: WorldMapLayer[]
@@ -163,43 +159,88 @@ type GameAsset = {
   src: string
 }
 
+type FontAsset = GameAsset & {
+  type: 'FONT'
+  name: string
+  url: string
+}
+
 type ImageAsset = GameAsset & {
   type: 'IMAGE'
+  name: string
+  url: string
 }
 
 type SpritesheetAsset = ImageAsset & {
   type: 'SPRITESHEET'
+  name: string
+  url: string
   sprites: SpritesheetItem[]
-}
-
-type TilesetAsset = ImageAsset & {
-  type: 'TILESET'
-  columns: number
-  rows: number
 }
 
 type AudioAsset = GameAsset & {
   type: 'AUDIO'
+  name: string
+  url: string
 }
 
-type VideoAsset = GameAsset & {
+type GameResource = {
+  type: GameAssetType
+  $element: HTMLElement
+}
+
+type ImageResource = GameResource & {
+  type: 'IMAGE'
+  $element: HTMLImageElement
+}
+
+type SpritesheetResource = ImageResource & {
+  type: 'SPRITESHEET'
+  $element: HTMLImageElement
+  sprites: SpritesheetItem[]
+}
+
+type AudioResource = GameResource & {
+  type: 'AUDIO'
+  $element: HTMLImageElement
+}
+
+type VideoResource = GameResource & {
   type: 'VIDEO'
+  $element: HTMLImageElement
 }
 
+type FontResource = GameResource & {
+  type: 'FONT'
+  $font: FontFace
+}
+
+/**
+ * @deprecated
+ */
 type HtmlImage = {
   url: string
   image: HTMLImageElement
 }
 
+/**
+ * @deprecated Use SpritesheetResource instead
+ */
 type HtmlSpritesheetImage = HtmlImage & {
   url: string
   sprites: SpritesheetItem[]
 }
 
+/**
+ * @deprecated
+ */
 type HtmlTilesetImage = HtmlImage & {
   url: string
 }
 
+/**
+ * @deprecated Use SpriteImageResource instead
+ */
 type HtmlSpriteImage = HtmlImage & {
   url: string
   sprite: SpritesheetItem
@@ -210,6 +251,7 @@ type HtmlSpriteImage = HtmlImage & {
 interface IGameResources {
   spritesheets: HtmlSpritesheetImage[]
   sprites: HtmlSpriteImage[]
+  loadFont(name: string, url: string): Promise<void>
   loadHtmlImage(url: string): Promise<HTMLImageElement>
   loadSpritesheet(url: string, nextgid?: number): Promise<void>
   loadKenneySpritesheet(name: string, nextgid?: number): Promise<void>

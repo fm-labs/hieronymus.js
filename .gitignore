@@ -1,6 +1,7 @@
 /dist/
 /submodules/
 /public/assets/sprites/kenney-assets
+/public/assets/fonts
 
 # Logs
 logs

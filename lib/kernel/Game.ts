@@ -1,6 +1,4 @@
 import { EventBus } from './EventBus.ts'
-import { DimetricGridProjection } from '../map/projection.ts'
-import { GameResources } from './GameResources.ts'
 
 export class Game implements IGame {
   public readonly config: GameConfig
@@ -29,7 +27,8 @@ export class Game implements IGame {
   /**
    * The loaded spritesheets.
    */
-  public resources: IGameResources = new GameResources()
+  public resources: IGameResources
+  public worldMap: IWorldMap
 
   /**
    * The event bus.
@@ -39,8 +38,6 @@ export class Game implements IGame {
   public width: number
   public height: number
 
-  public readonly worldMap: IWorldMap
-
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
     width: 1920,
@@ -49,19 +46,23 @@ export class Game implements IGame {
     //angle: 0,
     zoom: 1,
   }
-  public projection: IGrid2DProjection
 
   private gameRunning: boolean = false
 
-  constructor($container: HTMLDivElement, config: GameConfig, map: IWorldMap) {
-    console.log('Game constructor', map)
+  constructor(
+    $container: HTMLDivElement,
+    config: GameConfig,
+    map: IWorldMap,
+    resources: IGameResources,
+  ) {
+    console.log('Game constructor', config, map, resources)
     this.config = config
     this.worldMap = map
+    this.resources = resources
 
     // Camera
     this.width = this.camera.width
     this.height = this.camera.height
-    this.projection = new DimetricGridProjection(map.tileWidth)
 
     // container
     this.$container = $container

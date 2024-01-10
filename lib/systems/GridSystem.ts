@@ -63,7 +63,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
 
     const gridWidth = cols * twidth
     const gridHeight = rows * theight
-    const gridColor = 'rgba(88,220,220,0.2)'
+    const gridColor = 'rgba(0,0,0,0)'
 
     const gridCanvas = document.createElement('canvas')
     gridCanvas.width = gridWidth
@@ -87,7 +87,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     // draw a dot at the corner of each cell
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
-        const { x, y } = this._game.projection.mapGridToScreen(i, j)
+        const { x, y } = this._game.worldMap.projection.mapGridToScreen(i, j)
 
         const tileColor = gridColor
         const strokeColor = 'rgba(91,91,91,0.25)'

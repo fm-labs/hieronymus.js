@@ -4,10 +4,7 @@ import { DimetricGridProjection } from './projection.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
 
 export class WorldMap implements IWorldMap {
-  readonly LAYER_TILES = 0
-  readonly LAYER_UNDERGROUND = 1
-  readonly LAYER_GROUND = 2
-  readonly LAYER_OBJECTS = 3
+  readonly assets: any[]
 
   columns: number
   rows: number
@@ -48,9 +45,10 @@ export class WorldMap implements IWorldMap {
   ]
   public readonly objects: WorldMapLayerData[][] = []
   public readonly entities: EntityManager
-  private projection: DimetricGridProjection
+  public readonly projection: IGrid2DProjection
 
   constructor(config: WorldMapConfig) {
+    this.assets = []
     this.columns = config.columns
     this.rows = config.rows
     this.tileWidth = config.tileSize
@@ -58,6 +56,14 @@ export class WorldMap implements IWorldMap {
 
     this.entities = new EntityManager()
     this.projection = new DimetricGridProjection(this.tileWidth)
+  }
+
+  registerAsset(assetType: string, name: string, asset: any) {
+    this.assets.push({ type: assetType, name, ...asset })
+  }
+
+  addLayer(layerId: number, layer: WorldMapLayer) {
+    this.layers[layerId] = layer
   }
 
   addTile(layerId: number, col: number, row: number, properties: GameComponentProperties) {

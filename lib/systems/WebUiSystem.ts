@@ -221,7 +221,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
     if (this._selectedCellIdx !== undefined) {
       const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
-      const screenPos = this._game.projection.mapGridToScreen(gridPos.col, gridPos.row)
+      const screenPos = this._game.worldMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
       const cellInfo = document.createElement('div')
       cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`
       cellInfo.innerHTML += `<br />GridPos: ${gridPos.col},${gridPos.row}`
@@ -296,7 +296,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
         if (entityIdx !== undefined) {
           const entity = this._game.worldMap.entities.get(entityIdx)
           if (entity) {
-            cellLayerInfo.title = JSON.stringify(entity.properties, null, 2)
+            cellLayerInfo.title = JSON.stringify(entity.component.properties, null, 2)
           }
         }
       }
@@ -321,7 +321,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
     const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
     const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
-    const pos = this._game.projection.mapScreenToGrid(x, y)
+    const pos = this._game.worldMap.projection.mapScreenToGrid(x, y)
     const index = getCellIndex(pos.col, pos.row, this.cols)
 
     if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
@@ -355,7 +355,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
     const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
     const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
-    const pos = this._game.projection.mapScreenToGrid(x, y)
+    const pos = this._game.worldMap.projection.mapScreenToGrid(x, y)
     const index = getCellIndex(pos.col, pos.row, this.cols)
     if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
       if (index != this._selectedCellIdx) {

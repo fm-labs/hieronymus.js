@@ -1,5 +1,6 @@
 import { DimetricGridProjection, OrthogonalGridProjection } from '../map/projection.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
+import { FILL_COLORS, STROKE_COLORS } from '../constants.ts'
 
 export function drawIsoTile(
   ctx: CanvasRenderingContext2D,
@@ -21,8 +22,8 @@ export function drawIsoTile(
   ctx.closePath()
 
   // Fill the tile with a color
-  //ctx.fillStyle = fillColor
-  //ctx.fill()
+  ctx.fillStyle = fillColor
+  ctx.fill()
 
   // Stroke the tile with a border
   ctx.strokeStyle = strokeColor
@@ -47,49 +48,81 @@ export function drawIsometricCube(
   depth: number,
   text?: string,
 ) {
-  const strokeColor = '#e70d0d'
-  const fillColor = ['#57b6c2', '#459d86', '#2c7a6a']
+  const topFacePaths = [
+    [x, y],
+    [x + width / 2, y + height / 2],
+    [x, y + height],
+    [x - width / 2, y + height / 2],
+  ]
+  const leftFacePaths = [
+    [x, y + height],
+    [x, y + height + depth],
+    [x - width / 2, y + height / 2 + depth],
+    [x - width / 2, y + height / 2],
+  ]
+  const rightFacePaths = [
+    [x, y + height],
+    [x, y + height + depth],
+    [x + width / 2, y + height / 2 + depth],
+    [x + width / 2, y + height / 2],
+  ]
 
   // Draw top face
-  ctx.save()
+  ctx.setLineDash([3, 3]) // [dashLength, gapLength]
   //ctx.translate(0, height / 2)
-  ctx.beginPath()
-  ctx.moveTo(x, y)
-  ctx.lineTo(x + width / 2, y + height / 2)
-  ctx.lineTo(x, y + height)
-  ctx.lineTo(x - width / 2, y + height / 2)
-  ctx.closePath()
 
-  ctx.fillStyle = fillColor[0]
-  ctx.fill()
-  ctx.strokeStyle = strokeColor
-  ctx.stroke()
+  const paths = [topFacePaths, leftFacePaths, rightFacePaths]
+  paths.forEach((paths, idx) => {
+    ctx.beginPath()
+    ctx.moveTo(paths[0][0], paths[0][1])
+    for (let i = 1; i < paths.length; i++) {
+      ctx.lineTo(paths[i][0], paths[i][1])
+    }
+    ctx.closePath()
 
-  // Draw left face
-  ctx.beginPath()
-  ctx.moveTo(x, y + height)
-  ctx.lineTo(x, y + height + depth)
-  ctx.lineTo(x - width / 2, y + height / 2 + depth)
-  ctx.lineTo(x - width / 2, y + height / 2)
-  ctx.closePath()
+    ctx.fillStyle = FILL_COLORS[idx]
+    ctx.fill()
+    ctx.strokeStyle = STROKE_COLORS[idx]
+    ctx.stroke()
+  })
 
-  ctx.fillStyle = fillColor[1]
-  ctx.fill()
-  ctx.strokeStyle = 'green'
-  ctx.stroke()
-
-  // Draw right face
-  ctx.beginPath()
-  ctx.moveTo(x, y + height)
-  ctx.lineTo(x, y + height + depth)
-  ctx.lineTo(x + width / 2, y + height / 2 + depth)
-  ctx.lineTo(x + width / 2, y + height / 2)
-  ctx.closePath()
-
-  ctx.fillStyle = fillColor[2]
-  ctx.fill()
-  ctx.strokeStyle = 'blue'
-  ctx.stroke()
+  // ctx.beginPath()
+  // ctx.moveTo(x, y)
+  // ctx.lineTo(x + width / 2, y + height / 2)
+  // ctx.lineTo(x, y + height)
+  // ctx.lineTo(x - width / 2, y + height / 2)
+  // ctx.closePath()
+  //
+  // ctx.fillStyle = fillColor[0]
+  // ctx.fill()
+  // ctx.strokeStyle = strokeColor[0]
+  // ctx.stroke()
+  //
+  // // Draw left face
+  // ctx.beginPath()
+  // ctx.moveTo(x, y + height)
+  // ctx.lineTo(x, y + height + depth)
+  // ctx.lineTo(x - width / 2, y + height / 2 + depth)
+  // ctx.lineTo(x - width / 2, y + height / 2)
+  // ctx.closePath()
+  //
+  // ctx.fillStyle = fillColor[1]
+  // ctx.fill()
+  // ctx.strokeStyle = 'green'
+  // ctx.stroke()
+  //
+  // // Draw right face
+  // ctx.beginPath()
+  // ctx.moveTo(x, y + height)
+  // ctx.lineTo(x, y + height + depth)
+  // ctx.lineTo(x + width / 2, y + height / 2 + depth)
+  // ctx.lineTo(x + width / 2, y + height / 2)
+  // ctx.closePath()
+  //
+  // ctx.fillStyle = fillColor[2]
+  // ctx.fill()
+  // ctx.strokeStyle = 'blue'
+  // ctx.stroke()
 
   // Draw text
   if (text) {
@@ -126,8 +159,6 @@ export function drawIsometricCube(
     ctx.setTransform(1, 0, 0, 1, 0, 0) // Reset the transformation matrix to the identity matrix
     ctx.restore()
   }
-
-  ctx.restore()
 }
 
 export function drawIsometricHexagon(
@@ -138,14 +169,11 @@ export function drawIsometricHexagon(
   depth: number,
   //tileSize: number,
 ) {
-  const strokeColor = '#e70d0d'
-  const fillColor = ['#57b6c2', '#459d86', '#2c7a6a', '#57b6c2', '#459d86', '#2c7a6a']
-
   const scaleX = 1 // Scale factor for x-axis
   const scaleY = 0.5 // Scale factor for y-axis
   const angle = -Math.PI / 6 // Rotation angle (30 degrees in radians)
 
-  ctx.save()
+  //ctx.save()
 
   const topHexagonEdges = calculateIsometricHexagonEdges(0, 0, width, 1)
   //console.log(topHexagonEdges)
@@ -153,6 +181,8 @@ export function drawIsometricHexagon(
   // Draw bottom hexagon face
   //ctx.setTransform(scaleX, 0, 0, scaleY, x, y)
   //ctx.rotate(angle)
+
+  ctx.setLineDash([3, 3]) // [dashLength, gapLength]
 
   ctx.translate(x, y)
   ctx.beginPath()
@@ -162,14 +192,13 @@ export function drawIsometricHexagon(
   }
   ctx.closePath()
 
-  ctx.fillStyle = 'black'
+  ctx.fillStyle = FILL_COLORS[0]
   ctx.fill()
-  ctx.strokeStyle = 'red'
+  ctx.strokeStyle = STROKE_COLORS[0]
   ctx.stroke()
-  ctx.restore()
 
   // Draw top hexagon face
-  ctx.translate(x, y - depth)
+  ctx.translate(0, -depth)
   ctx.beginPath()
   ctx.moveTo(topHexagonEdges[0][0], topHexagonEdges[0][1])
   for (let i = 1; i < topHexagonEdges.length; i++) {
@@ -177,9 +206,9 @@ export function drawIsometricHexagon(
   }
   ctx.closePath()
 
-  ctx.fillStyle = 'gray'
+  ctx.fillStyle = FILL_COLORS[0]
   ctx.fill()
-  ctx.strokeStyle = 'blue'
+  ctx.strokeStyle = FILL_COLORS[0]
   ctx.stroke()
 
   // Draw front faces
@@ -193,13 +222,13 @@ export function drawIsometricHexagon(
     ctx.lineTo(topHexagonEdges[j][0], topHexagonEdges[j][1])
     ctx.closePath()
 
-    ctx.fillStyle = fillColor[i]
+    ctx.fillStyle = FILL_COLORS[i]
     ctx.fill()
-    ctx.strokeStyle = strokeColor
+    ctx.strokeStyle = STROKE_COLORS[i]
     ctx.stroke()
   }
 
-  ctx.restore()
+  //ctx.restore()
 }
 
 function calculateHexagonEdges(x: number, y: number, length: number): [number, number][] {

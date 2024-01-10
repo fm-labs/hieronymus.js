@@ -1,70 +1,6 @@
 import { loadHtmlImage, loadSpritesheetImage } from './loader.ts'
 
-type ResourceType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'SPRITESHEET' | 'FONT'
-
-type GameAsset = {
-  type: ResourceType
-  name: string
-  url: string
-}
-
-type FontAsset = GameAsset & {
-  type: 'FONT'
-  name: string
-  url: string
-}
-
-type ImageAsset = GameAsset & {
-  type: 'IMAGE'
-  name: string
-  url: string
-}
-
-type SpritesheetAsset = ImageAsset & {
-  type: 'SPRITESHEET'
-  name: string
-  url: string
-  sprites: SpritesheetItem[]
-}
-
-type AudioAsset = GameAsset & {
-  type: 'AUDIO'
-  name: string
-  url: string
-}
-
-type GameResource = {
-  type: ResourceType
-  $element: HTMLElement
-}
-
-type ImageResource = GameResource & {
-  type: 'IMAGE'
-  $element: HTMLImageElement
-}
-
-type SpritesheetResource = ImageResource & {
-  type: 'SPRITESHEET'
-  $element: HTMLImageElement
-  sprites: SpritesheetItem[]
-}
-
-type AudioResource = GameResource & {
-  type: 'AUDIO'
-  $element: HTMLImageElement
-}
-
-type VideoResource = GameResource & {
-  type: 'VIDEO'
-  $element: HTMLImageElement
-}
-
-type FontResource = GameResource & {
-  type: 'FONT'
-  $font: FontFace
-}
-
-export class GameResources {
+export class GameResourcesManager {
   public readonly spritesheets: HtmlSpritesheetImage[] = []
   public readonly sprites: HtmlSpriteImage[] = []
   public readonly fonts: FontResource[] = []
@@ -91,6 +27,13 @@ export class GameResources {
   public loadKenneySpritesheet = async (name: string, nextgid?: number): Promise<void> => {
     const url = `/assets/2d/${name}/${name}.png`
     return this.loadSpritesheet(url, nextgid)
+  }
+
+  public loadFont = async (name: string, url: string): Promise<void> => {
+    const font = new FontFace(name, `url(${url})`)
+    await font.load()
+    document.fonts.add(font)
+    this.fonts.push({ type: 'FONT', $font: font, $element: document.createElement('div') })
   }
 
   public getSprite(gid: number): HtmlSpriteImage | undefined {
