@@ -142,29 +142,29 @@ export class WorldRenderer2d {
     this.ctx.stroke()
   }
 
-  private drawSprite(sprite: Sprite, x: number, y: number, cellSize: number) {
-    const spriteSheetName = sprite.spriteSheet || DEFAULT_SPRITE_SHEET_NAME
-    if (!spriteSheetName) {
-      console.warn(`Sprite sheet for sprite "${sprite.name}:${sprite.spriteSheet}" not found`)
-      return
-    }
-    const spriteSheetEl = this.images[spriteSheetName]
-    if (spriteSheetEl) {
-      this.ctx.drawImage(
-        spriteSheetEl,
-        sprite.x,
-        sprite.y,
-        sprite.width,
-        sprite.height,
-        x,
-        y,
-        cellSize,
-        cellSize,
-      )
-    } else {
-      console.warn(`Sprite sheet element for "${spriteSheetName}" not found`)
-    }
-  }
+  // private drawSprite(sprite: Spritesheet, x: number, y: number, cellSize: number) {
+  //   const spriteSheetName = sprite.spriteSheet || DEFAULT_SPRITE_SHEET_NAME
+  //   if (!spriteSheetName) {
+  //     console.warn(`Sprite sheet for sprite "${sprite.name}:${sprite.spriteSheet}" not found`)
+  //     return
+  //   }
+  //   const spriteSheetEl = this.images[spriteSheetName]
+  //   if (spriteSheetEl) {
+  //     this.ctx.drawImage(
+  //       spriteSheetEl,
+  //       sprite.x,
+  //       sprite.y,
+  //       sprite.width,
+  //       sprite.height,
+  //       x,
+  //       y,
+  //       cellSize,
+  //       cellSize,
+  //     )
+  //   } else {
+  //     console.warn(`Sprite sheet element for "${spriteSheetName}" not found`)
+  //   }
+  // }
 
   private drawCell(cell: WorldCell) {
     const cellSize = this.props.cellSize
@@ -193,7 +193,7 @@ export class WorldRenderer2d {
     if (cell.layers) {
       cell.layers.forEach((layer) => {
         if (layer?.sprite) {
-          this.drawSprite(layer.sprite, x, y, cellSize)
+          //@todo this.drawSprite(layer.sprite, x, y, cellSize)
         }
       })
     }

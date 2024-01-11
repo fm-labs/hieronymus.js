@@ -10,8 +10,13 @@ export abstract class AbstractBaseComponent {
     this.properties.y = y
     return this
   }
+
   public getPosition(): { x: number; y: number } {
-    return { x: this.properties.x, y: this.properties.y }
+    const x = this.properties.x
+    const y = this.properties.y
+    if (x === undefined || y === undefined) return { x: 0, y: 0 }
+
+    return { x, y }
   }
 
   public abstract update(deltaTime: number): void

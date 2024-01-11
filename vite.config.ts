@@ -19,7 +19,7 @@ export default defineConfig({
     copyPublicDir: true,
     lib: {
       // Could also be a dictionary or array of multiple entry points
-      entry: resolve(`${__dirname}`, 'lib/main.ts'),
+      entry: resolve(`${__dirname}`, 'lib/index.ts'),
       name: 'ReactBoost',
       // the proper extensions will be added
       fileName: 'world-lib',

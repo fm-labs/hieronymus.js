@@ -1,11 +1,11 @@
 import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 
-interface TileComponentProps extends GameComponentProperties {
+export interface TileComponentProps extends GameComponentProperties {
   width: number
   height: number
-  color: string
-  backgroundColor: string
-  borderColor: string
+  color?: string
+  backgroundColor?: string
+  borderColor?: string
   text?: string
 }
 
@@ -71,8 +71,10 @@ export class TileComponent extends AbstractBaseComponent implements IGameCompone
     ctx.closePath()
 
     // Fill the tile with a color
-    ctx.fillStyle = fillColor
-    ctx.fill()
+    if (fillColor) {
+      ctx.fillStyle = fillColor
+      ctx.fill()
+    }
 
     // Stroke the tile with a border
     //ctx.strokeStyle = strokeColor
@@ -82,7 +84,9 @@ export class TileComponent extends AbstractBaseComponent implements IGameCompone
     //ctx.fillText(`${x},${y}`, x, y)
 
     if (text) {
-      ctx.fillStyle = textColor
+      if (textColor) {
+        ctx.fillStyle = textColor
+      }
       ctx.fillText(text, x - 10, y + height / 2)
     }
   }

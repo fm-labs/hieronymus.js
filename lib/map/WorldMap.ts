@@ -1,4 +1,4 @@
-import { TileComponent } from '../components/TileComponent.ts'
+import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
 import { EntityManager } from '../entity/EntityManager.ts'
 import { DimetricGridProjection } from './projection.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
@@ -69,7 +69,7 @@ export class WorldMap implements IWorldMap {
   addTileAtPosition(
     layerId: number,
     pos: Grid2DPosition | Screen2DPosition,
-    properties: GameComponentProperties,
+    properties: TileComponentProps,
   ) {
     if ('col' in pos && 'row' in pos) {
       this.addTile(layerId, pos.col, pos.row, properties)
@@ -79,10 +79,13 @@ export class WorldMap implements IWorldMap {
     }
   }
 
-  addTile(layerId: number, col: number, row: number, properties: TileComponentProperties) {
-    const tile = new TileComponent({
+  addTile(layerId: number, col: number, row: number, properties: TileComponentProps) {
+    const defaultProperties: Partial<TileComponentProps> = {
       width: this.tileWidth,
       height: this.tileHeight,
+    }
+    const tile = new TileComponent({
+      ...defaultProperties,
       ...properties,
     })
     const screenPos = this.projection.mapGridToScreen(col, row)

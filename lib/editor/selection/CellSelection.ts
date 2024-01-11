@@ -9,4 +9,8 @@ export class CellSelection implements IMapSelection {
   getSelectedCells(): Grid2DCell[] {
     return this._cells
   }
+
+  isCellSelected(cell: Grid2DCell): boolean {
+    return this._cells.some((c) => c.col === cell.col && c.row === cell.row)
+  }
 }

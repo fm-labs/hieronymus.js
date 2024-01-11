@@ -28,4 +28,8 @@ export class RowSelection implements IMapSelection {
     })
     return cells
   }
+
+  isCellSelected(cell: Grid2DCell): boolean {
+    return this._rowIds.includes(cell.row)
+  }
 }

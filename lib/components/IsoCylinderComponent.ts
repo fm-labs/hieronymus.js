@@ -8,6 +8,8 @@ interface IsoCylinderProps extends GameComponentProperties {
 }
 
 export class IsoCylinderComponent extends AbstractBaseComponent implements IGameComponent {
+  declare properties: IsoCylinderProps
+
   public static readonly defaultProperties: IsoCylinderProps = {
     x: 0,
     y: 0,
@@ -23,6 +25,8 @@ export class IsoCylinderComponent extends AbstractBaseComponent implements IGame
   draw(ctx: CanvasRenderingContext2D): void {
     const x = this.properties.x
     const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
     const radius = this.properties.radius
     const depth = this.properties.depth
     const tileSize = this.properties.tileSize

@@ -9,6 +9,8 @@ interface IsoCubeProps extends GameComponentProperties {
 }
 
 export class IsoCubeComponent extends AbstractBaseComponent implements IGameComponent {
+  declare properties: IsoCubeProps
+
   public static readonly defaultProperties: IsoCubeProps = {
     x: 0,
     y: 0,
@@ -25,6 +27,8 @@ export class IsoCubeComponent extends AbstractBaseComponent implements IGameComp
   draw(ctx: CanvasRenderingContext2D): void {
     const x = this.properties.x
     const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
     const text = this.properties.text
 
     const cubeWidth = this.properties.width
