@@ -1,72 +1,85 @@
-[
-  {
-    "x": 0,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "powerplant02"
-  },
-  {
-    "x": 300,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper02"
-  },
-  {
-    "x": 600,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper03"
-  },
-  {
-    "x": 900,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper04"
-  },
-  {
-    "x": 1200,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper05"
-  },
-  {
-    "x": 1500,
-    "y": 0,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper06"
-  },
-  {
-    "x": 0,
-    "y": 300,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper07"
-  },
-  {
-    "x": 300,
-    "y": 300,
-    "width": 300,
-    "height": 300,
-    "name": "skyscraper09"
-  },
-  {
-    "x": 600,
-    "y": 300,
-    "width": 300,
-    "height": 300,
-    "name": "warehouse02"
-  },
-  {
-    "x": 900,
-    "y": 300,
-    "width": 300,
-    "height": 300,
-    "name": "warehouse04"
-  }
-]
+{
+  "sprites": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "powerplant02",
+      "idx": 1
+    },
+    {
+      "x": 300,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper02",
+      "idx": 2
+    },
+    {
+      "x": 600,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper03",
+      "idx": 3
+    },
+    {
+      "x": 900,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper04",
+      "idx": 4
+    },
+    {
+      "x": 1200,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper05",
+      "idx": 5
+    },
+    {
+      "x": 1500,
+      "y": 0,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper06",
+      "idx": 6
+    },
+    {
+      "x": 0,
+      "y": 300,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper07",
+      "idx": 7
+    },
+    {
+      "x": 300,
+      "y": 300,
+      "width": 300,
+      "height": 300,
+      "name": "skyscraper09",
+      "idx": 8
+    },
+    {
+      "x": 600,
+      "y": 300,
+      "width": 300,
+      "height": 300,
+      "name": "warehouse02",
+      "idx": 9
+    },
+    {
+      "x": 900,
+      "y": 300,
+      "width": 300,
+      "height": 300,
+      "name": "warehouse04",
+      "idx": 10
+    }
+  ],
+  "sequences": []
+}

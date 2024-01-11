@@ -73,6 +73,14 @@ type Grid2DCell = Grid2DPosition & {
   props?: any
 }
 
+type Screen2DPosition = {
+  x: number
+  y: number
+}
+
+type Grid2DPoint = [number, number]
+type Screen2DPoint = [number, number]
+
 interface IGrid2DProjection {
   mapGridToScreen(col: number, row: number): { x: number; y: number }
   mapScreenToGrid(x: number, y: number): { col: number; row: number }
@@ -156,7 +164,7 @@ type GameAsset = {
   nextgid: number
   type: GameAssetType
   name: string
-  src: string
+  url: string
 }
 
 type FontAsset = GameAsset & {
@@ -175,7 +183,14 @@ type SpritesheetAsset = ImageAsset & {
   type: 'SPRITESHEET'
   name: string
   url: string
-  sprites: SpritesheetItem[]
+  //sprites: SpritesheetItem[]
+}
+
+type TilesetAsset = SpritesheetAsset & {
+  type: 'TILESET'
+  name: string
+  url: string
+  //sprites: SpritesheetItem[]
 }
 
 type AudioAsset = GameAsset & {
@@ -184,8 +199,12 @@ type AudioAsset = GameAsset & {
   url: string
 }
 
+/** RESOURCE TYPES **/
+
+type GameResourceType = 'SPRITESHEET' | 'SPRITE' | 'TILE' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FONT'
+
 type GameResource = {
-  type: GameAssetType
+  type: GameResourceType
   $element: HTMLElement
 }
 
@@ -194,10 +213,26 @@ type ImageResource = GameResource & {
   $element: HTMLImageElement
 }
 
-type SpritesheetResource = ImageResource & {
+type SpritesheetResource = GameResource & {
   type: 'SPRITESHEET'
   $element: HTMLImageElement
   sprites: SpritesheetItem[]
+}
+
+type TilesetResource = GameResource & {
+  type: 'TILESET'
+  $element: HTMLImageElement
+  tileWidth: number
+  tileHeight: number
+  columns: number
+  rows: number
+  count: number
+}
+
+type SpriteResource = GameResource & {
+  type: 'SPRITE'
+  $element: HTMLImageElement
+  sprite: SpritesheetItem
 }
 
 type AudioResource = GameResource & {
@@ -215,47 +250,16 @@ type FontResource = GameResource & {
   $font: FontFace
 }
 
-/**
- * @deprecated
- */
-type HtmlImage = {
-  url: string
-  image: HTMLImageElement
-}
-
-/**
- * @deprecated Use SpritesheetResource instead
- */
-type HtmlSpritesheetImage = HtmlImage & {
-  url: string
-  sprites: SpritesheetItem[]
-}
-
-/**
- * @deprecated
- */
-type HtmlTilesetImage = HtmlImage & {
-  url: string
-}
-
-/**
- * @deprecated Use SpriteImageResource instead
- */
-type HtmlSpriteImage = HtmlImage & {
-  url: string
-  sprite: SpritesheetItem
-}
-
 /** RESOURCE TYPES **/
 
 interface IGameResources {
-  spritesheets: HtmlSpritesheetImage[]
-  sprites: HtmlSpriteImage[]
+  spritesheets: SpritesheetResource[]
+  sprites: SpriteResource[]
   loadFont(name: string, url: string): Promise<void>
   loadHtmlImage(url: string): Promise<HTMLImageElement>
   loadSpritesheet(url: string, nextgid?: number): Promise<void>
   loadKenneySpritesheet(name: string, nextgid?: number): Promise<void>
-  getSprite(gid: number): HtmlSpriteImage | undefined
+  getSprite(gid: number): SpriteResource | undefined
 }
 
 /** INPUT TYPES **/

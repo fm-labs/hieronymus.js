@@ -2,10 +2,12 @@ import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 
 interface SpriteComponentProps extends GameComponentProperties {
   tileSize: number
-  spriteImage?: HtmlSpriteImage
+  spriteImage?: SpriteResource
 }
 
 export class SpriteComponent extends AbstractBaseComponent implements IGameComponent {
+  declare properties: SpriteComponentProps
+
   public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,
@@ -27,7 +29,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
     const spriteImage = this.properties.spriteImage
     const tsize = this.properties.tileSize
 
-    ctx.save()
+    //ctx.save()
 
     //const spriteImage = this.game.resources.sprites[spriteIdx]
     if (!spriteImage) {
@@ -42,7 +44,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
     spriteCanvas.height = sprite.height
     const spriteCanvasCtx = spriteCanvas.getContext('2d')!
     spriteCanvasCtx.drawImage(
-      spriteImage.image,
+      spriteImage.$element,
       sprite.x,
       sprite.y,
       sprite.width,
@@ -70,6 +72,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
     const offsetX = -(imgW / 2)
     const offsetY = -imgH + theight
 
+    ctx.globalAlpha = 0.5
     ctx.drawImage(
       spriteCanvas,
       0,
@@ -81,8 +84,9 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
       imgW,
       imgH,
     )
+    ctx.globalAlpha = 1
 
-    ctx.restore()
+    //ctx.restore()
   }
 
   update(deltaTime: number): void {}

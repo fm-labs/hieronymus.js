@@ -121,7 +121,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     spritesContainer.style.width = 320 + 'px'
     //spritesContainer.style.height = 100 + '%'
     spritesContainer.style.borderTop = '5px solid blue'
-    this._game.resources.sprites.forEach((spriteImage: HtmlSpriteImage, spriteIdx) => {
+    this._game.resources.sprites.forEach((spriteImage: SpriteResource, spriteIdx) => {
       const { x, y, width, height } = spriteImage.sprite
       const spriteCanvas = document.createElement('canvas')
       spriteCanvas.width = spriteWidth
@@ -129,7 +129,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
       spriteCanvas.style.position = 'relative'
       const spriteCanvasCtx = spriteCanvas.getContext('2d')!
       spriteCanvasCtx.drawImage(
-        spriteImage.image,
+        spriteImage.$element,
         x,
         y,
         width,
@@ -141,7 +141,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
       )
 
       const spriteDiv = document.createElement('div')
-      spriteDiv.title = `${spriteImage.url} ${spriteImage.sprite.name} (${x}, ${y})`
+      spriteDiv.title = `${spriteImage.sprite.id} ${spriteImage.sprite.name} (${x}, ${y})`
       spriteDiv.style.width = `${spriteWidth}px`
       spriteDiv.style.height = `${spriteHeight}px`
       spriteDiv.style.border = '1px solid rgba(255,255,255,1)'

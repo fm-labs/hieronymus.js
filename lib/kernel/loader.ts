@@ -6,7 +6,7 @@ const loaderErrorHandler = (e: Error) => {
   console.error(`Asset loading FAILED: ${e.message}`)
 }
 
-export const loadHtmlImage = (url: string): Promise<HTMLImageElement> => {
+export const fetchImage = (url: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.src = url
@@ -16,11 +16,18 @@ export const loadHtmlImage = (url: string): Promise<HTMLImageElement> => {
   })
 }
 
-export const loadSpritesheetImage = async (url: string): Promise<HtmlSpritesheetImage> => {
-  const image = await loadHtmlImage(url)
+export const fetchSpritesheet = async (
+  url: string,
+): Promise<{ $element: HTMLImageElement; type: 'SPRITESHEET'; sprites: SpritesheetItem[] }> => {
+  const image = await fetchImage(url)
   const mapUrl = url.replace('.png', '.json')
-  const sprites = await fetch(mapUrl).then(loaderSuccessHandler).catch(loaderErrorHandler)
-  return { url, image, sprites }
+  const info: any = await fetch(mapUrl).then(loaderSuccessHandler).catch(loaderErrorHandler)
+  return {
+    sprites: info.sprites as SpritesheetItem[],
+    type: 'SPRITESHEET',
+    $element: image,
+    //sprites: info.sprites,
+  }
 }
 
 /**
@@ -28,10 +35,7 @@ export const loadSpritesheetImage = async (url: string): Promise<HtmlSpritesheet
  * @param name
  * @deprecated Use loadSpritesheetImage instead
  */
-export const loadKenneySpritesheetImage = async (name: string): Promise<HtmlSpritesheetImage> => {
+export const fetchKenneySpritesheet = async (name: string): Promise<SpritesheetResource> => {
   const url = `/assets/sprites/kenney-assets/2d/${name}/${name}.png`
-  const image = await loadHtmlImage(url)
-  const mapUrl = url.replace('.png', '.json')
-  const sprites = await fetch(mapUrl).then(loaderSuccessHandler).catch(loaderErrorHandler)
-  return { url, image, sprites }
+  return fetchSpritesheet(url)
 }

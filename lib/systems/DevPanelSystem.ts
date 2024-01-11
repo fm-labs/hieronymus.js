@@ -2,6 +2,8 @@ import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
 export class DevPanelSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'DevPanelSystem'
+  private dirty = true
+  private devPanelContainer?: HTMLDivElement
 
   public onLoad() {
     console.log('DevPanelSystem.onLoad')
@@ -14,7 +16,8 @@ export class DevPanelSystem extends AbstractBaseSystem implements IGameSystem {
     devPanelContainer.style.height = '100%'
     devPanelContainer.style.backgroundColor = 'rgba(194,64,64,0.5)'
 
-    this._game.$container.appendChild(devPanelContainer)
+    this.devPanelContainer = devPanelContainer
+    this._game.$container.appendChild(this.devPanelContainer)
   }
 
   public onUnload() {
@@ -34,6 +37,9 @@ export class DevPanelSystem extends AbstractBaseSystem implements IGameSystem {
   }
 
   public draw() {
+    if (!this.dirty || !this.devPanelContainer) return
     console.log('DevPanelSystem.draw')
+
+    this.devPanelContainer.innerHTML = ''
   }
 }

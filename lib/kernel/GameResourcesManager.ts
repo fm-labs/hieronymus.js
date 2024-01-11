@@ -1,27 +1,35 @@
-import { loadHtmlImage, loadSpritesheetImage } from './loader.ts'
+import { fetchImage, fetchSpritesheet } from './loader.ts'
 
 export class GameResourcesManager {
-  public readonly spritesheets: HtmlSpritesheetImage[] = []
-  public readonly sprites: HtmlSpriteImage[] = []
+  public readonly spritesheets: SpritesheetResource[] = []
+  public readonly sprites: SpriteResource[] = []
   public readonly fonts: FontResource[] = []
 
   private _nextgid: number = 1
 
-  private _fontCache: FontResource[] = []
-  private _imageCache: ImageResource[] = []
-
   public loadHtmlImage(url: string): Promise<HTMLImageElement> {
-    return loadHtmlImage(url)
+    return fetchImage(url)
+  }
+
+  public loadAsset = async (asset: GameAsset, nextgid?: number): Promise<void> => {
+    switch (asset.type) {
+      case 'SPRITESHEET':
+        return this.loadSpritesheet(asset.url, nextgid)
+      case 'FONT':
+        return this.loadFont(asset.name, asset.url)
+      default:
+        throw new Error(`Unknown asset type: ${asset.type}`)
+    }
   }
 
   public loadSpritesheet = async (url: string, nextgid?: number): Promise<void> => {
-    const spritesheet = await loadSpritesheetImage(url)
+    const spritesheet: SpritesheetResource = await fetchSpritesheet(url)
 
     if (nextgid) {
       if (nextgid < this._nextgid) throw new Error('nextgid must be greater than previous')
       this._nextgid = nextgid
     }
-    this.registerSpritesheet(spritesheet)
+    this.registerSpritesFromSpritesheet(spritesheet)
   }
 
   public loadKenneySpritesheet = async (name: string, nextgid?: number): Promise<void> => {
@@ -36,22 +44,23 @@ export class GameResourcesManager {
     this.fonts.push({ type: 'FONT', $font: font, $element: document.createElement('div') })
   }
 
-  public getSprite(gid: number): HtmlSpriteImage | undefined {
+  public getSprite(gid: number): SpriteResource | undefined {
     return this.sprites[gid]
   }
 
-  private registerSpritesheet(spritesheet: HtmlSpritesheetImage) {
+  public getSpriteByName(name: string): SpriteResource | undefined {
+    return this.sprites.find((sprite) => sprite.sprite.name === name)
+  }
+
+  private registerSpritesFromSpritesheet(spritesheet: SpritesheetResource) {
     // create resource and entity indices
     const spritesheetId = this.spritesheets.length
 
     spritesheet.sprites.forEach((sprite) => {
       const spriteGid = this._nextgid++
       this.sprites[spriteGid] = {
-        //gid: spriteGid,
-        //spritesheetId: spritesheetId,
-        //spritesheetSource: spritesheet.url,
-        image: spritesheet.image,
-        url: spritesheet.url,
+        type: 'SPRITE',
+        $element: spritesheet.$element,
         sprite: sprite,
       }
       console.log(

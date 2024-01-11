@@ -67,7 +67,7 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     objCtx.translate(objCanvas.width / 2, 0)
 
     this._game.worldMap.layers.forEach((layer, layerIdx) => {
-      console.log('layer', layerIdx, layer.type)
+      //console.log('layer', layerIdx, layer.type)
       if (layer.type === 'OBJECTLAYER') {
         this.drawObjects(layerIdx, objCtx)
       } else if (layer.type === 'TILELAYER') {
@@ -102,7 +102,7 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
         const component = this._game.worldMap.getTile(layerIdx, c, r)
         if (!component) continue
 
-        console.log('entity', entityIdx, component)
+        //console.log('entity', entityIdx, component)
         if (component.draw) {
           objCtx.save()
           component.draw(objCtx)
@@ -115,13 +115,13 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
   private drawObjects(layerIdx: number, objCtx: CanvasRenderingContext2D) {
     //const objects = this._game.worldMap.objects[layerIdx] || []
     const objects = this._game.worldMap.layers[layerIdx].data || []
-    console.log('drawObjects', layerIdx, objects)
+    //console.log('drawObjects', layerIdx, objects)
     objects.forEach((entityId, idx) => {
       const entity = this._game.worldMap.entities.get(entityId)
       const component = entity?.component
       //const component = this._game.worldMap.entities.get(entityId)?.component
       //const component = this._game.worldMap.getObject(layerIdx, idx)
-      console.log('entity', entityId, component)
+      //console.log('entity', entityId, component)
       if (component && component.draw) {
         objCtx.save()
         component.draw(objCtx)

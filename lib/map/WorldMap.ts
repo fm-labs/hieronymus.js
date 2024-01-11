@@ -66,6 +66,19 @@ export class WorldMap implements IWorldMap {
     this.layers[layerId] = layer
   }
 
+  addTileAtPosition(
+    layerId: number,
+    pos: Grid2DPosition | Screen2DPosition,
+    properties: GameComponentProperties,
+  ) {
+    if ('col' in pos && 'row' in pos) {
+      this.addTile(layerId, pos.col, pos.row, properties)
+    } else if ('x' in pos && 'y' in pos) {
+      const gridPos = this.projection.mapScreenToGrid(pos.x, pos.y)
+      this.addTile(layerId, gridPos.col, gridPos.row, properties)
+    }
+  }
+
   addTile(layerId: number, col: number, row: number, properties: GameComponentProperties) {
     const tile = new TileComponent({
       width: this.tileWidth,

@@ -8,13 +8,13 @@ import { HeroSystem } from '../lib/systems/HeroSystem.ts'
 import { WebUiSystem } from '../lib/systems/WebUiSystem.ts'
 import { WorldMapSystem } from '../lib/systems/WorldMapSystem.ts'
 import './style.css'
-import awsWorldBuilder from './worlds/aws/aws.world.ts'
+import devWorldBuilder from './worlds/dev/dev.world.ts'
 import { GameResourcesManager } from '../lib/kernel/GameResourcesManager.ts'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 // Init world
 const resources = new GameResourcesManager()
-const worldMap = await awsWorldBuilder(resources)
+const worldMap = await devWorldBuilder(resources)
 
 // Init game
 const gameConfig = { name: 'My Game' }
