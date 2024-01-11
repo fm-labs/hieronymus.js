@@ -79,7 +79,7 @@ export class WorldMap implements IWorldMap {
     }
   }
 
-  addTile(layerId: number, col: number, row: number, properties: GameComponentProperties) {
+  addTile(layerId: number, col: number, row: number, properties: TileComponentProperties) {
     const tile = new TileComponent({
       width: this.tileWidth,
       height: this.tileHeight,

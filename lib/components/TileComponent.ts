@@ -1,7 +1,18 @@
 import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
 
+interface TileComponentProps extends GameComponentProperties {
+  width: number
+  height: number
+  color: string
+  backgroundColor: string
+  borderColor: string
+  text?: string
+}
+
 export class TileComponent extends AbstractBaseComponent implements IGameComponent {
-  public static readonly defaultProperties: GameComponentProperties = {
+  declare properties: TileComponentProps
+
+  public static readonly defaultProperties: TileComponentProps = {
     x: 0,
     y: 0,
     width: 32,
@@ -23,7 +34,7 @@ export class TileComponent extends AbstractBaseComponent implements IGameCompone
     // shadowOffsetX: 0,
     // shadowOffsetY: 0,
     // image: null,
-    text: null,
+    text: undefined,
     // font: null,
     // audio: null,
     // video: null,
@@ -32,8 +43,7 @@ export class TileComponent extends AbstractBaseComponent implements IGameCompone
 
   public readonly name: string
 
-  constructor(properties?: GameComponentProperties) {
-    properties = properties || {}
+  constructor(properties: TileComponentProps) {
     super({
       ...TileComponent.defaultProperties,
       ...properties,
@@ -44,6 +54,8 @@ export class TileComponent extends AbstractBaseComponent implements IGameCompone
   draw(ctx: CanvasRenderingContext2D): void {
     const x = this.properties.x
     const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
     const width = this.properties.width
     const height = this.properties.height
     const fillColor = this.properties.backgroundColor

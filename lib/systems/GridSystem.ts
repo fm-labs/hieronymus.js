@@ -51,8 +51,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
   // }
 
   public draw(mainCtx: CanvasRenderingContext2D) {
-    if (!this.dirty) return
-    console.log('GridSystem.draw')
+    //if (!this.dirty) return
+    //console.log('GridSystem.draw')
 
     const cols = this._game.worldMap.columns
     const rows = this._game.worldMap.rows

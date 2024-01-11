@@ -107,7 +107,7 @@ export class Game implements IGame {
 
   public draw() {
     const ctx = this.$canvas.getContext('2d')!
-
+    ctx.clearRect(0, 0, this.width, this.height)
     this.systems.forEach((system) => {
       if (system.draw) {
         system.draw(ctx)

@@ -8,7 +8,7 @@ interface SpriteComponentProps extends GameComponentProperties {
 export class SpriteComponent extends AbstractBaseComponent implements IGameComponent {
   declare properties: SpriteComponentProps
 
-  public static readonly defaultProperties: GameComponentProperties = {
+  public static readonly defaultProperties: SpriteComponentProps = {
     x: 0,
     y: 0,
     tileSize: 0,
@@ -26,6 +26,8 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
   draw(ctx: CanvasRenderingContext2D): void {
     const x = this.properties.x
     const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
     const spriteImage = this.properties.spriteImage
     const tsize = this.properties.tileSize
 
@@ -36,7 +38,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
       console.log(`No sprite image selected`)
       return
     }
-    console.log('spriteImage', spriteImage)
+    //console.log('spriteImage', spriteImage)
 
     const sprite = spriteImage.sprite
     const spriteCanvas = document.createElement('canvas')

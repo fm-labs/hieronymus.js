@@ -12,6 +12,8 @@ interface TextComponentProps extends GameComponentProperties {
 }
 
 export class TextComponent extends AbstractBaseComponent implements IGameComponent {
+  declare properties: TextComponentProps
+
   public static readonly defaultProperties: TextComponentProps = {
     x: 0,
     y: 0,
@@ -27,9 +29,11 @@ export class TextComponent extends AbstractBaseComponent implements IGameCompone
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    console.log('TextEntity.draw', this.properties)
+    //console.log('TextEntity.draw', this.properties)
     const x = this.properties.x
     const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
     const color = this.properties.color
     const text = this.properties.text
     const orientation = this.properties.orientation
@@ -47,8 +51,12 @@ export class TextComponent extends AbstractBaseComponent implements IGameCompone
 
     //ctx.save()
     //ctx.direction = 'ltr'
-    ctx.fillStyle = color
-    ctx.font = font
+    if (color) {
+      ctx.fillStyle = color
+    }
+    if (font) {
+      ctx.font = font
+    }
     ctx.translate(x, y)
     ctx.rotate(rotationAngle)
     ctx.transform(1, 0, skewAngle, 1, 0, 0)

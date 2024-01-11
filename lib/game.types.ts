@@ -123,15 +123,16 @@ interface IWorldMap {
 }
 
 type GameComponentProperties = {
-  //x: number
-  //y: number
-  [key: string]: any
+  x?: number
+  y?: number
+  name?: string
+  //[key: string]: any
 }
 
 interface IGameComponent {
   properties?: GameComponentProperties
   setPosition: (x: number, y: number) => void
-  update?: (deltaTime: number) => void
+  update?: (deltaTime: number) => void | boolean
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
@@ -201,7 +202,15 @@ type AudioAsset = GameAsset & {
 
 /** RESOURCE TYPES **/
 
-type GameResourceType = 'SPRITESHEET' | 'SPRITE' | 'TILE' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FONT'
+type GameResourceType =
+  | 'SPRITESHEET'
+  | 'TILESET'
+  | 'SPRITE'
+  | 'TILE'
+  | 'IMAGE'
+  | 'AUDIO'
+  | 'VIDEO'
+  | 'FONT'
 
 type GameResource = {
   type: GameResourceType
@@ -216,17 +225,19 @@ type ImageResource = GameResource & {
 type SpritesheetResource = GameResource & {
   type: 'SPRITESHEET'
   $element: HTMLImageElement
+  name: string
   sprites: SpritesheetItem[]
 }
 
 type TilesetResource = GameResource & {
   type: 'TILESET'
   $element: HTMLImageElement
+  name: string
   tileWidth: number
   tileHeight: number
   columns: number
   rows: number
-  count: number
+  //count?: number
 }
 
 type SpriteResource = GameResource & {
@@ -253,13 +264,21 @@ type FontResource = GameResource & {
 /** RESOURCE TYPES **/
 
 interface IGameResources {
-  spritesheets: SpritesheetResource[]
-  sprites: SpriteResource[]
+  spritesheets: (SpritesheetResource | TilesetResource)[] // @TODO: remove from interface. Use getter instead.
+  sprites: SpriteResource[] // @TODO: remove from interface. Use getter instead.
   loadFont(name: string, url: string): Promise<void>
   loadHtmlImage(url: string): Promise<HTMLImageElement>
-  loadSpritesheet(url: string, nextgid?: number): Promise<void>
+  loadSpritesheet(name: string, url: string, nextgid?: number): Promise<void>
+  loadTileset(
+    name: string,
+    url: string,
+    columns: number,
+    rows: number,
+    nextgid?: number,
+  ): Promise<void>
   loadKenneySpritesheet(name: string, nextgid?: number): Promise<void>
   getSprite(gid: number): SpriteResource | undefined
+  getSpritesheet(name: string): SpritesheetResource | TilesetResource | undefined
 }
 
 /** INPUT TYPES **/

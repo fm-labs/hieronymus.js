@@ -24,11 +24,11 @@ const game = new Game(app, gameConfig, worldMap, resources)
 // game.addSystem(new OrthogonalGridSystem())
 game.addSystem(new GridSystem(game))
 game.addSystem(new WorldMapSystem(game))
-// game.addSystem(new InputSystem())
-// game.addSystem(new GamepadInputSystem())
-game.addSystem(new WebUiSystem(game))
+game.addSystem(new HeroSystem(game))
+game.addSystem(new InputSystem(game))
+//game.addSystem(new GamepadInputSystem())
+//game.addSystem(new WebUiSystem(game))
 game.addSystem(new InfoSystem(game))
-// game.addSystem(new HeroSystem())
 
 // @todo move to game or renderer class
 window.addEventListener('resize', () => {

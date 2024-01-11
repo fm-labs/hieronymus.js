@@ -43,9 +43,16 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     console.log('WorldMapSystem.stop')
   }
 
+  public update(deltaTime: number) {
+    //console.log('WorldMapSystem.update', deltaTime)
+    this._game.worldMap.layers.forEach((layer, layerIdx) => {
+      this.updateLayer(layerIdx, deltaTime)
+    })
+  }
+
   public draw(mainCtx: CanvasRenderingContext2D) {
-    if (!this.dirty) return
-    console.log('WorldMapSystem.draw')
+    //if (!this.dirty) return
+    //console.log('WorldMapSystem.draw')
 
     const tsize = this.tsize
     const twidth = tsize
@@ -54,36 +61,52 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     const gridWidth = this.cols * twidth
     const gridHeight = this.rows * theight
 
-    const objCanvas = document.createElement('canvas')
-    const objCtx = objCanvas.getContext('2d')!
-    objCanvas.width = gridWidth
-    objCanvas.height = gridHeight
+    const worldCanvas = document.createElement('canvas')
+    const worldCtx = worldCanvas.getContext('2d')!
+    worldCanvas.width = gridWidth
+    worldCanvas.height = gridHeight
 
     // draw all layers
-
-    objCtx.reset()
-    objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height)
-
-    objCtx.translate(objCanvas.width / 2, 0)
-
+    const layerCanvas: HTMLCanvasElement[] = []
     this._game.worldMap.layers.forEach((layer, layerIdx) => {
-      //console.log('layer', layerIdx, layer.type)
-      if (layer.type === 'OBJECTLAYER') {
-        this.drawObjects(layerIdx, objCtx)
-      } else if (layer.type === 'TILELAYER') {
-        this.drawTiles(layerIdx, objCtx)
-      } else if (layer.type === 'BACKGROUND') {
-        //this.drawBackground(layerIdx, objCtx)
-      } else if (layer.type === 'OVERLAY') {
-        //this.drawOverlay(layerIdx, objCtx)
-      }
+      layerCanvas[layerIdx] = document.createElement('canvas')
+      layerCanvas[layerIdx].width = gridWidth
+      layerCanvas[layerIdx].height = gridHeight
     })
 
-    mainCtx.drawImage(
-      objCanvas,
-      this._game.width / 2 - gridWidth / 2,
-      this._game.height / 2 - gridHeight / 2,
-    )
+    worldCtx.reset()
+    worldCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
+    worldCtx.translate(worldCanvas.width / 2, 0)
+
+    this._game.worldMap.layers.forEach((layer, layerIdx) => {
+      const layerCanvasCtx = layerCanvas[layerIdx].getContext('2d')!
+      layerCanvasCtx.reset()
+      layerCanvasCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
+      layerCanvasCtx.translate(worldCanvas.width / 2, 0)
+
+      //console.log('layer', layerIdx, layer.type)
+      if (layer.type === 'TILELAYER') {
+        this.drawTiles(layerIdx, layerCanvasCtx)
+      } else if (layer.type === 'OBJECTLAYER') {
+        this.drawObjects(layerIdx, layerCanvasCtx)
+      } else if (layer.type === 'BACKGROUND') {
+        //this.drawBackground(layerIdx, layerCanvasCtx)
+      } else if (layer.type === 'OVERLAY') {
+        //this.drawOverlay(layerIdx, layerCanvasCtx)
+      }
+
+      mainCtx.drawImage(
+        layerCanvasCtx.canvas,
+        this._game.width / 2 - gridWidth / 2,
+        this._game.height / 2 - gridHeight / 2,
+      )
+    })
+
+    // mainCtx.drawImage(
+    //   worldCanvas,
+    //   this._game.width / 2 - gridWidth / 2,
+    //   this._game.height / 2 - gridHeight / 2,
+    // )
 
     this.dirty = false
   }
@@ -126,6 +149,20 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
         objCtx.save()
         component.draw(objCtx)
         objCtx.restore()
+      }
+    })
+  }
+
+  private updateLayer(layerIdx: number, deltaTime: number) {
+    const layerData = this._game.worldMap.layers[layerIdx].data
+    layerData.forEach((entityId, idx) => {
+      const entity = this._game.worldMap.entities.get(entityId)
+      const component = entity?.component
+      if (component && component.update) {
+        if (component.update(deltaTime) === true) {
+          //console.log('update', layerIdx, idx, component)
+          this.dirty = true
+        }
       }
     })
   }

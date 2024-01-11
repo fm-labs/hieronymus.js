@@ -1,12 +1,16 @@
-export class GamepadInputSystem implements IGameSystem {
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+
+export class GamepadInputSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'GamepadInputSystem'
-  private game!: IGame
   private lastInputTime = 0
   private gamepads: Gamepad[] = []
 
-  public onLoad(game: IGame) {
+  constructor(game: IGame) {
+    super(game)
+  }
+
+  public onLoad() {
     console.log('GamepadInputSystem.onLoad')
-    this.game = game
   }
 
   public onUnload() {
@@ -51,14 +55,14 @@ export class GamepadInputSystem implements IGameSystem {
   private handleGamepadConnected(event: GamepadEvent) {
     const gamepad = event.gamepad
     console.log(`Gamepad connected: ${gamepad.id}`)
-    this.game.eventbus.emit('gamepad.connected', gamepad)
+    this._game.eventbus.emit('gamepad.connected', gamepad)
   }
 
   // Function to handle gamepad disconnections
   private handleGamepadDisconnected(event: GamepadEvent) {
     const gamepad = event.gamepad
     console.log(`Gamepad disconnected: ${gamepad.id}`)
-    this.game.eventbus.emit('gamepad.disconnected', gamepad)
+    this._game.eventbus.emit('gamepad.disconnected', gamepad)
   }
 
   // Function to update gamepad state
@@ -90,7 +94,7 @@ export class GamepadInputSystem implements IGameSystem {
     }
 
     if (stick.stickLeft || stick.stickRight || stick.stickUp || stick.stickDown) {
-      this.game.eventbus.emit('gamepad.stickChange', stick)
+      this._game.eventbus.emit('gamepad.stickChange', stick)
     }
 
     // const {
@@ -125,7 +129,7 @@ export class GamepadInputSystem implements IGameSystem {
     for (let i = 0; i < buttons.length; i++) {
       if (buttons[i].pressed) {
         console.log(`Button ${i} pressed`)
-        this.game.eventbus.emit('gamepad.buttonPress', { button: i, state: 'pressed' })
+        this._game.eventbus.emit('gamepad.buttonPress', { button: i, state: 'pressed' })
       }
     }
   }

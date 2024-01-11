@@ -1,8 +1,8 @@
 import { randomColor } from '../utils/colorutil.ts'
+import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
-export class HeroSystem implements IGameSystem {
+export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'HeroSystem'
-  private game!: IGame
 
   private hero = {
     x: 0,
@@ -16,15 +16,29 @@ export class HeroSystem implements IGameSystem {
   }
   private dirty: boolean = true
 
-  public onLoad(game: IGame) {
+  constructor(game: IGame) {
+    super(game)
+  }
+
+  public onLoad() {
     console.log('HeroSystem.onLoad')
-    this.game = game
-    this.game.eventbus.on('keyboard.keyDown', this.handleKeyboardDownEvent.bind(this))
-    this.game.eventbus.on('gamepad.stickChange', this.handleGamepadStickChange.bind(this))
-    this.game.eventbus.on('gamepad.buttonPress', this.handleGamepadButtonChangeEvent.bind(this))
+    this.handleKeyboardDownEvent = this.handleKeyboardDownEvent.bind(this)
+    this.handleGamepadStickChange = this.handleGamepadStickChange.bind(this)
+    this.handleGamepadButtonChangeEvent = this.handleGamepadButtonChangeEvent.bind(this)
+
+    this._game.eventbus.on('keyboard.keyDown', this.handleKeyboardDownEvent)
+    this._game.eventbus.on('gamepad.stickChange', this.handleGamepadStickChange)
+    this._game.eventbus.on('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
 
     // spawn hero in the middle of the grid
-    this.hero.y = (this.game.rows * 128) / 2 / 2 // @todo: replace hard coded tile size
+    this.hero.y = (this._game.worldMap.rows * 128) / 2 / 2 // @todo: replace hard coded tile size
+  }
+
+  public onUnload() {
+    console.log('HeroSystem.onUnload')
+    //this._game.eventbus.off('keyboard.keyDown', this.handleKeyboardDownEvent)
+    //this._game.eventbus.off('gamepad.stickChange', this.handleGamepadStickChange)
+    //this._game.eventbus.off('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
   }
 
   private handleGamepadStickChange(e: GamepadStickChangeEvent) {
@@ -94,8 +108,8 @@ export class HeroSystem implements IGameSystem {
         this.hero.direction = 'left'
         this.hero.moving = true
 
-        this.game.camera.offset.x -= speed * movementDelta
-        this.game.camera.offset.y -= (speed * movementDelta) / 2
+        //this._game.camera.offset.x -= speed * movementDelta
+        //this._game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'right':
         this.hero.x += speed * movementDelta
@@ -103,8 +117,8 @@ export class HeroSystem implements IGameSystem {
         this.hero.direction = 'right'
         this.hero.moving = true
 
-        this.game.camera.offset.x += speed * movementDelta
-        this.game.camera.offset.y += (speed * movementDelta) / 2
+        //this._game.camera.offset.x += speed * movementDelta
+        //this._game.camera.offset.y += (speed * movementDelta) / 2
         break
       case 'up':
         this.hero.x += speed * movementDelta
@@ -112,8 +126,8 @@ export class HeroSystem implements IGameSystem {
         this.hero.direction = 'up'
         this.hero.moving = true
 
-        this.game.camera.offset.x += speed * movementDelta
-        this.game.camera.offset.y -= (speed * movementDelta) / 2
+        //this._game.camera.offset.x += speed * movementDelta
+        //this._game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'down':
         this.hero.x -= speed * movementDelta
@@ -121,19 +135,15 @@ export class HeroSystem implements IGameSystem {
         this.hero.direction = 'down'
         this.hero.moving = true
 
-        this.game.camera.offset.x -= speed * movementDelta
-        this.game.camera.offset.y += (speed * movementDelta) / 2
+        //this._game.camera.offset.x -= speed * movementDelta
+        //this._game.camera.offset.y += (speed * movementDelta) / 2
         break
       default:
         this.hero.moving = false
         break
     }
 
-    this.game.eventbus.emit('hero.move', this.hero)
-  }
-
-  public onUnload() {
-    console.log('HeroSystem.onUnload')
+    this._game.eventbus.emit('hero.move', this.hero)
   }
 
   public start() {
@@ -149,15 +159,16 @@ export class HeroSystem implements IGameSystem {
     if (Math.max(deltaTime, 1000) <= 1000) return
 
     this.hero.color = randomColor()
-    this.game.eventbus.emit('hero.update', this.hero)
+    this._game.eventbus.emit('hero.update', this.hero)
     this.dirty = true
   }
 
   public draw(mainCtx: CanvasRenderingContext2D) {
     //console.log('HeroSystem.draw')
 
-    const gridWidth = this.game.cols * 128
-    const gridHeight = (this.game.rows * 128) / 2
+    const tsize = this._game.worldMap.tileWidth
+    const gridWidth = this._game.worldMap.columns * tsize
+    const gridHeight = (this._game.worldMap.rows * tsize) / 2
 
     const heroCanvas = document.createElement('canvas')
     const heroCtx = heroCanvas.getContext('2d')!
@@ -176,8 +187,8 @@ export class HeroSystem implements IGameSystem {
 
     mainCtx.drawImage(
       heroCanvas,
-      this.game.width / 2 - gridWidth / 2,
-      this.game.height / 2 - gridHeight / 2,
+      this._game.width / 2 - gridWidth / 2,
+      this._game.height / 2 - gridHeight / 2,
     )
 
     this.dirty = false

@@ -4,6 +4,7 @@ import { TextComponent } from '../../../lib/components/TextComponent.ts'
 import { IsoCubeComponent } from '../../../lib/components/IsoCubeComponent.ts'
 import { IsoHexagonComponent } from '../../../lib/components/IsoHexagonComponent.ts'
 import { IsoCylinderComponent } from '../../../lib/components/IsoCylinderComponent.ts'
+import { AnimatedSpriteComponent } from '../../../lib/components/AnimatedSpriteComponent.ts'
 
 const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> => {
   const LAYER_TILES = 0
@@ -14,9 +15,21 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
   const LAYER_OBJECTS = 4
 
   // Init resources
-  await resources.loadSpritesheet('/assets/sprites/fm_iso_buildings/fm_iso_buildings.png', 1)
-  await resources.loadSpritesheet('/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png', 32)
-  await resources.loadSpritesheet('/assets/sprites/fm_iso_characters/fm_iso_characters.png', 64)
+  await resources.loadSpritesheet(
+    'fm_iso_buildings',
+    '/assets/sprites/fm_iso_buildings/fm_iso_buildings.png',
+    1,
+  )
+  await resources.loadSpritesheet(
+    'fm_iso_pyramids',
+    '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png',
+    32,
+  )
+  await resources.loadTileset('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
+  await resources.loadTileset('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+  await resources.loadTileset('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
+  await resources.loadTileset('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
 
@@ -31,13 +44,13 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
   worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECTLAYER', data: [] })
   worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
-  // tile layer
+  // TILE layer
   worldMap.addTile(LAYER_TILES, 4, 4, { backgroundColor: 'rgba(255,242,0,0.27)' })
   worldMap.addTile(LAYER_TILES, 5, 5, { backgroundColor: 'rgba(255,0,106,0.5)' })
   worldMap.addTile(LAYER_TILES, 6, 6, { backgroundColor: 'rgba(0,81,255,0.5)' })
   worldMap.addTile(LAYER_TILES, 7, 7, {})
 
-  // ground layer
+  // BULILDINGS layer
   worldMap.setTile(
     LAYER_BUILDINGS,
     0,
@@ -134,7 +147,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     1,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
-      width: worldMap.tileWidth,
+      sideLength: worldMap.tileWidth,
       depth: 64,
     }),
   )
@@ -144,7 +157,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     1,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
-      width: worldMap.tileWidth / 2,
+      sideLength: worldMap.tileWidth / 2,
       depth: 32,
     }),
   )
@@ -168,6 +181,44 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
       tileSize: worldMap.tileWidth,
       radius: 32,
       depth: 32,
+    }),
+  )
+
+  // animated
+  worldMap.addObjectAt(
+    LAYER_OBJECTS,
+    6,
+    2,
+    new AnimatedSpriteComponent({
+      tileSize: worldMap.tileWidth,
+      tileset: resources.getSpritesheet('mech-up') as TilesetResource,
+    }),
+  )
+  worldMap.addObjectAt(
+    LAYER_OBJECTS,
+    5,
+    3,
+    new AnimatedSpriteComponent({
+      tileSize: worldMap.tileWidth,
+      tileset: resources.getSpritesheet('mech-right') as TilesetResource,
+    }),
+  )
+  worldMap.addObjectAt(
+    LAYER_OBJECTS,
+    7,
+    3,
+    new AnimatedSpriteComponent({
+      tileSize: worldMap.tileWidth,
+      tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+    }),
+  )
+  worldMap.addObjectAt(
+    LAYER_OBJECTS,
+    6,
+    4,
+    new AnimatedSpriteComponent({
+      tileSize: worldMap.tileWidth,
+      tileset: resources.getSpritesheet('mech-down') as TilesetResource,
     }),
   )
 
