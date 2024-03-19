@@ -20,9 +20,9 @@ interface IGame {
   height: number
 
   // systems
-  run: () => void
-  tick: (deltaTime: number) => void
-  draw: () => void
+  run: () => void | Promise<void>
+  tick: (deltaTime: number) => void | Promise<void>
+  draw: () => void | Promise<void>
 
   // fps
   fps: number
@@ -84,6 +84,8 @@ type Screen2DPoint = [number, number]
 interface IGrid2DProjection {
   mapGridToScreen(col: number, row: number): { x: number; y: number }
   mapScreenToGrid(x: number, y: number): { col: number; row: number }
+  getGridDimensions(): { width: number; height: number }
+  getProjectionOffset(): { x: number; y: number }
 }
 
 /** MAP TYPES **/

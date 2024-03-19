@@ -1,34 +1,20 @@
-export class OrthogonalGridProjection implements IGrid2DProjection {
-  private readonly tileSize: number
-
-  constructor(tileSize: number) {
-    this.tileSize = tileSize
-  }
-
-  public mapGridToScreen(col: number, row: number) {
-    const tileWidth = this.tileSize
-    const tileHeight = this.tileSize
-    const x = col * tileWidth
-    const y = row * tileHeight
-    return { x, y }
-  }
-
-  public mapScreenToGrid(x: number, y: number) {
-    const tileWidth = this.tileSize
-    const tileHeight = this.tileSize
-    const col = Math.floor(x / tileWidth)
-    const row = Math.floor(y / tileHeight)
-    return { col, row }
-  }
-}
-
 export class DimetricGridProjection implements IGrid2DProjection {
   private readonly tileWidth: number
   private readonly tileHeight: number
 
-  constructor(tileSize: number) {
+  private readonly cols: number
+  private readonly rows: number
+  private readonly gridWidth: number
+  private readonly gridHeight: number
+
+  constructor(tileSize: number, cols: number, rows: number) {
     this.tileWidth = tileSize
     this.tileHeight = tileSize / 2
+
+    this.cols = cols
+    this.rows = rows
+    this.gridWidth = this.cols * this.tileWidth
+    this.gridHeight = this.rows * this.tileHeight
   }
 
   public mapGridToScreen(col: number, row: number) {
@@ -47,5 +33,16 @@ export class DimetricGridProjection implements IGrid2DProjection {
     const col = Math.floor((x / tileWidthHalf + y / tileHeightHalf) / 2)
     const row = Math.floor((y / tileHeightHalf - x / tileWidthHalf) / 2)
     return { col, row }
+  }
+
+  getGridDimensions(): { width: number; height: number } {
+    return { width: this.gridWidth, height: this.gridHeight }
+  }
+
+  getProjectionOffset(): { x: number; y: number } {
+    const projectionOffsetX = 0 // this.gridWidth / 2
+    const projectionOffsetY = 0
+
+    return { x: projectionOffsetX, y: projectionOffsetY }
   }
 }

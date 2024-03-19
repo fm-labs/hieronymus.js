@@ -1,6 +1,6 @@
 import { drawIsoTile } from '../draw2d/drawiso.ts'
 import { getIsometricScreenPosition, getOrthogonalScreenPosition } from '../utils/gridutil.ts'
-import { OrthogonalGridProjection } from '../map/projection.ts'
+import { OrthogonalGridProjection } from '../map/OrthogonalGridProjection.ts'
 import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
 
 export interface OrthogonalGridTile extends Grid2DCell {

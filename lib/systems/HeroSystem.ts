@@ -29,9 +29,6 @@ export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
     this._game.eventbus.on('keyboard.keyDown', this.handleKeyboardDownEvent)
     this._game.eventbus.on('gamepad.stickChange', this.handleGamepadStickChange)
     this._game.eventbus.on('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
-
-    // spawn hero in the middle of the grid
-    this.hero.y = (this._game.worldMap.rows * 128) / 2 / 2 // @todo: replace hard coded tile size
   }
 
   public onUnload() {
@@ -103,40 +100,40 @@ export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
 
     switch (direction) {
       case 'left':
-        this.hero.x -= speed * movementDelta
-        this.hero.y -= (speed * movementDelta) / 2
+        // this.hero.x -= speed * movementDelta
+        // this.hero.y -= (speed * movementDelta) / 2
         this.hero.direction = 'left'
         this.hero.moving = true
 
-        //this._game.camera.offset.x -= speed * movementDelta
-        //this._game.camera.offset.y -= (speed * movementDelta) / 2
+        this._game.camera.offset.x -= speed * movementDelta
+        this._game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'right':
-        this.hero.x += speed * movementDelta
-        this.hero.y += (speed * movementDelta) / 2
+        // this.hero.x += speed * movementDelta
+        // this.hero.y += (speed * movementDelta) / 2
         this.hero.direction = 'right'
         this.hero.moving = true
 
-        //this._game.camera.offset.x += speed * movementDelta
-        //this._game.camera.offset.y += (speed * movementDelta) / 2
+        this._game.camera.offset.x += speed * movementDelta
+        this._game.camera.offset.y += (speed * movementDelta) / 2
         break
       case 'up':
-        this.hero.x += speed * movementDelta
-        this.hero.y -= (speed * movementDelta) / 2
+        // this.hero.x += speed * movementDelta
+        // this.hero.y -= (speed * movementDelta) / 2
         this.hero.direction = 'up'
         this.hero.moving = true
 
-        //this._game.camera.offset.x += speed * movementDelta
-        //this._game.camera.offset.y -= (speed * movementDelta) / 2
+        this._game.camera.offset.x += speed * movementDelta
+        this._game.camera.offset.y -= (speed * movementDelta) / 2
         break
       case 'down':
-        this.hero.x -= speed * movementDelta
-        this.hero.y += (speed * movementDelta) / 2
+        // this.hero.x -= speed * movementDelta
+        // this.hero.y += (speed * movementDelta) / 2
         this.hero.direction = 'down'
         this.hero.moving = true
 
-        //this._game.camera.offset.x -= speed * movementDelta
-        //this._game.camera.offset.y += (speed * movementDelta) / 2
+        this._game.camera.offset.x -= speed * movementDelta
+        this._game.camera.offset.y += (speed * movementDelta) / 2
         break
       default:
         this.hero.moving = false
@@ -148,6 +145,18 @@ export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
 
   public start() {
     console.log('HeroSystem.start')
+
+    // spawn hero in the middle of the grid
+    const canvasWidth = this._game.$canvas.width
+    const canvasHeight = this._game.$canvas.height
+    this.hero.x = this._game.$canvas.width / 2 - this.hero.width / 2
+    this.hero.y = this._game.$canvas.height / 2 - this.hero.height / 2
+
+    const gridWidth = this._game.worldMap.projection.getGridDimensions().width
+    const gridHeight = this._game.worldMap.projection.getGridDimensions().height
+
+    //this._game.camera.offset.x = -Math.max(gridWidth, canvasWidth) / 2 + canvasWidth / 2
+    //this._game.camera.offset.y = -Math.max(gridHeight, canvasHeight) / 2 + gridHeight / 2
   }
 
   public stop() {
@@ -164,7 +173,8 @@ export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
   }
 
   public draw(mainCtx: CanvasRenderingContext2D) {
-    //console.log('HeroSystem.draw')
+    const hero = this.hero
+    console.log('HeroSystem.draw', hero)
 
     const tsize = this._game.worldMap.tileWidth
     const gridWidth = this._game.worldMap.columns * tsize
@@ -172,23 +182,26 @@ export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
 
     const heroCanvas = document.createElement('canvas')
     const heroCtx = heroCanvas.getContext('2d')!
-    heroCanvas.width = gridWidth
-    heroCanvas.height = gridHeight
+    heroCanvas.width = mainCtx.canvas.width
+    heroCanvas.height = mainCtx.canvas.height
 
-    heroCtx.reset()
-    heroCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height)
+    //heroCtx.reset()
+    //heroCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height)
 
-    heroCtx.save()
-    heroCtx.translate(heroCanvas.width / 2 - this.hero.width / 2, -this.hero.height / 2)
+    //heroCtx.save()
+    //heroCtx.translate(heroCanvas.width / 2 - this.hero.width / 2, -this.hero.height / 2)
+    const projectionOffsetX = this._game.worldMap.projection.getProjectionOffset()
+    const cameraOffsetX = this._game.camera.offset.x
+    const cameraOffsetY = this._game.camera.offset.y
+    //heroCtx.translate(projectionOffsetX.x - cameraOffsetX, projectionOffsetX.y - cameraOffsetY)
 
-    const hero = this.hero
     heroCtx.fillStyle = hero.color
     heroCtx.fillRect(hero.x, hero.y, hero.width, hero.height)
 
     mainCtx.drawImage(
       heroCanvas,
-      this._game.width / 2 - gridWidth / 2,
-      this._game.height / 2 - gridHeight / 2,
+      0, //this._game.width / 2 - gridWidth / 2,
+      0, //this._game.height / 2 - gridHeight / 2,
     )
 
     this.dirty = false

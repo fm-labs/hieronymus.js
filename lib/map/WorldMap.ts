@@ -1,7 +1,8 @@
 import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
 import { EntityManager } from '../entity/EntityManager.ts'
-import { DimetricGridProjection } from './projection.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
+import { DimetricGridProjection } from './DimetricGridProjection.ts'
+import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'
 
 export class WorldMap implements IWorldMap {
   readonly assets: any[]
@@ -11,38 +12,7 @@ export class WorldMap implements IWorldMap {
   tileWidth: number
   tileHeight: number
 
-  public layers: WorldMapLayer[] = [
-    {
-      name: 'tiles',
-      type: 'TILELAYER',
-      data: [],
-    },
-    {
-      name: 'underground',
-      type: 'TILELAYER',
-      data: [],
-    },
-    {
-      name: 'ground',
-      type: 'TILELAYER',
-      data: [],
-    },
-    {
-      name: 'objects',
-      type: 'OBJECTLAYER',
-      data: [],
-    },
-    // {
-    //   name: 'hero',
-    //   type: 'OBJECTLAYER',
-    //   data: [],
-    // },
-    // {
-    //   name: 'overlay',
-    //   type: 'OBJECTLAYER',
-    //   data: [],
-    // },
-  ]
+  public readonly layers: WorldMapLayer[] = []
   public readonly objects: WorldMapLayerData[][] = []
   public readonly entities: EntityManager
   public readonly projection: IGrid2DProjection
@@ -55,7 +25,8 @@ export class WorldMap implements IWorldMap {
     this.tileHeight = config.tileSize / 2
 
     this.entities = new EntityManager()
-    this.projection = new DimetricGridProjection(this.tileWidth)
+    //this.projection = new OrthogonalGridProjection(this.tileWidth, config.columns, config.rows)
+    this.projection = new DimetricGridProjection(this.tileWidth, config.columns, config.rows)
   }
 
   registerAsset(assetType: string, name: string, asset: any) {
@@ -79,8 +50,8 @@ export class WorldMap implements IWorldMap {
     }
   }
 
-  addTile(layerId: number, col: number, row: number, properties: TileComponentProps) {
-    const defaultProperties: Partial<TileComponentProps> = {
+  addTile(layerId: number, col: number, row: number, properties: Partial<TileComponentProps>) {
+    const defaultProperties: TileComponentProps = {
       width: this.tileWidth,
       height: this.tileHeight,
     }
@@ -141,14 +112,21 @@ export class WorldMap implements IWorldMap {
     this.addObject(layerId, obj)
   }
 
-  getObject(layerId: number, id: number): IGameComponent | undefined {
+  getObject(layerId: number, idx: number): IGameComponent | undefined {
     //const entityId = this.objects[layerId][id] || undefined
-    const entityId = this.layers[layerId].data[id] || undefined
+    const entityId = this.layers[layerId].data[idx] || undefined
     if (!entityId) return undefined
     return this.entities.get(entityId)?.component
   }
 
-  updateObject(layerId: number, id: number, obj: IGameComponent): void {}
+  updateObject(layerId: number, idx: number, obj: IGameComponent): void {
+    const entityId = this.layers[layerId].data[idx] || undefined
+    if (!entityId) throw new Error(`Entity ${idx} does not exist`)
+    const entity = this.entities.get(entityId)
+    if (!entity) throw new Error(`Entity ${idx} does not exist`)
+    entity.component = obj
+    this.entities.set(entityId, entity)
+  }
 
   serialize(): any {
     return {

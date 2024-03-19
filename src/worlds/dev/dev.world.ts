@@ -7,6 +7,10 @@ import { IsoCylinderComponent } from '../../../lib/components/IsoCylinderCompone
 import { AnimatedSpriteComponent } from '../../../lib/components/AnimatedSpriteComponent.ts'
 
 const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> => {
+  const ROWS = 10
+  const COLUMNS = 10
+  const TILE_SIZE = 128
+
   const LAYER_TILES = 0
   const LAYER_UNDERGROUND = 1
   const LAYER_GROUND = 2
@@ -33,7 +37,12 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
 
-  const worldConfig: WorldMapConfig = { columns: 9, rows: 9, tileSize: 128, projection: 'dimetric' }
+  const worldConfig: WorldMapConfig = {
+    columns: COLUMNS,
+    rows: ROWS,
+    tileSize: TILE_SIZE,
+    projection: 'dimetric',
+  }
   const worldMap = new WorldMap(worldConfig)
 
   // Init layers
@@ -45,10 +54,10 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
   worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
   // TILE layer
-  worldMap.addTile(LAYER_TILES, 4, 4, { backgroundColor: 'rgba(255,242,0,0.27)' })
-  worldMap.addTile(LAYER_TILES, 5, 5, { backgroundColor: 'rgba(255,0,106,0.5)' })
-  worldMap.addTile(LAYER_TILES, 6, 6, { backgroundColor: 'rgba(0,81,255,0.5)' })
-  worldMap.addTile(LAYER_TILES, 7, 7, {})
+  worldMap.addTile(LAYER_TILES, 0, 7, { backgroundColor: 'rgba(255,242,0,0.27)' })
+  worldMap.addTile(LAYER_TILES, 1, 7, { backgroundColor: 'rgba(255,0,106,0.5)' })
+  worldMap.addTile(LAYER_TILES, 2, 7, { backgroundColor: 'rgba(0,81,255,0.5)' })
+  worldMap.addTile(LAYER_TILES, 3, 7, {})
 
   // BULILDINGS layer
   worldMap.setTile(
@@ -85,7 +94,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     4,
     4,
     new TextComponent({
-      text: 'wootwoot',
+      text: 'Custom Font',
       font: '48px BungeeSpice',
       orientation: 'vertical',
       skewOrientation: 'upright',
@@ -108,7 +117,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     0,
     6,
     new TextComponent({
-      text: 'Funky Town',
+      text: 'Tiles',
       font: '48px Tektur',
       orientation: 'horizontal',
     }),
@@ -147,7 +156,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     1,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
-      sideLength: worldMap.tileWidth,
+      sideLength: worldMap.tileWidth / 2,
       depth: 64,
     }),
   )
@@ -157,7 +166,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     1,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
-      sideLength: worldMap.tileWidth / 2,
+      sideLength: worldMap.tileWidth / 4,
       depth: 32,
     }),
   )
@@ -219,6 +228,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
       tileset: resources.getSpritesheet('mech-down') as TilesetResource,
+      speed: 10,
     }),
   )
 

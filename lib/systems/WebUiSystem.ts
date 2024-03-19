@@ -5,7 +5,6 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'WebUiSystem'
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
-  private infoDiv!: HTMLDivElement
   private dirty = true
 
   private cols: number
@@ -30,18 +29,6 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
   public onLoad() {
     console.log('WebUiSystem.onLoad')
-
-    const infoDiv = document.createElement('div')
-    infoDiv.id = 'infoDiv'
-    infoDiv.style.position = 'fixed'
-    infoDiv.style.bottom = '10px'
-    infoDiv.style.right = '70px'
-    infoDiv.style.background = 'black'
-    infoDiv.style.padding = '0.1rem'
-    infoDiv.style.fontFamily = 'monospace'
-    infoDiv.style.fontSize = '10px'
-    this.infoDiv = infoDiv
-    this._game.$container.appendChild(this.infoDiv)
 
     const uiCanvas = document.createElement('canvas')
     //const uiCtx = uiCanvas.getContext('2d')!
@@ -79,18 +66,10 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.controlsDiv = controlsDiv
     this._game.$container.appendChild(controlsDiv)
-
-    // Register DOM events
-    this._game.$canvas.addEventListener('mousemove', this.handleMouseMove.bind(this))
-    this._game.$canvas.addEventListener('click', this.handleMouseClick.bind(this))
   }
 
   public onUnload() {
     console.log('WebUiSystem.onUnload')
-
-    // Unregister DOM events
-    this._game.$canvas.removeEventListener('mousemove', this.handleMouseMove.bind(this))
-    this._game.$canvas.removeEventListener('click', this.handleMouseClick.bind(this))
   }
 
   public start() {
@@ -310,61 +289,5 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     })
 
     this.dirty = false
-  }
-
-  private handleMouseMove(e: MouseEvent) {
-    const mainCanvas = this._game.$canvas
-    const rect = mainCanvas.getBoundingClientRect()
-
-    //@todo calculate offsets using projection
-    const offsetX = mainCanvas.width / 2
-    const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
-    const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
-    const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
-    const pos = this._game.worldMap.projection.mapScreenToGrid(x, y)
-    const index = getCellIndex(pos.col, pos.row, this.cols)
-
-    if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
-      if (index != this._hoveredCellIdx) {
-        this._game.eventbus.emit('grid.cellHover', {
-          index: index,
-        })
-        //console.log('cell changed', index, this._lastCellIdx)
-        this._hoveredCellIdx = index
-        this.dirty = true
-      }
-    } else if (this._hoveredCellIdx) {
-      this._hoveredCellIdx = undefined
-      this.dirty = true
-    }
-
-    //console.log('handleMouseMove', x, y, index)
-    if (this.infoDiv) {
-      this.infoDiv.textContent = `MOUSE: ${e.clientX.toFixed(2)},${e.clientY.toFixed(2)}
-      CANVASPOS: ${x.toFixed(2)},${y.toFixed(2)}
-      GRIDPOS: [${pos.col},${pos.row}]
-      IDX: ${index},
-      SPRITE: ${this._selectedSpriteIndex}`
-    }
-  }
-
-  private handleMouseClick(e: MouseEvent) {
-    const mainCanvas = this._game.$canvas
-    const rect = mainCanvas.getBoundingClientRect()
-    const offsetX = mainCanvas.width / 2
-    const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tileSize / 2)
-    const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
-    const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
-    const pos = this._game.worldMap.projection.mapScreenToGrid(x, y)
-    const index = getCellIndex(pos.col, pos.row, this.cols)
-    if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
-      if (index != this._selectedCellIdx) {
-        console.log('clicked cell', index, pos)
-        this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
-
-        this._selectedCellIdx = index
-        this.dirty = true
-      }
-    }
   }
 }

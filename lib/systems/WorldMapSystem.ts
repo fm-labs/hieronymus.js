@@ -7,6 +7,7 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
   private readonly cols: number
   private readonly rows: number
 
+  private readonly worldCanvas: HTMLCanvasElement
   private dirty = true
 
   constructor(game: IGame) {
@@ -15,6 +16,8 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     this.cols = this._game.worldMap.columns
     this.rows = this._game.worldMap.rows
     this.tsize = this._game.worldMap.tileWidth
+
+    this.worldCanvas = document.createElement('canvas')
   }
 
   private handleMouseClick(e: MouseEvent) {
@@ -34,6 +37,13 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
 
   public start() {
     console.log('WorldMapSystem.start')
+
+    this.worldCanvas.width = this.cols * this.tsize
+    this.worldCanvas.height = (this.rows * this.tsize) / 2
+
+    //this._game.camera.offset.x = -this.worldCanvas.width / 2
+    this._game.camera.offset.x = -1000
+
     this._game.eventbus.on('rerender', () => {
       this.dirty = true
     })
@@ -61,29 +71,32 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
     const gridWidth = this.cols * twidth
     const gridHeight = this.rows * theight
 
-    const worldCanvas = document.createElement('canvas')
-    const worldCtx = worldCanvas.getContext('2d')!
-    worldCanvas.width = gridWidth
-    worldCanvas.height = gridHeight
+    const projectionOffset = this._game.worldMap.projection.getProjectionOffset()
+    const projectionOffsetX = projectionOffset.x
+    const projectionOffsetY = projectionOffset.y
+    const cameraOffsetX = this._game.camera.offset.x
+    const cameraOffsetY = this._game.camera.offset.y
 
     // draw all layers
-    const layerCanvas: HTMLCanvasElement[] = []
+    // const layerCanvas: HTMLCanvasElement[] = []
+    // this._game.worldMap.layers.forEach((layer, layerIdx) => {
+    //   layerCanvas[layerIdx] = document.createElement('canvas')
+    //   layerCanvas[layerIdx].width = gridWidth
+    //   layerCanvas[layerIdx].height = gridHeight
+    // })
+
+    // const worldCtx = this.worldCanvas.getContext('2d')!
+    // worldCtx.reset()
+    // worldCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
+    // worldCtx.translate(worldCanvas.width / 2, 0)
+
+    const translateX = projectionOffsetX - cameraOffsetX
+    const translateY = projectionOffsetY - cameraOffsetY
+    const layerCanvasCtx = this.worldCanvas.getContext('2d')!
+    layerCanvasCtx.reset()
+    //layerCanvasCtx.clearRect(0, 0, gridWidth, gridHeight)
+    layerCanvasCtx.translate(translateX, translateY)
     this._game.worldMap.layers.forEach((layer, layerIdx) => {
-      layerCanvas[layerIdx] = document.createElement('canvas')
-      layerCanvas[layerIdx].width = gridWidth
-      layerCanvas[layerIdx].height = gridHeight
-    })
-
-    worldCtx.reset()
-    worldCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
-    worldCtx.translate(worldCanvas.width / 2, 0)
-
-    this._game.worldMap.layers.forEach((layer, layerIdx) => {
-      const layerCanvasCtx = layerCanvas[layerIdx].getContext('2d')!
-      layerCanvasCtx.reset()
-      layerCanvasCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
-      layerCanvasCtx.translate(worldCanvas.width / 2, 0)
-
       //console.log('layer', layerIdx, layer.type)
       if (layer.type === 'TILELAYER') {
         this.drawTiles(layerIdx, layerCanvasCtx)
@@ -95,27 +108,29 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
         //this.drawOverlay(layerIdx, layerCanvasCtx)
       }
 
-      mainCtx.drawImage(
-        layerCanvasCtx.canvas,
-        this._game.width / 2 - gridWidth / 2,
-        this._game.height / 2 - gridHeight / 2,
-      )
+      // mainCtx.drawImage(
+      //   layerCanvasCtx.canvas,
+      //   0, //this._game.width / 2 - gridWidth / 2,
+      //   0, //this._game.height / 2 - gridHeight / 2,
+      // )
     })
+    //layerCanvasCtx.translate(-gridWidth / 2 - projectionOffsetX, -projectionOffsetY)
+    layerCanvasCtx.rect(0, 0, gridWidth, gridHeight)
+    layerCanvasCtx.setLineDash([10, 10])
+    layerCanvasCtx.strokeStyle = 'green'
+    layerCanvasCtx.stroke()
 
-    // mainCtx.drawImage(
-    //   worldCanvas,
-    //   this._game.width / 2 - gridWidth / 2,
-    //   this._game.height / 2 - gridHeight / 2,
-    // )
+    //mainCtx.reset()
+    mainCtx.drawImage(
+      this.worldCanvas,
+      0, //this._game.width / 2 - gridWidth / 2,
+      0, //this._game.height / 2 - gridHeight / 2,
+    )
 
     this.dirty = false
   }
 
-  private drawTiles(layerIdx: number, objCtx: CanvasRenderingContext2D) {
-    const tsize = this.tsize
-    const twidth = tsize
-    const theight = tsize / 2
-
+  private drawTiles(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
     for (let c = 0; c < this.cols; c++) {
       for (let r = 0; r < this.rows; r++) {
         const cellIdx = getCellIndex(c, r, this.cols)
@@ -127,15 +142,15 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
 
         //console.log('entity', entityIdx, component)
         if (component.draw) {
-          objCtx.save()
-          component.draw(objCtx)
-          objCtx.restore()
+          layerCtx.save()
+          component.draw(layerCtx)
+          layerCtx.restore()
         }
       }
     }
   }
 
-  private drawObjects(layerIdx: number, objCtx: CanvasRenderingContext2D) {
+  private drawObjects(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
     //const objects = this._game.worldMap.objects[layerIdx] || []
     const objects = this._game.worldMap.layers[layerIdx].data || []
     //console.log('drawObjects', layerIdx, objects)
@@ -146,9 +161,9 @@ export class WorldMapSystem extends AbstractBaseSystem implements IGameSystem {
       //const component = this._game.worldMap.getObject(layerIdx, idx)
       //console.log('entity', entityId, component)
       if (component && component.draw) {
-        objCtx.save()
-        component.draw(objCtx)
-        objCtx.restore()
+        layerCtx.save()
+        component.draw(layerCtx)
+        layerCtx.restore()
       }
     })
   }

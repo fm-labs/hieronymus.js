@@ -40,10 +40,8 @@ export class Game implements IGame {
 
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
-    width: 1920,
-    height: 780,
-    //depth: 0,
-    //angle: 0,
+    width: 1200,
+    height: 800,
     zoom: 1,
   }
 
@@ -113,6 +111,10 @@ export class Game implements IGame {
         system.draw(ctx)
       }
     })
+
+    ctx.rect(0, 0, this.width, this.height)
+    ctx.strokeStyle = 'red'
+    ctx.stroke()
   }
 
   // fps
