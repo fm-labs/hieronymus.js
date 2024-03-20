@@ -1,15 +1,21 @@
-/** GAME ENGINE TYPES **/
+/** GAME ENGINE **/
+
+type GameConfig = {
+  name?: string
+}
 
 interface IGame {
   $container: HTMLDivElement
-  $canvas: HTMLCanvasElement
+  //$canvas: HTMLCanvasElement
 
   // config
   config: GameConfig
 
-  // world
-  worldMap: IWorldMap
+  // resources
   resources: IGameResources
+
+  // scene
+  mainScene?: IScene
 
   // events
   eventbus: IEventBus
@@ -31,17 +37,6 @@ interface IGame {
   deltaTime: number
 }
 
-type GameConfig = {
-  name?: string
-}
-
-type WorldMapConfig = {
-  columns: number
-  rows: number
-  tileSize: number
-  projection: 'orthogonal' | 'isometric' | 'dimetric'
-}
-
 interface IGameSystem {
   name: string
   onLoad?: () => void
@@ -52,7 +47,19 @@ interface IGameSystem {
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
-/** EVENT TYPES **/
+interface IScene {
+  name: string
+}
+
+interface ISceneManager {
+  addScene(scene: IScene): void
+  getScene(name: string): IScene | undefined
+  removeScene(name: string): void
+  setActiveScene(name: string): void
+  getActiveScene(): IScene | undefined
+}
+
+/** EVENTS **/
 
 interface IEventBus {
   on: (eventName: string, callback: (e: any) => void) => void
@@ -60,7 +67,7 @@ interface IEventBus {
   emit: (eventName: string, e: any) => void
 }
 
-/** GRID TYPES **/
+/** GRID **/
 
 type Grid2DPosition = {
   col: number
@@ -88,19 +95,26 @@ interface IGrid2DProjection {
   getProjectionOffset(): { x: number; y: number }
 }
 
-/** MAP TYPES **/
+/** TILE MAP **/
 
-type WorldMapLayer = {
+type TileMapConfig = {
+  columns: number
+  rows: number
+  tileSize: number
+  projection: 'orthogonal' | 'isometric' | 'dimetric'
+}
+
+type TileMapLayer = {
   name: string
   type: 'TILELAYER' | 'OBJECTLAYER' | 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
-  data: WorldMapLayerData[]
+  data: TileMapLayerData[]
   locked?: boolean
   visible?: boolean
 }
 
-type WorldMapLayerData = number
+type TileMapLayerData = number
 
-interface IWorldMap {
+interface ITileMap {
   columns: number
   rows: number
   tileWidth: number
@@ -109,8 +123,8 @@ interface IWorldMap {
   projection: IGrid2DProjection
 
   entities: IEntityManager
-  layers: WorldMapLayer[]
-  objects: WorldMapLayerData[][]
+  layers: TileMapLayer[]
+  objects: TileMapLayerData[][]
 
   addTile(layerId: number, col: number, row: number, properties: GameComponentProperties): void
   setTile(layerId: number, col: number, row: number, tile: IGameComponent): void
@@ -311,8 +325,8 @@ type MoveDirection = 'up' | 'down' | 'left' | 'right'
 
 type Camera2D = {
   offset: Point2D
-  width: number
-  height: number
+  //width: number
+  //height: number
   zoom: number
   //depth: number
   //angle: number

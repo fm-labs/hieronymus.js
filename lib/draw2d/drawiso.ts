@@ -31,8 +31,8 @@ export function drawIsoTile(
   ctx.strokeStyle = strokeColor
   ctx.stroke()
 
-  ctx.fillStyle = 'rgba(255,0,0,0.34)'
-  ctx.fillText(`${x},${y}`, x, y)
+  //ctx.fillStyle = 'rgba(255,0,0,0.34)'
+  //ctx.fillText(`${x},${y}`, x, y)
 
   if (text) {
     ctx.fillStyle = textColor || strokeColor

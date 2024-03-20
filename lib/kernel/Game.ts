@@ -11,7 +11,7 @@ export class Game implements IGame {
   /**
    * The main canvas element for the game.
    */
-  public $canvas: HTMLCanvasElement
+  //public $canvas: HTMLCanvasElement
 
   /**
    * The logging container.
@@ -28,20 +28,19 @@ export class Game implements IGame {
    * The loaded spritesheets.
    */
   public resources: IGameResources
-  public worldMap: IWorldMap
 
   /**
    * The event bus.
    */
   public eventbus: EventBus = new EventBus()
 
-  public width: number
-  public height: number
+  public width: number = 800
+  public height: number = 600
 
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
-    width: 1200,
-    height: 800,
+    //width: 800,
+    //height: 600,
     zoom: 1,
   }
 
@@ -50,17 +49,12 @@ export class Game implements IGame {
   constructor(
     $container: HTMLDivElement,
     config: GameConfig,
-    map: IWorldMap,
+    map: ITileMap,
     resources: IGameResources,
   ) {
     console.log('Game constructor', config, map, resources)
     this.config = config
-    this.worldMap = map
     this.resources = resources
-
-    // Camera
-    this.width = this.camera.width
-    this.height = this.camera.height
 
     // container
     this.$container = $container
@@ -69,26 +63,35 @@ export class Game implements IGame {
     this.$container.style.left = '0px'
     this.$container.style.width = '100vw'
     this.$container.style.height = '100vh'
+    //this.$container.style.border = '1px solid red'
 
-    // canvas
-    const $canvas = document.createElement('canvas')
-    $canvas.width = this.width
-    $canvas.height = this.height
-    this.$canvas = $canvas
-    this.$container.appendChild($canvas)
+    // Dimensions
+    this.width = this.$container.offsetWidth
+    this.height = this.$container.offsetHeight
+
+    // // canvas
+    // const $canvas = document.createElement('canvas')
+    // $canvas.width = this.width
+    // $canvas.height = this.height
+    // this.$canvas = $canvas
+    // this.$container.appendChild($canvas)
 
     // log container
-    const logDiv = document.createElement('div')
-    this.logDiv = logDiv
+    this.logDiv = document.createElement('div')
 
     this.tick = this.tick.bind(this)
+
+    this.eventbus.on('resize', (event: any) => {
+      console.log('resize game', event)
+      this.updateDimensions(event.width, event.height)
+    })
   }
 
   public updateDimensions(width: number, height: number) {
     this.width = width
     this.height = height
-    this.$canvas.width = width
-    this.$canvas.height = height
+    //this.$container.style.width = width + 'px'
+    //this.$container.style.height = height + 'px'
   }
 
   public addSystem(system: IGameSystem) {
@@ -104,17 +107,17 @@ export class Game implements IGame {
   }
 
   public draw() {
-    const ctx = this.$canvas.getContext('2d')!
-    ctx.clearRect(0, 0, this.width, this.height)
+    //const ctx = this.$canvas.getContext('2d')!
+    //ctx.clearRect(0, 0, this.width, this.height)
     this.systems.forEach((system) => {
       if (system.draw) {
-        system.draw(ctx)
+        //system.draw(ctx)
       }
     })
 
-    ctx.rect(0, 0, this.width, this.height)
-    ctx.strokeStyle = 'red'
-    ctx.stroke()
+    // ctx.rect(0, 0, this.width, this.height)
+    // ctx.strokeStyle = 'red'
+    // ctx.stroke()
   }
 
   // fps
@@ -151,7 +154,7 @@ export class Game implements IGame {
       }
     })
 
-    this.draw()
+    //this.draw()
 
     if (!this.gameRunning) return
     requestAnimationFrame(this.tick)

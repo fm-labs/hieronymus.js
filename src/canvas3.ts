@@ -87,7 +87,7 @@ export async function setupCanvas3(container: HTMLDivElement) {
 
   function drawAllTiles() {
     for (const tile of tiles) {
-      drawIsoTile(gridCtx, tile.x, tile.y, twidth, theight, tile.color)
+      drawIsoTile(gridCtx, tile.x, tile.y, twidth, theight, tile.color, tile.color)
     }
   }
 

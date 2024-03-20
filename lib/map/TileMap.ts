@@ -4,7 +4,7 @@ import { getCellIndex } from '../utils/gridutil.ts'
 import { DimetricGridProjection } from './DimetricGridProjection.ts'
 import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'
 
-export class WorldMap implements IWorldMap {
+export class TileMap implements ITileMap {
   readonly assets: any[]
 
   columns: number
@@ -12,12 +12,12 @@ export class WorldMap implements IWorldMap {
   tileWidth: number
   tileHeight: number
 
-  public readonly layers: WorldMapLayer[] = []
-  public readonly objects: WorldMapLayerData[][] = []
+  public readonly layers: TileMapLayer[] = []
+  public readonly objects: TileMapLayerData[][] = []
   public readonly entities: EntityManager
   public readonly projection: IGrid2DProjection
 
-  constructor(config: WorldMapConfig) {
+  constructor(config: TileMapConfig) {
     this.assets = []
     this.columns = config.columns
     this.rows = config.rows
@@ -25,15 +25,21 @@ export class WorldMap implements IWorldMap {
     this.tileHeight = config.tileSize / 2
 
     this.entities = new EntityManager()
-    //this.projection = new OrthogonalGridProjection(this.tileWidth, config.columns, config.rows)
-    this.projection = new DimetricGridProjection(this.tileWidth, config.columns, config.rows)
+
+    let projection: IGrid2DProjection
+    if (config.projection === 'dimetric') {
+      projection = new DimetricGridProjection(this.tileWidth, config.columns, config.rows)
+    } else {
+      projection = new OrthogonalGridProjection(this.tileWidth, config.columns, config.rows)
+    }
+    this.projection = projection
   }
 
   registerAsset(assetType: string, name: string, asset: any) {
     this.assets.push({ type: assetType, name, ...asset })
   }
 
-  addLayer(layerId: number, layer: WorldMapLayer) {
+  addLayer(layerId: number, layer: TileMapLayer) {
     this.layers[layerId] = layer
   }
 
@@ -86,12 +92,12 @@ export class WorldMap implements IWorldMap {
     return this.entities.get(entityId)?.component
   }
 
-  setLayerData(layerIdx: number, cellIdx: number, data: WorldMapLayerData) {
+  setLayerData(layerIdx: number, cellIdx: number, data: TileMapLayerData) {
     if (!this.layers[layerIdx]) throw new Error(`Layer ${layerIdx} does not exist`)
     this.layers[layerIdx].data[cellIdx] = data
   }
 
-  getLayerData(layerIdx: number, cellIdx: number): WorldMapLayerData | undefined {
+  getLayerData(layerIdx: number, cellIdx: number): TileMapLayerData | undefined {
     return this.layers[layerIdx]?.data[cellIdx] || undefined
   }
 

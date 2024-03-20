@@ -1,4 +1,4 @@
-import { WorldMap } from '../../../lib/map/WorldMap.ts'
+import { TileMap } from '../../../lib/map/TileMap.ts'
 import { SpriteComponent } from '../../../lib/components/SpriteComponent.ts'
 import { TextComponent } from '../../../lib/components/TextComponent.ts'
 import { IsoCubeComponent } from '../../../lib/components/IsoCubeComponent.ts'
@@ -6,9 +6,9 @@ import { IsoHexagonComponent } from '../../../lib/components/IsoHexagonComponent
 import { IsoCylinderComponent } from '../../../lib/components/IsoCylinderComponent.ts'
 import { AnimatedSpriteComponent } from '../../../lib/components/AnimatedSpriteComponent.ts'
 
-const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> => {
-  const ROWS = 10
-  const COLUMNS = 10
+const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => {
+  const ROWS = 30
+  const COLUMNS = 30
   const TILE_SIZE = 128
 
   const LAYER_TILES = 0
@@ -37,13 +37,14 @@ const devWorldBuilder = async (resources: IGameResources): Promise<IWorldMap> =>
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
 
-  const worldConfig: WorldMapConfig = {
+  const worldConfig: TileMapConfig = {
     columns: COLUMNS,
     rows: ROWS,
     tileSize: TILE_SIZE,
+    //projection: 'orthogonal',
     projection: 'dimetric',
   }
-  const worldMap = new WorldMap(worldConfig)
+  const worldMap = new TileMap(worldConfig)
 
   // Init layers
   worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILELAYER', data: [] })

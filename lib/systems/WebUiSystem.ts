@@ -22,9 +22,9 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   constructor(game: IGame) {
     super(game)
 
-    this.cols = this._game.worldMap.columns
-    this.rows = this._game.worldMap.rows
-    this.tileSize = this._game.worldMap.tileWidth
+    this.cols = this._game.tileMap.columns
+    this.rows = this._game.tileMap.rows
+    this.tileSize = this._game.tileMap.tileWidth
   }
 
   public onLoad() {
@@ -200,7 +200,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
     if (this._selectedCellIdx !== undefined) {
       const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
-      const screenPos = this._game.worldMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
+      const screenPos = this._game.tileMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
       const cellInfo = document.createElement('div')
       cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`
       cellInfo.innerHTML += `<br />GridPos: ${gridPos.col},${gridPos.row}`
@@ -229,7 +229,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     layerInfo.textContent = `LayerIdx: ${this._selectedLayerIdx}`
     this.controlsDiv.appendChild(layerInfo)
 
-    this._game.worldMap.layers.forEach((layer: WorldMapLayer, layerIdx) => {
+    this._game.tileMap.layers.forEach((layer: TileMapLayer, layerIdx) => {
       const layerDiv = document.createElement('div')
       layerDiv.style.display = 'flex'
       layerDiv.style.flexDirection = 'row'
@@ -273,7 +273,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
         cellLayerInfo.textContent = `EntityIdx: ${entityIdx || '-'}`
 
         if (entityIdx !== undefined) {
-          const entity = this._game.worldMap.entities.get(entityIdx)
+          const entity = this._game.tileMap.entities.get(entityIdx)
           if (entity) {
             cellLayerInfo.title = JSON.stringify(entity.component.properties, null, 2)
           }
