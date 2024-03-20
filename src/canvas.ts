@@ -1,5 +1,5 @@
 import { WorldRenderer2d } from '../lib/world/renderer2d.ts'
-import { spritesheets } from './sprites.ts'
+import { spritesheets } from './_sprites.ts'
 import { elbaWorldConfig } from './worlds/elba/elba.world.ts'
 
 // const map = {

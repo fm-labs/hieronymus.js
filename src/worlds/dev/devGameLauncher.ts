@@ -1,13 +1,13 @@
-import { GameResourcesManager } from '../lib'
-import { Game } from '../lib'
-import { GridSystem } from '../lib'
-import { TileMapSystem } from '../lib'
-import { InputSystem } from '../lib'
-import { WebUiSystem } from '../lib'
-import { InfoSystem } from '../lib'
-import devWorldBuilder from './worlds/dev/dev.world.ts'
+import { GameResourcesManager } from '../../../lib'
+import { Game } from '../../../lib'
+import { GridSystem } from '../../../lib'
+import { TileMapSystem } from '../../../lib'
+import { InputSystem } from '../../../lib'
+import { WebUiSystem } from '../../../lib'
+import { InfoSystem } from '../../../lib'
+import devWorldBuilder from './dev.world.ts'
 
-export const WorldGame = async (app: HTMLDivElement) => {
+export const devGameLauncher = async (app: HTMLDivElement) => {
   const resources = new GameResourcesManager()
   const tileMap = await devWorldBuilder(resources)
 
