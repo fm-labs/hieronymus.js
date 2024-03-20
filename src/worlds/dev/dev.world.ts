@@ -1,10 +1,10 @@
-import { TileMap } from '../../../lib/map/TileMap.ts'
-import { SpriteComponent } from '../../../lib/components/SpriteComponent.ts'
-import { TextComponent } from '../../../lib/components/TextComponent.ts'
-import { IsoCubeComponent } from '../../../lib/components/IsoCubeComponent.ts'
-import { IsoHexagonComponent } from '../../../lib/components/IsoHexagonComponent.ts'
-import { IsoCylinderComponent } from '../../../lib/components/IsoCylinderComponent.ts'
-import { AnimatedSpriteComponent } from '../../../lib/components/AnimatedSpriteComponent.ts'
+import { TileMap } from '../../../lib'
+import { SpriteComponent } from '../../../lib'
+import { TextComponent } from '../../../lib'
+import { IsoCubeComponent } from '../../../lib'
+import { IsoHexagonComponent } from '../../../lib'
+import { IsoCylinderComponent } from '../../../lib'
+import { AnimatedSpriteComponent } from '../../../lib'
 
 const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => {
   const ROWS = 30
@@ -54,69 +54,12 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECTLAYER', data: [] })
   worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
-  // TILE layer
-  worldMap.addTile(LAYER_TILES, 0, 7, { backgroundColor: 'rgba(255,242,0,0.27)' })
-  worldMap.addTile(LAYER_TILES, 1, 7, { backgroundColor: 'rgba(255,0,106,0.5)' })
-  worldMap.addTile(LAYER_TILES, 2, 7, { backgroundColor: 'rgba(0,81,255,0.5)' })
-  worldMap.addTile(LAYER_TILES, 3, 7, {})
-
-  // BULILDINGS layer
-  worldMap.setTile(
-    LAYER_BUILDINGS,
-    0,
-    6,
-    new SpriteComponent({
-      tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(6),
-    }),
-  )
-  worldMap.setTile(
-    LAYER_BUILDINGS,
-    1,
-    6,
-    new SpriteComponent({
-      tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(7),
-    }),
-  )
-  worldMap.setTile(
-    LAYER_BUILDINGS,
-    2,
-    6,
-    new SpriteComponent({
-      tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(8),
-    }),
-  )
-
-  // LABELS layer
-  worldMap.addObjectAt(
-    LAYER_LABELS,
-    4,
-    4,
-    new TextComponent({
-      text: 'Custom Font',
-      font: '48px BungeeSpice',
-      orientation: 'vertical',
-      skewOrientation: 'upright',
-    }),
-  )
+  let rowNr = 0
 
   worldMap.addObjectAt(
     LAYER_LABELS,
     0,
-    0,
-    new TextComponent({
-      text: 'Shapes',
-      font: '48px Tektur',
-      orientation: 'horizontal',
-    }),
-  )
-
-  worldMap.addObjectAt(
-    LAYER_LABELS,
-    0,
-    6,
+    rowNr,
     new TextComponent({
       text: 'Tiles',
       font: '48px Tektur',
@@ -124,13 +67,32 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     }),
   )
 
-  // OBJECT layer
+  // TILE layer
+  worldMap.addTile(LAYER_TILES, 0, rowNr, { backgroundColor: 'rgba(255,242,0,0.27)' })
+  worldMap.addTile(LAYER_TILES, 1, rowNr, { backgroundColor: 'rgba(255,0,106,0.5)' })
+  worldMap.addTile(LAYER_TILES, 2, rowNr, { backgroundColor: 'rgba(0,81,255,0.5)' })
+  worldMap.addTile(LAYER_TILES, 3, rowNr, {})
+
+  // SHAPES layer
+  rowNr++
+  rowNr++
+  rowNr++
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    0,
+    rowNr,
+    new TextComponent({
+      text: 'Shapes',
+      font: '48px Tektur',
+      orientation: 'horizontal',
+    }),
+  )
 
   // cube
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     0,
-    0,
+    rowNr,
     new IsoCubeComponent({
       tileSize: worldMap.tileWidth,
       width: worldMap.tileWidth,
@@ -141,7 +103,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     1,
-    0,
+    rowNr,
     new IsoCubeComponent({
       tileSize: worldMap.tileWidth,
       width: worldMap.tileWidth / 2,
@@ -151,10 +113,11 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   )
 
   // hexagon
+  rowNr++
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     0,
-    1,
+    rowNr,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
       sideLength: worldMap.tileWidth / 2,
@@ -164,7 +127,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     1,
-    1,
+    rowNr,
     new IsoHexagonComponent({
       tileSize: worldMap.tileWidth,
       sideLength: worldMap.tileWidth / 4,
@@ -173,10 +136,11 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   )
 
   // cylinder
+  rowNr++
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     0,
-    2,
+    rowNr,
     new IsoCylinderComponent({
       tileSize: worldMap.tileWidth,
       radius: 48,
@@ -186,7 +150,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     1,
-    2,
+    rowNr,
     new IsoCylinderComponent({
       tileSize: worldMap.tileWidth,
       radius: 32,
@@ -194,7 +158,64 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     }),
   )
 
+  // BUILDINGS layer
+  rowNr++
+  rowNr++
+  rowNr++
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    0,
+    rowNr,
+    new TextComponent({
+      text: 'Buildings',
+      font: '48px Tektur',
+      orientation: 'horizontal',
+    }),
+  )
+
+  worldMap.setTile(
+    LAYER_BUILDINGS,
+    0,
+    rowNr,
+    new SpriteComponent({
+      tileSize: worldMap.tileWidth,
+      spriteImage: resources.getSprite(6),
+    }),
+  )
+  worldMap.setTile(
+    LAYER_BUILDINGS,
+    1,
+    rowNr,
+    new SpriteComponent({
+      tileSize: worldMap.tileWidth,
+      spriteImage: resources.getSprite(7),
+    }),
+  )
+  worldMap.setTile(
+    LAYER_BUILDINGS,
+    2,
+    rowNr,
+    new SpriteComponent({
+      tileSize: worldMap.tileWidth,
+      spriteImage: resources.getSprite(8),
+    }),
+  )
+
   // animated
+  rowNr = 0
+  const secondColStart = 5
+  let colNr = secondColStart
+
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 5,
+    new TextComponent({
+      text: 'Sprites',
+      font: '48px Tektur',
+      orientation: 'vertical',
+    }),
+  )
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     6,
@@ -202,6 +223,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
       tileset: resources.getSpritesheet('mech-up') as TilesetResource,
+      speed: 5,
     }),
   )
   worldMap.addObjectAt(
@@ -211,8 +233,19 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
       tileset: resources.getSpritesheet('mech-right') as TilesetResource,
+      speed: 5,
     }),
   )
+  // worldMap.addObjectAt(
+  //   LAYER_OBJECTS,
+  //   7,
+  //   2,
+  //   new AnimatedSpriteComponent({
+  //     tileSize: worldMap.tileWidth,
+  //     tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+  //     speed: 1,
+  //   }),
+  // )
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     7,
@@ -220,8 +253,19 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
       tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+      speed: 5,
     }),
   )
+  // worldMap.addObjectAt(
+  //   LAYER_OBJECTS,
+  //   7,
+  //   4,
+  //   new AnimatedSpriteComponent({
+  //     tileSize: worldMap.tileWidth,
+  //     tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+  //     speed: 10,
+  //   }),
+  // )
   worldMap.addObjectAt(
     LAYER_OBJECTS,
     6,
@@ -229,7 +273,68 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
       tileset: resources.getSpritesheet('mech-down') as TilesetResource,
-      speed: 10,
+      speed: 5,
+    }),
+  )
+
+  colNr = colNr + 4
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 5,
+    new TextComponent({
+      text: 'Fonts',
+      font: '48px Tektur',
+      orientation: 'vertical',
+    }),
+  )
+
+  // LABELS layer
+  colNr++
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 5,
+    new TextComponent({
+      text: 'Vertical Flat',
+      font: '48px BungeeSpice',
+      orientation: 'vertical',
+      skewOrientation: 'flat',
+    }),
+  )
+  colNr++
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 5,
+    new TextComponent({
+      text: 'Vertical Upright',
+      font: '48px BungeeSpice',
+      orientation: 'vertical',
+      skewOrientation: 'upright',
+    }),
+  )
+  colNr++
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 4,
+    new TextComponent({
+      text: 'Horizontal Flat',
+      font: '48px BungeeSpice',
+      orientation: 'horizontal',
+      skewOrientation: 'flat',
+    }),
+  )
+  worldMap.addObjectAt(
+    LAYER_LABELS,
+    colNr,
+    rowNr + 5,
+    new TextComponent({
+      text: 'Horizontal Upright',
+      font: '48px BungeeSpice',
+      orientation: 'horizontal',
+      skewOrientation: 'upright',
     }),
   )
 

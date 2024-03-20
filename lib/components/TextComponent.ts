@@ -19,7 +19,7 @@ export class TextComponent extends AbstractBaseComponent implements IGameCompone
     y: 0,
     text: '',
     font: '12px Arial,Helvetica,sans-serif',
-    color: 'yellow',
+    color: 'black',
     direction: 'ltr',
     orientation: 'vertical', // vertical | horizontal
     skewOrientation: 'flat', // upright | flat

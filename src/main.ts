@@ -1,4 +1,3 @@
-import './style.css'
 import { WorldGame } from './worldGame.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
