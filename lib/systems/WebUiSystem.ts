@@ -1,5 +1,5 @@
 import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
-import { getCellCordsFromIndex, getCellIndex } from '../utils/gridutil.ts'
+import { getCellCordsFromIndex } from '../utils/gridutil.ts'
 
 export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   public name = 'WebUiSystem'
@@ -8,23 +8,25 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
   private dirty = true
 
   private cols: number
-  private rows: number
-  private tileSize: number
+  //private rows: number
+  //private tileSize: number
 
-  private _hoveredCellIdx: number | undefined
-  private _hoverTimer: any | undefined
+  //private _hoveredCellIdx: number | undefined
+  //private _hoverTimer: any | undefined
 
   private _selectedCellIdx: number | undefined
   private _selectedLayerIdx: number | undefined
   private _selectedSpriteIndex: number | undefined
   private _selection: IMapSelection | undefined
+  private readonly tileMap: ITileMap
 
-  constructor(game: IGame) {
+  constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
-    this.cols = this._game.tileMap.columns
-    this.rows = this._game.tileMap.rows
-    this.tileSize = this._game.tileMap.tileWidth
+    this.tileMap = tileMap
+    this.cols = this.tileMap.columns
+    //this.rows = this.tileMap.rows
+    //this.tileSize = this.tileMap.tileWidth
   }
 
   public onLoad() {
@@ -62,7 +64,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     //controlsDiv.style.pointerEvents = 'none'
     //controlsDiv.style.display = 'flex'
     //controlsDiv.style.flexDirection = 'row'
-    controlsDiv.style.backgroundColor = 'rgba(215,6,6,0.2)'
+    controlsDiv.style.backgroundColor = 'rgba(134,129,129,0.2)'
     //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
     this.controlsDiv = controlsDiv
     this._game.$container.appendChild(controlsDiv)
@@ -80,9 +82,10 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     console.log('WebUiSystem.stop')
   }
 
-  // public update() {
-  //   console.log('WebUiSystem.update')
-  // }
+  public update() {
+    //console.log('WebUiSystem.update')
+    this.draw()
+  }
 
   public draw() {
     if (!this.dirty) return
@@ -200,7 +203,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
     if (this._selectedCellIdx !== undefined) {
       const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
-      const screenPos = this._game.tileMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
+      const screenPos = this.tileMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
       const cellInfo = document.createElement('div')
       cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`
       cellInfo.innerHTML += `<br />GridPos: ${gridPos.col},${gridPos.row}`
@@ -229,7 +232,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
     layerInfo.textContent = `LayerIdx: ${this._selectedLayerIdx}`
     this.controlsDiv.appendChild(layerInfo)
 
-    this._game.tileMap.layers.forEach((layer: TileMapLayer, layerIdx) => {
+    this.tileMap.layers.forEach((layer: TileMapLayer, layerIdx) => {
       const layerDiv = document.createElement('div')
       layerDiv.style.display = 'flex'
       layerDiv.style.flexDirection = 'row'
@@ -273,7 +276,7 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
         cellLayerInfo.textContent = `EntityIdx: ${entityIdx || '-'}`
 
         if (entityIdx !== undefined) {
-          const entity = this._game.tileMap.entities.get(entityIdx)
+          const entity = this.tileMap.entities.get(entityIdx)
           if (entity) {
             cellLayerInfo.title = JSON.stringify(entity.component.properties, null, 2)
           }

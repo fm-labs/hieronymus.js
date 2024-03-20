@@ -38,11 +38,4 @@ export class DimetricGridProjection implements IGrid2DProjection {
   getGridDimensions(): { width: number; height: number } {
     return { width: this.gridWidth, height: this.gridHeight }
   }
-
-  getProjectionOffset(): { x: number; y: number } {
-    const projectionOffsetX = 0 // this.gridWidth / 2
-    const projectionOffsetY = 0
-
-    return { x: projectionOffsetX, y: projectionOffsetY }
-  }
 }

@@ -92,7 +92,6 @@ interface IGrid2DProjection {
   mapGridToScreen(col: number, row: number): { x: number; y: number }
   mapScreenToGrid(x: number, y: number): { col: number; row: number }
   getGridDimensions(): { width: number; height: number }
-  getProjectionOffset(): { x: number; y: number }
 }
 
 /** TILE MAP **/

@@ -1,5 +1,13 @@
 import { mapCellCordsToIndex } from '../utils/gridutil.ts'
 
+/**
+ * @deprecated
+ * @param width
+ * @param height
+ * @param cells
+ * @param name
+ * @param label
+ */
 export const worldBuilder: WorldBuilder = ({
   width,
   height,

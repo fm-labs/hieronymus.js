@@ -1,10 +1,6 @@
-const DEFAULT_SPRITE_SHEET_NAME = 'map_pack'
-
 const defaultCamera: Camera2D = {
   offset: { x: 0, y: 0 },
   zoom: 1,
-  width: 800,
-  height: 600,
 }
 
 const defaultCellRenderer2d = (
@@ -73,7 +69,10 @@ const getCellRenderer = (cell: WorldCell) => {
   return cellRenderer
 }
 
-// Now, the TypeScript class:
+/**
+ * WorldRenderer2d
+ * @deprecated
+ */
 export class WorldRenderer2d {
   private ctx: CanvasRenderingContext2D
   private world: World

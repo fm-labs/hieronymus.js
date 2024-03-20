@@ -18,7 +18,6 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
   //private _clientScreenPos: { x: number; y: number } = { x: 0, y: 0 }
   private _activeCellIdx?: number = undefined
   private _activeGridPos?: number[] = undefined
-  private projectionOffset: { x: number; y: number }
 
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
@@ -27,10 +26,9 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     this.cols = tileMap.columns
     this.rows = tileMap.rows
     this.projection = tileMap.projection
-    this.projectionOffset = this.projection.getProjectionOffset()
+
+    //@todo center the grid on the screen
     if (this.projection instanceof DimetricGridProjection) {
-      //this.projectionOffset = { x: this.cols * this.tsize, y: this.rows * this.tsize }
-      //this.projectionOffset = { x: 100, y: 100 }
       this._game.camera.offset.x = -this._game.$container.offsetWidth / 2
     }
 
@@ -119,14 +117,12 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     const mainContainer = this._game.$container
     const rect = mainContainer.getBoundingClientRect()
 
-    const projectionOffsetX = this.projectionOffset.x
-    const projectionOffsetY = this.projectionOffset.y
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
 
     //@todo calculate offsets using projection
-    const offsetX = projectionOffsetX - cameraOffsetX // mainCanvas.width / 2
-    const offsetY = projectionOffsetY - cameraOffsetY // mainCanvas.height / 2 - (this.cols / 2) * (this.tsize / 2)
+    const offsetX = -cameraOffsetX // mainCanvas.width / 2
+    const offsetY = -cameraOffsetY // mainCanvas.height / 2 - (this.cols / 2) * (this.tsize / 2)
     const x = e.clientX - rect.left - offsetX
     const y = e.clientY - rect.top - offsetY
 
@@ -189,9 +185,6 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
 
     const gridColor = 'rgba(0,0,0,0.03)'
 
-    const projectionOffsetX = this.projectionOffset.x
-    const projectionOffsetY = this.projectionOffset.y
-
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
 
@@ -209,8 +202,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     gridCtx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height)
 
     //gridCtx.save()
-    const translateX = projectionOffsetX - cameraOffsetX
-    const translateY = projectionOffsetY - cameraOffsetY
+    const translateX = -cameraOffsetX
+    const translateY = -cameraOffsetY
     gridCtx.translate(translateX, translateY)
 
     const gridDimensions = this.projection.getGridDimensions()
@@ -223,8 +216,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     // gridCtx.setLineDash([5, 5])
     // gridCtx.strokeRect(-gridDimensions.width / 2, 0, gridDimensions.width, gridDimensions.height)
 
-    // draw a dot at the corner of each cell
-    const renderedCells: any[] = []
+    // @todo draw grid lines
+    // draw grid tiles
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         const { x, y } = this.projection.mapGridToScreen(i, j)
@@ -285,22 +278,6 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
       }
       //console.log('renderedCells', renderedCells)
     }
-
-    //gridCtx.restore()
-
-    // draw the grid in the center of the canvas
-    // mainCtx.clearRect(
-    //   this._game.width / 2 - gridWidth / 2,
-    //   this._game.height / 2 - gridHeight / 2,
-    //   gridWidth,
-    //   gridHeight,
-    // )
-
-    // const mainOffsetX = this._game.width / 2 - gridWidth / 2
-    // const mainOffsetY = this._game.height / 2 - gridHeight / 2
-    // mainCtx.drawImage(gridCanvas, mainOffsetX, mainOffsetY)
-    //mainCtx.drawImage(this.gridCanvas, 0, 0)
-
     //this._dirty = false
   }
 

@@ -7,3 +7,15 @@ export const FILL_COLORS = [
   'rgba(69,157,134,0.33)',
   'rgba(44,122,106,0.33)',
 ]
+
+export const KEYBOARD_KEYS = {
+  BACKSPACE: 8,
+  TAB: 9,
+  ENTER: 13,
+  ESC: 27,
+  SPACE: 32,
+  LEFT: 37,
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+}

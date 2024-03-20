@@ -1,5 +1,9 @@
 import { getCellIndex } from '../utils/gridutil.ts'
 
+/**
+ * Legacy WorldInstance class
+ * @deprecated
+ */
 export class WorldInstance {
   public name: string
   public label?: string

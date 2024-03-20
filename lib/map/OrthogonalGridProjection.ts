@@ -30,8 +30,4 @@ export class OrthogonalGridProjection implements IGrid2DProjection {
     const height = this.rows * this.tileSize
     return { width: width, height: height }
   }
-
-  getProjectionOffset(): { x: number; y: number } {
-    return { x: 0, y: 0 }
-  }
 }

@@ -1,4 +1,4 @@
-import { fetchImage, fetchSpritesheet } from './loader.ts'
+import { fetchImage, fetchSpritesheet } from '../utils/assetfetch.ts'
 
 export class GameResourcesManager implements IGameResources {
   public readonly spritesheets: (SpritesheetResource | TilesetResource)[] = []

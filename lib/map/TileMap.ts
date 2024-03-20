@@ -1,5 +1,5 @@
 import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
-import { EntityManager } from '../entity/EntityManager.ts'
+import { EntityManager } from '../kernel/EntityManager.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
 import { DimetricGridProjection } from './DimetricGridProjection.ts'
 import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'

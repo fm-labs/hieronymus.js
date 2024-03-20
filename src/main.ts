@@ -1,6 +1,8 @@
 import './style.css'
-import { WorldGame } from './world_game.ts'
+import { WorldGame } from './worldGame.ts'
 
+const app = document.querySelector<HTMLDivElement>('#app')!
+const game: IGame = await WorldGame(app)
 window.addEventListener('resize', () => {
   const width = window.innerWidth
   const height = window.innerHeight
@@ -8,7 +10,4 @@ window.addEventListener('resize', () => {
   game.eventbus.emit('resize', { width, height })
 })
 window.dispatchEvent(new Event('resize'))
-
-const app = document.querySelector<HTMLDivElement>('#app')!
-const game: IGame = await WorldGame(app)
 await game.run()

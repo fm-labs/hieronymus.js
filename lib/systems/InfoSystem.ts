@@ -13,15 +13,15 @@ export class InfoSystem extends AbstractBaseSystem implements IGameSystem {
     const systemDiv = document.createElement('div')
     systemDiv.id = 'systemDiv'
     systemDiv.style.position = 'absolute'
-    systemDiv.style.top = '0px'
-    systemDiv.style.right = '0px'
+    systemDiv.style.bottom = '5px'
+    systemDiv.style.right = '5px'
     //systemDiv.style.width = '320px'
     //systemDiv.style.height = '100vh'
     systemDiv.style.overflowX = 'ellipsis'
     systemDiv.style.overflowY = 'scroll'
     systemDiv.style.fontFamily = 'monospace'
     systemDiv.style.fontSize = '10px'
-    systemDiv.style.color = 'rgba(211,211,211,0.93)'
+    systemDiv.style.color = 'rgb(117,255,0)'
     systemDiv.style.opacity = '0.8'
     this.systemDiv = systemDiv
   }

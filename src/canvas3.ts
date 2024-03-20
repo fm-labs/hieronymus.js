@@ -1,4 +1,4 @@
-import { fetchSpritesheet, fetchKenneySpritesheet } from '../lib/kernel/loader.ts'
+import { fetchSpritesheet, fetchKenneySpritesheet } from '../lib/utils/assetfetch.ts'
 
 import { drawIsoTile } from '../lib/draw2d/drawiso.ts'
 
