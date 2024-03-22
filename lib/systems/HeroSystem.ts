@@ -1,7 +1,7 @@
 import { randomColor } from '../utils/colorutil.ts'
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class HeroSystem extends AbstractBaseSystem implements IGameSystem {
+export class HeroSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'HeroSystem'
 
   private hero = {

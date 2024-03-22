@@ -1,6 +1,6 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class DebugSystem extends AbstractBaseSystem implements IGameSystem {
+export class DebugSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'DebugSystem'
 
   public onLoad() {

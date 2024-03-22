@@ -1,6 +1,6 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class InfoSystem extends AbstractBaseSystem implements IGameSystem {
+export class InfoSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'InfoSystem'
   private readonly systemDiv: HTMLDivElement
   //private dirty = true
@@ -21,7 +21,7 @@ export class InfoSystem extends AbstractBaseSystem implements IGameSystem {
     systemDiv.style.overflowY = 'scroll'
     systemDiv.style.fontFamily = 'monospace'
     systemDiv.style.fontSize = '10px'
-    systemDiv.style.color = 'rgb(117,255,0)'
+    systemDiv.style.color = 'rgb(255,0,0)'
     systemDiv.style.opacity = '0.8'
     this.systemDiv = systemDiv
   }
@@ -76,7 +76,7 @@ export class InfoSystem extends AbstractBaseSystem implements IGameSystem {
 <div>Window W:${window.innerWidth} H:${window.innerHeight}</div>
 <div>Container W:${this._game.$container.offsetWidth} H:${this._game.$container.offsetHeight}</div>
 <div>Game W:${this._game.width} H:${this._game.height}</div>
-<div>Camera X:${this._game.camera.offset.x} Y:${this._game.camera.offset.y}</div>
+<div>Camera X:${this._game.camera.offset.x} Y:${this._game.camera.offset.y} ZOOM ${this._game.camera.zoom}</div>
 <div>Mouse X:${this.mousePos.x} Y:${this.mousePos.y}</div>
 `
   }

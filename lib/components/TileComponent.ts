@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
 export interface TileComponentProps extends GameComponentProperties {
   width: number
@@ -9,7 +9,7 @@ export interface TileComponentProps extends GameComponentProperties {
   text?: string
 }
 
-export class TileComponent extends AbstractBaseComponent implements IGameComponent {
+export class TileComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: TileComponentProps
 
   public static readonly defaultProperties: TileComponentProps = {

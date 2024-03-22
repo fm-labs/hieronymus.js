@@ -1,6 +1,6 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
-export class GameComponent extends AbstractBaseComponent implements IGameComponent {
+export class GameComponent extends AbstractGameComponent implements IGameComponent {
   public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,

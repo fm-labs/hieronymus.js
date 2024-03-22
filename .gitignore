@@ -3,6 +3,7 @@
 /submodules/
 /public/assets/sprites/kenney-assets
 /public/assets/fonts
+/public/aws
 
 # Logs
 logs

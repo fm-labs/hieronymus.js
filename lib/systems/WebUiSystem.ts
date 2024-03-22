@@ -1,7 +1,7 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellCordsFromIndex } from '../utils/gridutil.ts'
 
-export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
+export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'WebUiSystem'
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
@@ -176,23 +176,31 @@ export class WebUiSystem extends AbstractBaseSystem implements IGameSystem {
 
     this.controlsDiv.appendChild(document.createElement('hr'))
 
-    const button3 = document.createElement('button')
-    button3.textContent = 'Reset camera'
-    button3.onclick = () => {
+    const buttonCamReset = document.createElement('button')
+    buttonCamReset.textContent = 'Reset camera'
+    buttonCamReset.onclick = () => {
       console.log('reset camera')
       this._game.eventbus.emit('camera.reset', {})
     }
-    this.controlsDiv.appendChild(button3)
+    this.controlsDiv.appendChild(buttonCamReset)
+
+    const buttonCamCenter = document.createElement('button')
+    buttonCamCenter.textContent = 'Center camera'
+    buttonCamCenter.onclick = () => {
+      console.log('reset camera')
+      this._game.eventbus.emit('camera.reset', {})
+    }
+    this.controlsDiv.appendChild(buttonCamCenter)
 
     this.controlsDiv.appendChild(document.createElement('hr'))
 
-    const button4 = document.createElement('button')
-    button4.textContent = 'Select'
-    button4.onclick = () => {
+    const buttonSelectCell = document.createElement('button')
+    buttonSelectCell.textContent = 'Select'
+    buttonSelectCell.onclick = () => {
       console.log('select cell')
       this._game.eventbus.emit('editor.set_mode', { mode: 'select' })
     }
-    this.controlsDiv.appendChild(button4)
+    this.controlsDiv.appendChild(buttonSelectCell)
 
     this.controlsDiv.appendChild(document.createElement('hr'))
 

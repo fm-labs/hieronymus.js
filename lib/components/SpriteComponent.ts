@@ -1,11 +1,11 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
 interface SpriteComponentProps extends GameComponentProperties {
   tileSize: number
   spriteImage?: SpriteResource
 }
 
-export class SpriteComponent extends AbstractBaseComponent implements IGameComponent {
+export class SpriteComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: SpriteComponentProps
 
   public static readonly defaultProperties: SpriteComponentProps = {
@@ -74,7 +74,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
     const offsetX = -(imgW / 2)
     const offsetY = -imgH + theight
 
-    ctx.globalAlpha = 0.5
+    //ctx.globalAlpha = 0.7
     ctx.drawImage(
       spriteCanvas,
       0,
@@ -86,7 +86,7 @@ export class SpriteComponent extends AbstractBaseComponent implements IGameCompo
       imgW,
       imgH,
     )
-    ctx.globalAlpha = 1
+    //ctx.globalAlpha = 1
 
     //ctx.restore()
   }

@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { drawIsometricHexagon } from '../draw2d/drawiso.ts'
 
 interface IsoHexagonProps extends GameComponentProperties {
@@ -7,7 +7,7 @@ interface IsoHexagonProps extends GameComponentProperties {
   tileSize: number
 }
 
-export class IsoHexagonComponent extends AbstractBaseComponent implements IGameComponent {
+export class IsoHexagonComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: IsoHexagonProps
 
   public static readonly defaultProperties: IsoHexagonProps = {

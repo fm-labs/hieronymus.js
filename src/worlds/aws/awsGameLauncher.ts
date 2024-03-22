@@ -23,7 +23,7 @@ export const awsGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new GridSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
 
-  game.addSystem(new WebUiSystem(game, tileMap))
+  //game.addSystem(new WebUiSystem(game, tileMap))
 
   return game
 }

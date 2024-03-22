@@ -1,7 +1,7 @@
 import { getCellIndex } from '../utils/gridutil.ts'
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class TileMapSystem extends AbstractBaseSystem implements IGameSystem {
+export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'TileMapSystem'
 
   private readonly tileMap: ITileMap
@@ -22,31 +22,22 @@ export class TileMapSystem extends AbstractBaseSystem implements IGameSystem {
     this.worldCanvas = document.createElement('canvas')
   }
 
-  private handleMouseClick(e: MouseEvent) {
-    //this._game.eventbus.emit('rerender', {})
-  }
-
   public onLoad() {
     console.log('TileMapSystem.onLoad')
 
-    this.worldCanvas.id = 'worldCanvas'
-
     const gridWidth = this.cols * this.tsize
     const gridHeight = this.rows * this.tsize
-    this.worldCanvas.width = gridWidth // this._game.width
-    this.worldCanvas.height = gridHeight // this._game.height
-    //this.worldCanvas.width = this.cols * this.tsize
-    //this.worldCanvas.height = (this.rows * this.tsize) / 2
+    this.worldCanvas.width = gridWidth
+    this.worldCanvas.height = gridHeight
+    this.worldCanvas.id = 'worldCanvas'
 
     this._game.$container.appendChild(this.worldCanvas)
-    this._game.$container.addEventListener('click', this.handleMouseClick.bind(this))
-    //this._game.$container.addEventListener('mousemove', this.handleMouseClick.bind(this))
 
-    this._game.eventbus.on('resize', (event: any) => {
-      console.log('resize tilemap', event)
-      //this.worldCanvas.width = event.width
-      //this.worldCanvas.height = event.height
-    })
+    // this._game.eventbus.on('resize', (event: any) => {
+    //   console.log('resize tilemap', event)
+    //   //this.worldCanvas.width = event.width
+    //   //this.worldCanvas.height = event.height
+    // })
   }
 
   public onUnload() {
@@ -79,39 +70,9 @@ export class TileMapSystem extends AbstractBaseSystem implements IGameSystem {
     //if (!this.dirty) return
     //console.log('TileMapSystem.draw')
 
-    // const tsize = this.tsize
-    // const twidth = tsize
-    // const theight = tsize / 2
-    //
-    const gridWidth = this.cols * this.tsize
-    const gridHeight = this.rows * this.tsize
-
-    // const projectionOffset = this.tileMap.projection.getProjectionOffset()
-    // const projectionOffsetX = projectionOffset.x
-    // const projectionOffsetY = projectionOffset.y
-    // const cameraOffsetX = this._game.camera.offset.x
-    // const cameraOffsetY = this._game.camera.offset.y
-
-    // draw all layers
-    // const layerCanvas: HTMLCanvasElement[] = []
-    // this._game.worldMap.layers.forEach((layer, layerIdx) => {
-    //   layerCanvas[layerIdx] = document.createElement('canvas')
-    //   layerCanvas[layerIdx].width = gridWidth
-    //   layerCanvas[layerIdx].height = gridHeight
-    // })
-
-    // const worldCtx = this.worldCanvas.getContext('2d')!
-    // worldCtx.reset()
-    // worldCtx.clearRect(0, 0, worldCanvas.width, worldCanvas.height)
-    // worldCtx.translate(worldCanvas.width / 2, 0)
-
-    //const translateX = projectionOffsetX - cameraOffsetX
-    //const translateY = projectionOffsetY - cameraOffsetY
-    //const layerCanvasCtx = this.worldCanvas.getContext('2d')!
     layerCanvasCtx.reset()
-    //layerCanvasCtx.clearRect(0, 0, gridWidth, gridHeight)
-    //layerCanvasCtx.translate(translateX, translateY)
     layerCanvasCtx.translate(-this._game.camera.offset.x, -this._game.camera.offset.y)
+    layerCanvasCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
     this.tileMap.layers.forEach((layer, layerIdx) => {
       //console.log('layer', layerIdx, layer.type)
       if (layer.type === 'TILELAYER') {
@@ -123,25 +84,7 @@ export class TileMapSystem extends AbstractBaseSystem implements IGameSystem {
       } else if (layer.type === 'OVERLAY') {
         //this.drawOverlay(layerIdx, layerCanvasCtx)
       }
-
-      // mainCtx.drawImage(
-      //   layerCanvasCtx.canvas,
-      //   0, //this._game.width / 2 - gridWidth / 2,
-      //   0, //this._game.height / 2 - gridHeight / 2,
-      // )
     })
-    //layerCanvasCtx.translate(-gridWidth / 2 - projectionOffsetX, -projectionOffsetY)
-    // layerCanvasCtx.rect(0, 0, gridWidth, gridHeight)
-    // layerCanvasCtx.setLineDash([10, 10])
-    // layerCanvasCtx.strokeStyle = 'purple'
-    // layerCanvasCtx.stroke()
-
-    //mainCtx.reset()
-    // mainCtx.drawImage(
-    //   this.worldCanvas,
-    //   0, //this._game.width / 2 - gridWidth / 2,
-    //   0, //this._game.height / 2 - gridHeight / 2,
-    // )
 
     //this.dirty = false
   }

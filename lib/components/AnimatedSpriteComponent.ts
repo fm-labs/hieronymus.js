@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
 const DEFAULT_SPEED = 1
 
@@ -12,7 +12,7 @@ interface AnimatedSpriteComponentProps extends GameComponentProperties {
   autoPlay?: boolean
 }
 
-export class AnimatedSpriteComponent extends AbstractBaseComponent implements IGameComponent {
+export class AnimatedSpriteComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: AnimatedSpriteComponentProps
 
   public static readonly defaultProperties: Partial<AnimatedSpriteComponentProps> = {

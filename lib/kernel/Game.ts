@@ -39,8 +39,6 @@ export class Game implements IGame {
 
   public camera: Camera2D = {
     offset: { x: 0, y: 0 },
-    //width: 800,
-    //height: 600,
     zoom: 1,
   }
 

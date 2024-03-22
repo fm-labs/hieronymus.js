@@ -1,10 +1,11 @@
 import { TileMap } from '../../../lib'
-import { SpriteComponent } from '../../../lib'
 import { TextComponent } from '../../../lib'
-import { IsoCubeComponent } from '../../../lib'
-import { IsoHexagonComponent } from '../../../lib'
-import { IsoCylinderComponent } from '../../../lib'
-import { AnimatedSpriteComponent } from '../../../lib'
+import {
+  AWS_SERVICE_CATEGORIES,
+  AWS_SERVICES,
+  AwsServiceIdentifier,
+  IAwsInventoryItemFull,
+} from 'cloudia-common'
 
 const awsWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => {
   const ROWS = 30
@@ -17,6 +18,12 @@ const awsWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   const LAYER_LABELS = 3
   const LAYER_BUILDINGS = 4
   const LAYER_OBJECTS = 4
+
+  const awsInventory: IAwsInventoryItemFull[] = await fetch(
+    '/aws/inventory/aws.inventory.json',
+  ).then((response) => {
+    return response.json()
+  })
 
   // Init resources
   await resources.loadSpritesheet(
@@ -54,18 +61,54 @@ const awsWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECTLAYER', data: [] })
   worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
-  const rowNr = 0
-
   worldMap.addObjectAt(
     LAYER_LABELS,
     0,
-    rowNr,
+    0,
     new TextComponent({
       text: 'AWS Inventory',
       font: '48px Tektur',
       orientation: 'horizontal',
     }),
   )
+
+  let rowNr = 1
+  let colNr = 0
+  AWS_SERVICE_CATEGORIES.forEach((service, index) => {
+    if (service.id === 'ManagementGovernance') return
+
+    const serviceIds = AWS_SERVICES.filter((item) => item.category === service.id).map(
+      (item) => item.id,
+    )
+    const inventory: IAwsInventoryItemFull[] = awsInventory.filter(
+      (item) => serviceIds.indexOf(item.service_id as AwsServiceIdentifier) > -1,
+    )
+    if (inventory.length === 0) return
+
+    worldMap.addObjectAt(
+      LAYER_LABELS,
+      colNr,
+      rowNr,
+      new TextComponent({
+        text: service.label + ' (' + serviceIds.length + '/' + inventory.length + ')',
+        font: '24px Tektur',
+        orientation: 'horizontal',
+      }),
+    )
+
+    inventory.forEach((item, index) => {
+      worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgba(255,242,0,0.27)' })
+      colNr++
+      if (colNr >= COLUMNS) {
+        colNr = 0
+        rowNr++
+      }
+    })
+
+    colNr = 0
+    rowNr++
+    rowNr++
+  })
 
   return worldMap
 }

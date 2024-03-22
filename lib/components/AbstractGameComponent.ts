@@ -1,4 +1,4 @@
-export abstract class AbstractBaseComponent {
+export abstract class AbstractGameComponent {
   public readonly properties: GameComponentProperties
 
   protected constructor(properties?: GameComponentProperties) {

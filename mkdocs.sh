@@ -1,21 +1,23 @@
 #!/bin/bash
 
+TAGNAME=world-docs
+PORT=8002
+
 case $1 in
     "make")
-        docker build -t world-mkdocs-material -f docs/Dockerfile .
+        docker build -t ${TAGNAME} -f docs/Dockerfile .
         ;;
     "new")
-        docker run --rm -it -v $(pwd):/docs world-mkdocs-material new .
+        docker run --rm -it -v $(pwd):/docs ${TAGNAME} new .
         ;;
     "build")
-        docker run --rm -it -v $(pwd):/docs world-mkdocs-material build
+        docker run --rm -it -v $(pwd):/docs ${TAGNAME} build
         ;;
     "serve")
-        docker run --rm -it -v $(pwd):/docs -p 8002:8000 world-mkdocs-material
+        docker run --rm -it -v $(pwd):/docs -p ${PORT}:8000 ${TAGNAME}
         ;;
     *)
         echo "Usage: $0 {make|new|build|serve}"
         exit 1
         ;;
 esac
-

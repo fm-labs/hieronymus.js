@@ -1,9 +1,9 @@
 import { drawIsoTile } from '../draw2d/drawiso.ts'
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
 import { DimetricGridProjection } from '../map/DimetricGridProjection.ts'
 
-export class GridSystem extends AbstractBaseSystem implements IGameSystem {
+export class GridSystem extends AbstractGameSystem implements IGameSystem {
   public readonly name = 'GridSystem'
   private readonly tsize: number
   private readonly cols: number
@@ -74,31 +74,6 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     // Register DOM events
     this.handleMouseMove = this.handleMouseMove.bind(this)
     this._game.$container.addEventListener('mousemove', this.handleMouseMove)
-
-    //this.handleMouseClick = this.handleMouseClick.bind(this)
-    //this._game.$container.addEventListener('click', this.handleMouseClick)
-
-    // Register game events
-    this._game.eventbus.on('keyboard.keyDown', this.handleKeyboardInput.bind(this))
-  }
-
-  private handleKeyboardInput(e: KeyboardEvent) {
-    console.log('[GridSystem]', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
-    const delta = 16
-    if (e.code == 'KeyA') {
-      this._game.camera.offset.x -= delta
-      //console.log('X', this._game.camera.offset.x)
-    } else if (e.code == 'KeyD') {
-      this._game.camera.offset.x += delta
-      //console.log('X', this._game.camera.offset.x)
-    }
-    if (e.code == 'KeyW') {
-      this._game.camera.offset.y -= delta
-      //console.log('Y', this._game.camera.offset.y)
-    } else if (e.code == 'KeyS') {
-      this._game.camera.offset.y += delta
-      //console.log('Y', this._game.camera.offset.y)
-    }
   }
 
   public stop() {
@@ -106,12 +81,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
 
     // Unregister game events
     this._game.$container.removeEventListener('mousemove', this.handleMouseMove)
-    //this._game.$container.removeEventListener('click', this.handleMouseClick)
   }
-
-  // public update() {
-  //   console.log('GridSystem.update')
-  // }
 
   private handleMouseMove(e: MouseEvent) {
     const mainContainer = this._game.$container
@@ -126,7 +96,11 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     const x = e.clientX - rect.left - offsetX
     const y = e.clientY - rect.top - offsetY
 
-    const pos = this.projection.mapScreenToGrid(x, y)
+    const pos = this.projection.mapScreenToGrid(
+      x / this._game.camera.zoom,
+      y / this._game.camera.zoom,
+    )
+    //console.log('move', { cameraOffsetX, cameraOffsetY }, { x, y }, pos)
     const index = getCellIndex(pos.col, pos.row, this.cols)
 
     if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
@@ -188,14 +162,7 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
 
-    //const gridCanvas = document.createElement('canvas')
-    //this.gridCanvas.width = mainCtx.canvas.width
-    //this.gridCanvas.height = mainCtx.canvas.height
-
-    //const gridCtx = this.gridCanvas.getContext('2d')!
-    //const gridCtx = mainCtx
-    //gridCtx.save()
-    //gridCtx.translate(this.game.width / 2, this.game.height / 2 - gridHeight / 2)
+    const tileSize = this.tsize
 
     // draw the grid
     gridCtx.reset()
@@ -205,16 +172,12 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
     const translateX = -cameraOffsetX
     const translateY = -cameraOffsetY
     gridCtx.translate(translateX, translateY)
+    gridCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
 
     const gridDimensions = this.projection.getGridDimensions()
     //gridCtx.translate(-gridDimensions.width / 2, 0)
     gridCtx.fillStyle = 'white'
     gridCtx.fillText(`${gridDimensions.width}/${gridDimensions.height}`, 0, 10)
-
-    // gridCtx.strokeStyle = 'orange'
-    // gridCtx.lineWidth = 1
-    // gridCtx.setLineDash([5, 5])
-    // gridCtx.strokeRect(-gridDimensions.width / 2, 0, gridDimensions.width, gridDimensions.height)
 
     // @todo draw grid lines
     // draw grid tiles
@@ -223,9 +186,11 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
         const { x, y } = this.projection.mapGridToScreen(i, j)
 
         // skip if the cell is outside of the canvas / not visible
+        const _x = x * this._game.camera.zoom
+        const _y = y * this._game.camera.zoom
         //if (x < 0 || y < 0) continue
-        if (x + translateX + this.tsize < 0 || y + translateY + this.tsize < 0) continue
-        if (x > window.innerWidth - translateX || y > window.innerHeight - translateY) continue
+        if (_x + translateX + tileSize < 0 || _y + translateY + tileSize < 0) continue
+        if (_x > window.innerWidth - translateX || _y > window.innerHeight - translateY) continue
 
         //renderedCells.push([i, j])
 
@@ -254,8 +219,8 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
             gridCtx,
             x,
             y,
-            this.tsize,
-            this.tsize / 2,
+            tileSize,
+            tileSize / 2,
             tileColor,
             strokeColor,
             `[${i},${j}]`,
@@ -263,10 +228,10 @@ export class GridSystem extends AbstractBaseSystem implements IGameSystem {
           )
         } else {
           gridCtx.fillStyle = tileColor
-          gridCtx.fillRect(x, y, this.tsize, this.tsize)
+          gridCtx.fillRect(x, y, tileSize, tileSize)
           gridCtx.strokeStyle = 'rgba(163,164,163,0.48)'
           gridCtx.setLineDash([1, 3])
-          gridCtx.strokeRect(x, y, this.tsize, this.tsize)
+          gridCtx.strokeRect(x, y, tileSize, tileSize)
           if (textColor) {
             gridCtx.fillStyle = textColor
           }

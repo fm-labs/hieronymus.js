@@ -167,7 +167,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     0,
     rowNr,
     new TextComponent({
-      text: 'Buildings',
+      text: 'Sprites',
       font: '48px Tektur',
       orientation: 'horizontal',
     }),
@@ -211,7 +211,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     colNr,
     rowNr + 5,
     new TextComponent({
-      text: 'Sprites',
+      text: 'Animations',
       font: '48px Tektur',
       orientation: 'vertical',
     }),
@@ -297,7 +297,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     rowNr + 5,
     new TextComponent({
       text: 'Vertical Flat',
-      font: '48px BungeeSpice',
+      font: '32px BungeeSpice',
       orientation: 'vertical',
       skewOrientation: 'flat',
     }),
@@ -309,7 +309,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     rowNr + 5,
     new TextComponent({
       text: 'Vertical Upright',
-      font: '48px BungeeSpice',
+      font: '32px BungeeSpice',
       orientation: 'vertical',
       skewOrientation: 'upright',
     }),
@@ -321,7 +321,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     rowNr + 4,
     new TextComponent({
       text: 'Horizontal Flat',
-      font: '48px BungeeSpice',
+      font: '32px BungeeSpice',
       orientation: 'horizontal',
       skewOrientation: 'flat',
     }),
@@ -332,7 +332,7 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
     rowNr + 5,
     new TextComponent({
       text: 'Horizontal Upright',
-      font: '48px BungeeSpice',
+      font: '32px BungeeSpice',
       orientation: 'horizontal',
       skewOrientation: 'upright',
     }),

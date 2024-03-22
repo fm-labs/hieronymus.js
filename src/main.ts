@@ -22,14 +22,5 @@ switch (world) {
     throw new Error(`Unknown world: ${world}`)
 }
 
-// handle window resize events
-window.addEventListener('resize', () => {
-  const width = window.innerWidth
-  const height = window.innerHeight
-  console.log('resize', width, height)
-  game.eventbus.emit('resize', { width, height })
-})
-window.dispatchEvent(new Event('resize'))
-
 // run the game
 await game.run()

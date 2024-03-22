@@ -1,6 +1,6 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class DevPanelSystem extends AbstractBaseSystem implements IGameSystem {
+export class DevPanelSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'DevPanelSystem'
   private dirty = true
   private devPanelContainer?: HTMLDivElement

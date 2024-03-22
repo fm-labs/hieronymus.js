@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
 
 interface TextComponentProps extends GameComponentProperties {
@@ -11,7 +11,7 @@ interface TextComponentProps extends GameComponentProperties {
   //angle: number
 }
 
-export class TextComponent extends AbstractBaseComponent implements IGameComponent {
+export class TextComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: TextComponentProps
 
   public static readonly defaultProperties: TextComponentProps = {

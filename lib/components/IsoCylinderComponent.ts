@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { FILL_COLORS, STROKE_COLORS } from '../constants.ts'
 
 interface IsoCylinderProps extends GameComponentProperties {
@@ -7,7 +7,7 @@ interface IsoCylinderProps extends GameComponentProperties {
   tileSize: number
 }
 
-export class IsoCylinderComponent extends AbstractBaseComponent implements IGameComponent {
+export class IsoCylinderComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: IsoCylinderProps
 
   public static readonly defaultProperties: IsoCylinderProps = {

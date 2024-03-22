@@ -1,4 +1,4 @@
-import { AbstractBaseComponent } from './AbstractBaseComponent.ts'
+import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { drawIsometricCube } from '../draw2d/drawiso.ts'
 
 interface IsoCubeProps extends GameComponentProperties {
@@ -8,7 +8,7 @@ interface IsoCubeProps extends GameComponentProperties {
   text?: string
 }
 
-export class IsoCubeComponent extends AbstractBaseComponent implements IGameComponent {
+export class IsoCubeComponent extends AbstractGameComponent implements IGameComponent {
   declare properties: IsoCubeProps
 
   public static readonly defaultProperties: IsoCubeProps = {

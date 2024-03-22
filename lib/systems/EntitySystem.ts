@@ -1,6 +1,6 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class EntitySystem extends AbstractBaseSystem implements IGameSystem {
+export class EntitySystem extends AbstractGameSystem implements IGameSystem {
   public name = 'EntitySystem'
   private _selectedSpriteImage: any | undefined
 

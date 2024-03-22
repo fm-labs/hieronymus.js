@@ -26,6 +26,7 @@
     "test": "vitest --silent=false --reporter=verbose"
   },
   "dependencies": {
+    "cloudia-common": "link:../cloudia-common",
     "pug": "^3.0.2"
   },
   "devDependencies": {

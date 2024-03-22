@@ -1,6 +1,6 @@
-import { AbstractBaseSystem } from './AbstractBaseSystem.ts'
+import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class WebUiSystem2 extends AbstractBaseSystem implements IGameSystem {
+export class WebUiSystem2 extends AbstractGameSystem implements IGameSystem {
   public name = 'WebUiSystem'
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
