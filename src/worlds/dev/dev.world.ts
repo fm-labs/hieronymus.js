@@ -6,7 +6,7 @@ import { IsoHexagonComponent } from '../../../lib'
 import { IsoCylinderComponent } from '../../../lib'
 import { AnimatedSpriteComponent } from '../../../lib'
 
-const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => {
+const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 30
   const COLUMNS = 30
   const TILE_SIZE = 128
@@ -17,6 +17,8 @@ const devWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   const LAYER_LABELS = 3
   const LAYER_BUILDINGS = 4
   const LAYER_OBJECTS = 4
+
+  const resources = game.resources
 
   // Init resources
   await resources.loadSpritesheet(

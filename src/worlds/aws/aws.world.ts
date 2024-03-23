@@ -7,7 +7,7 @@ import {
   IAwsInventoryItemFull,
 } from 'cloudia-common'
 
-const awsWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => {
+const awsWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 30
   const COLUMNS = 30
   const TILE_SIZE = 128
@@ -18,6 +18,8 @@ const awsWorldBuilder = async (resources: IGameResources): Promise<ITileMap> => 
   const LAYER_LABELS = 3
   const LAYER_BUILDINGS = 4
   const LAYER_OBJECTS = 4
+
+  const resources = game.resources
 
   const awsInventory: IAwsInventoryItemFull[] = await fetch(
     '/aws/inventory/aws.inventory.json',

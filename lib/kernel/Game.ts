@@ -1,4 +1,5 @@
 import { EventBus } from './EventBus.ts'
+import { GameResourcesManager } from './GameResourcesManager.ts'
 
 export class Game implements IGame {
   public readonly config: GameConfig
@@ -44,15 +45,10 @@ export class Game implements IGame {
 
   private gameRunning: boolean = false
 
-  constructor(
-    $container: HTMLDivElement,
-    config: GameConfig,
-    map: ITileMap,
-    resources: IGameResources,
-  ) {
-    console.log('Game constructor', config, map, resources)
+  constructor($container: HTMLDivElement, config: GameConfig, resources?: IGameResources) {
+    console.log('Game constructor', config, resources)
     this.config = config
-    this.resources = resources
+    this.resources = resources || new GameResourcesManager()
 
     // container
     this.$container = $container

@@ -1,20 +1,16 @@
-import { GameResourcesManager } from '../../../lib'
 import { Game } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'
 import { InputSystem } from '../../../lib'
 import { WebUiSystem } from '../../../lib'
 import { InfoSystem } from '../../../lib'
-import devWorldBuilder from './dev.world.ts'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
+import devWorldBuilder from './dev.world.ts'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
-  const resources = new GameResourcesManager()
-  const tileMap = await devWorldBuilder(resources)
-
   // Init gamec
-  const gameConfig = { name: 'Dev Game' }
-  const game = new Game(app, gameConfig, tileMap, resources)
+  const config: GameConfig = { name: 'Dev Game' }
+  const game = new Game(app, config)
 
   game.addSystem(new InfoSystem(game))
   game.addSystem(new InputSystem(game))
@@ -22,10 +18,10 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   //game.addSystem(new GamepadInputSystem())
   //game.addSystem(new HeroSystem(game))
 
+  const tileMap = await devWorldBuilder(game)
   game.addSystem(new GridSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
-
-  //game.addSystem(new WebUiSystem(game, tileMap))
+  game.addSystem(new WebUiSystem(game, tileMap))
 
   return game
 }

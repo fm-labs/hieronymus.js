@@ -18,6 +18,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
   //private _clientScreenPos: { x: number; y: number } = { x: 0, y: 0 }
   private _activeCellIdx?: number = undefined
   private _activeGridPos?: number[] = undefined
+  private _cellsRendered: number = 0
 
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
@@ -87,14 +88,8 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     const mainContainer = this._game.$container
     const rect = mainContainer.getBoundingClientRect()
 
-    const cameraOffsetX = this._game.camera.offset.x
-    const cameraOffsetY = this._game.camera.offset.y
-
-    //@todo calculate offsets using projection
-    const offsetX = -cameraOffsetX // mainCanvas.width / 2
-    const offsetY = -cameraOffsetY // mainCanvas.height / 2 - (this.cols / 2) * (this.tsize / 2)
-    const x = e.clientX - rect.left - offsetX
-    const y = e.clientY - rect.top - offsetY
+    const x = e.clientX - rect.left + this._game.camera.offset.x
+    const y = e.clientY - rect.top + this._game.camera.offset.y
 
     const pos = this.projection.mapScreenToGrid(
       x / this._game.camera.zoom,
@@ -119,14 +114,14 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
       //this._dirty = true
     }
 
-    //this._clientScreenPos = { x, y }
-
     //console.log('handleMouseMove', x, y, index)
     if (this.infoDiv) {
       this.infoDiv.textContent = `MOUSE: ${e.clientX.toFixed(2)},${e.clientY.toFixed(2)}
       CANVASPOS: ${x.toFixed(2)},${y.toFixed(2)}
       GRIDPOS: [${pos.col},${pos.row}]
-      IDX: ${index}`
+      IDX: ${index}
+      CELLSRND: ${this._cellsRendered}
+      `
     }
   }
 
@@ -156,31 +151,25 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     const cols = this.cols
     const rows = this.rows
-
+    const tileSize = this.tsize
     const gridColor = 'rgba(0,0,0,0.03)'
-
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
-
-    const tileSize = this.tsize
 
     // draw the grid
     gridCtx.reset()
     gridCtx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height)
 
-    //gridCtx.save()
-    const translateX = -cameraOffsetX
-    const translateY = -cameraOffsetY
-    gridCtx.translate(translateX, translateY)
+    gridCtx.translate(-cameraOffsetX, -cameraOffsetY)
     gridCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
 
     const gridDimensions = this.projection.getGridDimensions()
-    //gridCtx.translate(-gridDimensions.width / 2, 0)
     gridCtx.fillStyle = 'white'
     gridCtx.fillText(`${gridDimensions.width}/${gridDimensions.height}`, 0, 10)
 
     // @todo draw grid lines
     // draw grid tiles
+    let renderedCells = 0
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         const { x, y } = this.projection.mapGridToScreen(i, j)
@@ -189,8 +178,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
         const _x = x * this._game.camera.zoom
         const _y = y * this._game.camera.zoom
         //if (x < 0 || y < 0) continue
-        if (_x + translateX + tileSize < 0 || _y + translateY + tileSize < 0) continue
-        if (_x > window.innerWidth - translateX || _y > window.innerHeight - translateY) continue
+        if (_x - cameraOffsetX + tileSize < 0 || _y - cameraOffsetY + tileSize < 0) continue
+        if (_x > window.innerWidth + cameraOffsetX || _y > window.innerHeight + cameraOffsetY)
+          continue
 
         //renderedCells.push([i, j])
 
@@ -240,10 +230,13 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
         gridCtx.fillStyle = 'rgba(154,2,255,0.48)'
         gridCtx.fillRect(x - 1, y - 1, 2, 2)
+
+        renderedCells++
       }
       //console.log('renderedCells', renderedCells)
     }
     //this._dirty = false
+    this._cellsRendered = renderedCells
   }
 
   public update() {
