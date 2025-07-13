@@ -28,6 +28,14 @@ export class EntityManager implements IEntityManager {
     this._entities.set(id, entity)
   }
 
+  all(): { [key: number]: GameEntity } {
+    const result: { [key: number]: GameEntity } = {}
+    for (const [key, value] of this._entities.entries()) {
+      result[key] = value
+    }
+    return result
+  }
+
   // create(entity: GameEntityDescription): IGameEntity {
   //   let _entity: IGameEntity = entity
   //   switch (entity.type) {

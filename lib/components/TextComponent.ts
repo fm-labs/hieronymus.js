@@ -24,6 +24,9 @@ export class TextComponent extends AbstractGameComponent implements IGameCompone
     orientation: 'vertical', // vertical | horizontal
     skewOrientation: 'flat', // upright | flat
   }
+
+  public readonly componentType: string = 'Text'
+
   constructor(properties: TextComponentProps) {
     super({ ...TextComponent.defaultProperties, ...properties })
   }

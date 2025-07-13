@@ -18,7 +18,7 @@ export class Game implements IGame {
    * The logging container.
    * @private
    */
-  private logDiv: HTMLDivElement
+  private $logContainer: HTMLDivElement
 
   /**
    * The attached game systems.
@@ -71,7 +71,7 @@ export class Game implements IGame {
     // this.$container.appendChild($canvas)
 
     // log container
-    this.logDiv = document.createElement('div')
+    this.$logContainer = document.createElement('div')
 
     this.tick = this.tick.bind(this)
 
@@ -100,19 +100,19 @@ export class Game implements IGame {
     }
   }
 
-  public draw() {
-    //const ctx = this.$canvas.getContext('2d')!
-    //ctx.clearRect(0, 0, this.width, this.height)
-    this.systems.forEach((system) => {
-      if (system.draw) {
-        //system.draw(ctx)
-      }
-    })
-
-    // ctx.rect(0, 0, this.width, this.height)
-    // ctx.strokeStyle = 'red'
-    // ctx.stroke()
-  }
+  // public draw() {
+  //   //const ctx = this.$canvas.getContext('2d')!
+  //   //ctx.clearRect(0, 0, this.width, this.height)
+  //   this.systems.forEach((system) => {
+  //     if (system.draw) {
+  //       //system.draw(ctx)
+  //     }
+  //   })
+  //
+  //   // ctx.rect(0, 0, this.width, this.height)
+  //   // ctx.strokeStyle = 'red'
+  //   // ctx.stroke()
+  // }
 
   // fps
   public lastFrameTime = 0
@@ -143,8 +143,8 @@ export class Game implements IGame {
     }
 
     this.systems.forEach((system) => {
-      if (system.update) {
-        system.update(this.deltaTime)
+      if (system.tick) {
+        system.tick(this.deltaTime)
       }
     })
 
@@ -192,7 +192,7 @@ export class Game implements IGame {
     console.log(...msg)
     const div = document.createElement('div')
     div.textContent = msg.join(' ')
-    this.logDiv.appendChild(div)
+    this.$logContainer.appendChild(div)
   }
 
   public logwarn(...msg: any[]) {

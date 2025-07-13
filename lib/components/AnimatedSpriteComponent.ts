@@ -24,6 +24,7 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     autoPlay: true,
   }
 
+  public readonly componentType: string = 'AnimatedSprite'
   public readonly name: string
 
   private _spriteIdx: number = 0

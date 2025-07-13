@@ -41,6 +41,7 @@ export class TileComponent extends AbstractGameComponent implements IGameCompone
     // children: [],
   }
 
+  public readonly componentType: string = 'Tile'
   public readonly name: string
 
   constructor(properties: TileComponentProps) {

@@ -17,6 +17,9 @@ export class IsoHexagonComponent extends AbstractGameComponent implements IGameC
     depth: 16,
     tileSize: 32,
   }
+
+  public readonly componentType: string = 'IsoHexagon'
+
   constructor(properties: IsoHexagonProps) {
     super({ ...IsoHexagonComponent.defaultProperties, ...properties })
   }

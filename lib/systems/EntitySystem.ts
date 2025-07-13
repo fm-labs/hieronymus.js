@@ -35,7 +35,7 @@ export class EntitySystem extends AbstractGameSystem implements IGameSystem {
     console.log('EntitySystem.stop')
   }
 
-  public update() {
+  public tick() {
     //console.log('EntitySystem.update')
   }
 

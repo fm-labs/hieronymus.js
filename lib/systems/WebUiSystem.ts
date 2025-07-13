@@ -1,5 +1,6 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellCordsFromIndex } from '../utils/gridutil.ts'
+import { SpriteComponent } from '../components/SpriteComponent.ts'
 
 export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'WebUiSystem'
@@ -27,6 +28,8 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
     this.cols = this.tileMap.columns
     //this.rows = this.tileMap.rows
     //this.tileSize = this.tileMap.tileWidth
+
+    this.handleCellClick = this.handleCellClick.bind(this)
   }
 
   public onLoad() {
@@ -76,15 +79,38 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
   public start() {
     console.log('WebUiSystem.start')
+
+    this._game.eventbus.on('grid.cellClick', this.handleCellClick)
   }
 
   public stop() {
     console.log('WebUiSystem.stop')
+
+    this._game.eventbus.off('grid.cellClick', this.handleCellClick)
   }
 
-  public update() {
+  public tick() {
     //console.log('WebUiSystem.update')
     this.draw()
+  }
+
+  private handleCellClick(cellEvent: { index: number; col: number; row: number }) {
+    console.log('WebUiSystem.handleCellClick', cellEvent, this._selectedSpriteIndex)
+
+    this._selectedCellIdx = cellEvent.index
+    if (this._selectedSpriteIndex !== undefined) {
+      // add entity to layer
+      console.log('add entity to layer', this._selectedLayerIdx, this._selectedSpriteIndex)
+      this.tileMap.addObjectAt(
+        this._selectedLayerIdx!,
+        cellEvent.col,
+        cellEvent.row,
+        new SpriteComponent({
+          spriteImage: this._game.resources.sprites[this._selectedSpriteIndex!],
+          tileSize: this.tileMap.tileWidth,
+        }),
+      )
+    }
   }
 
   public draw() {
@@ -130,6 +156,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
       spriteDiv.style.borderWidth = '0 1px 1px 0'
       spriteDiv.dataset.spriteIndex = spriteIdx.toString()
       //spriteDiv.dataset.spriteSheetName = spriteImage.url.toString()
+
       spriteDiv.onclick = (ev) => {
         //const $el = ev.target as HTMLDivElement
         const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
@@ -140,6 +167,9 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
         this.dirty = true
         this.draw()
+
+        ev.preventDefault()
+        ev.stopPropagation()
       }
       if (this._selectedSpriteIndex === spriteIdx) {
         //spriteDiv.style.border = '2px solid red'
@@ -158,24 +188,68 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
     // controls
     this.controlsDiv.innerHTML = ''
 
-    const button1 = document.createElement('button')
-    button1.textContent = 'Save'
-    button1.onclick = () => {
-      console.log('save')
-      this._game.eventbus.emit('editor.save', {})
+    // Dump
+    const buttonDump = document.createElement('button')
+    buttonDump.textContent = 'Dump'
+    buttonDump.onclick = () => {
+      console.log('Dump')
+      const jsonString = JSON.stringify(this.tileMap.dump(), null, 2)
+      console.log(jsonString)
     }
-    this.controlsDiv.appendChild(button1)
+    this.controlsDiv.appendChild(buttonDump)
 
-    const button2 = document.createElement('button')
-    button2.textContent = 'Restore'
-    button2.onclick = () => {
-      console.log('restore')
-      this._game.eventbus.emit('editor.restore', {})
+    // Save
+    const buttonSave = document.createElement('button')
+    buttonSave.textContent = 'Save'
+    buttonSave.onclick = () => {
+      console.log('save')
+      const jsonString = JSON.stringify(this.tileMap.dump(), null, 2)
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'save.json' // Name of the file to be downloaded
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url) // Clean up the URL object
+
+      this._game.eventbus.emit('editor.save', {
+        tilemapJson: jsonString,
+      })
     }
-    this.controlsDiv.appendChild(button2)
+    this.controlsDiv.appendChild(buttonSave)
+
+    // Restore
+    const inputRestoreFile = document.createElement('input')
+    inputRestoreFile.type = 'file'
+    inputRestoreFile.accept = '.json'
+    inputRestoreFile.style.display = 'none'
+    inputRestoreFile.onchange = (ev) => {
+      const file = (ev.target as HTMLInputElement).files![0]
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const jsonString = event.target?.result as string
+        console.log('restore', jsonString)
+        const json = JSON.parse(jsonString)
+        this._game.eventbus.emit('editor.restore', { tilemapJson: json })
+        this.tileMap.restore(json)
+      }
+      reader.readAsText(file)
+    }
+    const buttonRestore = document.createElement('button')
+    buttonRestore.textContent = 'Restore'
+    buttonRestore.onclick = () => {
+      //console.log('restore')
+      //this._game.eventbus.emit('editor.restore', {})
+      inputRestoreFile.click()
+    }
+    this.controlsDiv.appendChild(inputRestoreFile)
+    this.controlsDiv.appendChild(buttonRestore)
 
     this.controlsDiv.appendChild(document.createElement('hr'))
 
+    // Cam Reset
     const buttonCamReset = document.createElement('button')
     buttonCamReset.textContent = 'Reset camera'
     buttonCamReset.onclick = () => {
@@ -184,6 +258,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
     }
     this.controlsDiv.appendChild(buttonCamReset)
 
+    // Cam Center
     const buttonCamCenter = document.createElement('button')
     buttonCamCenter.textContent = 'Center camera'
     buttonCamCenter.onclick = () => {

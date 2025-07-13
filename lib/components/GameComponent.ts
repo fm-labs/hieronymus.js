@@ -1,6 +1,7 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
 export class GameComponent extends AbstractGameComponent implements IGameComponent {
+  public readonly componentType: string = 'Generic'
   public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
     y: 0,

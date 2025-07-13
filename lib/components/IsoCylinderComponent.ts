@@ -17,6 +17,7 @@ export class IsoCylinderComponent extends AbstractGameComponent implements IGame
     depth: 16,
     tileSize: 32,
   }
+  public readonly componentType: string = 'IsoCylinder'
 
   constructor(properties: IsoCylinderProps) {
     super({ ...IsoCylinderComponent.defaultProperties, ...properties })

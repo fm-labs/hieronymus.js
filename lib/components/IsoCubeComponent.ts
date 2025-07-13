@@ -20,6 +20,8 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
     text: undefined,
   }
 
+  public readonly componentType: string = 'IsoCube'
+
   constructor(properties: IsoCubeProps) {
     super({ ...IsoCubeComponent.defaultProperties, ...properties })
   }

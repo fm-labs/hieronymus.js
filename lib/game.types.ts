@@ -1,6 +1,7 @@
 /** GAME ENGINE **/
 
 type GameConfig = {
+  id: string
   name?: string
 }
 
@@ -28,7 +29,7 @@ interface IGame {
   // systems
   run: () => void | Promise<void>
   tick: (deltaTime: number) => void | Promise<void>
-  draw: () => void | Promise<void>
+  //draw: () => void | Promise<void>
 
   // fps
   fps: number
@@ -43,7 +44,7 @@ interface IGameSystem {
   onUnload?: () => void
   start?: () => void
   stop?: () => void
-  update?: (deltaTime: number) => void
+  tick?: (deltaTime: number) => void
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
@@ -113,6 +114,16 @@ type TileMapLayer = {
 
 type TileMapLayerData = number
 
+type TileMapDump = {
+  columns: number
+  rows: number
+  tileWidth: number
+  tileHeight: number
+  layers: TileMapLayer[]
+  objects: TileMapLayerData[][]
+  entities: { [key: number]: GameEntity }
+}
+
 interface ITileMap {
   columns: number
   rows: number
@@ -134,7 +145,12 @@ interface ITileMap {
   getObject(layerId: number, id: number): IGameComponent | undefined
   updateObject(layerId: number, id: number, obj: IGameComponent): void
 
-  serialize(): any
+  dump(): TileMapDump
+  restore(dump: TileMapDump): void
+}
+
+type GameComponentData = {
+  [key: string]: any
 }
 
 type GameComponentProperties = {
@@ -142,6 +158,7 @@ type GameComponentProperties = {
   y?: number
   name?: string
   //[key: string]: any
+  data?: GameComponentData
 }
 
 interface IGameComponent {

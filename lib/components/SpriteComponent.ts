@@ -15,36 +15,32 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
     spriteImage: undefined,
   }
 
+  public readonly componentType: string = 'Sprite'
   public readonly name: string
+
+  private _rendered: boolean = false
+  private _spriteCanvas: HTMLCanvasElement
 
   constructor(properties: SpriteComponentProps) {
     properties = properties || {}
     super({ ...SpriteComponent.defaultProperties, ...properties })
     this.name = properties.name || 'SpriteEntity'
-  }
-
-  draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
-    if (x === undefined || y === undefined) return
 
     const spriteImage = this.properties.spriteImage
-    const tsize = this.properties.tileSize
+    this._spriteCanvas = document.createElement('canvas')
 
     //ctx.save()
 
     //const spriteImage = this.game.resources.sprites[spriteIdx]
     if (!spriteImage) {
-      console.log(`No sprite image selected`)
-      return
+      throw new Error(`No sprite image selected`)
     }
     //console.log('spriteImage', spriteImage)
 
     const sprite = spriteImage.sprite
-    const spriteCanvas = document.createElement('canvas')
-    spriteCanvas.width = sprite.width
-    spriteCanvas.height = sprite.height
-    const spriteCanvasCtx = spriteCanvas.getContext('2d')!
+    this._spriteCanvas.width = sprite.width
+    this._spriteCanvas.height = sprite.height
+    const spriteCanvasCtx = this._spriteCanvas.getContext('2d')!
     spriteCanvasCtx.drawImage(
       spriteImage.$element,
       sprite.x,
@@ -56,11 +52,20 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
       sprite.width,
       sprite.height,
     )
+  }
 
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (this._rendered) return
+
+    const x = this.properties.x
+    const y = this.properties.y
+    if (x === undefined || y === undefined) return
+
+    const tsize = this.properties.tileSize
     const twidth = tsize
     const theight = tsize / 2
-    const ratio = sprite.width / sprite.height
-    const imgW = Math.min(sprite.width, twidth)
+    const ratio = this._spriteCanvas.width / this._spriteCanvas.height
+    const imgW = Math.min(this._spriteCanvas.width, twidth)
     const imgH = imgW / ratio
 
     // adjust width to fit the tile
@@ -76,11 +81,11 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
 
     //ctx.globalAlpha = 0.7
     ctx.drawImage(
-      spriteCanvas,
+      this._spriteCanvas,
       0,
       0,
-      sprite.width,
-      sprite.height,
+      this._spriteCanvas.width,
+      this._spriteCanvas.height,
       x + offsetX,
       y + offsetY,
       imgW,
@@ -89,6 +94,7 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
     //ctx.globalAlpha = 1
 
     //ctx.restore()
+    //this._rendered = true
   }
 
   update(deltaTime: number): void {}

@@ -17,7 +17,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
   //private _clientScreenPos: { x: number; y: number } = { x: 0, y: 0 }
   private _activeCellIdx?: number = undefined
-  private _activeGridPos?: number[] = undefined
+  private _activeGridPos?: Grid2DPosition = undefined
   private _cellsRendered: number = 0
 
   constructor(game: IGame, tileMap: ITileMap) {
@@ -29,9 +29,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     this.projection = tileMap.projection
 
     //@todo center the grid on the screen
-    if (this.projection instanceof DimetricGridProjection) {
-      this._game.camera.offset.x = -this._game.$container.offsetWidth / 2
-    }
+    // if (this.projection instanceof DimetricGridProjection) {
+    //   this._game.camera.offset.x = -this._game.$container.offsetWidth / 2
+    // }
 
     const infoDiv = document.createElement('div')
     infoDiv.id = 'infoDiv'
@@ -74,7 +74,8 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     // Register DOM events
     this.handleMouseMove = this.handleMouseMove.bind(this)
-    this._game.$container.addEventListener('mousemove', this.handleMouseMove)
+    this._game.$container.addEventListener('mousemove', this.handleMouseMove.bind(this))
+    this._game.$container.addEventListener('mousedown', this.handleMouseClick.bind(this))
   }
 
   public stop() {
@@ -82,6 +83,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     // Unregister game events
     this._game.$container.removeEventListener('mousemove', this.handleMouseMove)
+    this._game.$container.removeEventListener('mousedown', this.handleMouseClick)
   }
 
   private handleMouseMove(e: MouseEvent) {
@@ -100,12 +102,14 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
       if (index != this._activeCellIdx) {
-        // this._game.eventbus.emit('grid.cellHover', {
-        //   index: index,
-        // })
+        this._game.eventbus.emit('grid.cellHover', {
+          index: index,
+          col: pos.col,
+          row: pos.row,
+        })
         //console.log('cell changed', index, [pos.col, pos.row], this._activeCellIdx)
         this._activeCellIdx = index
-        this._activeGridPos = [pos.col, pos.row]
+        this._activeGridPos = pos
         //this._dirty = true
       }
     } else if (this._activeCellIdx) {
@@ -125,25 +129,30 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     }
   }
 
-  // private handleMouseClick(e: MouseEvent) {
-  //   const mainCanvas = this._game.$container
-  //   const rect = mainCanvas.getBoundingClientRect()
-  //   const offsetX = mainCanvas.width / 2
-  //   const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tsize / 2)
-  //   const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
-  //   const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
-  //   const pos = this.projection.mapScreenToGrid(x, y)
-  //   const index = getCellIndex(pos.col, pos.row, this.cols)
-  //   // if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
-  //   //   if (index != this._selectedCellIdx) {
-  //   //     console.log('clicked cell', index, pos)
-  //   //     this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
-  //   //
-  //   //     this._selectedCellIdx = index
-  //   //     this.dirty = true
-  //   //   }
-  //   // }
-  // }
+  private handleMouseClick(e: MouseEvent) {
+    // const mainCanvas = this._game.$container
+    // const rect = mainCanvas.getBoundingClientRect()
+    // const offsetX = mainCanvas.width / 2
+    // const offsetY = mainCanvas.height / 2 - (this.cols / 2) * (this.tsize / 2)
+    // const x = e.clientX - rect.left - offsetX + this._game.camera.offset.x
+    // const y = e.clientY - rect.top - offsetY + this._game.camera.offset.y
+    // const pos = this.projection.mapScreenToGrid(x, y)
+    console.log('handleMouseClick', this._activeCellIdx, this._activeGridPos)
+    const index = this._activeCellIdx
+    const pos = this._activeGridPos
+    if (index !== undefined && pos !== undefined) {
+      this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
+    }
+    // if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
+    //   if (index != this._selectedCellIdx) {
+    //     console.log('clicked cell', index, pos)
+    //     this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
+    //
+    //     this._selectedCellIdx = index
+    //     this.dirty = true
+    //   }
+    // }
+  }
 
   public draw(gridCtx: CanvasRenderingContext2D) {
     //if (!this.dirty) return
@@ -191,11 +200,11 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
         // if (index == this._activeCellIdx) {
         //   tileColor = 'rgba(255,0,0,0.5)'
         // }
-        if (this._activeGridPos?.[0] == i && this._activeGridPos?.[1] == j) {
+        if (this._activeGridPos?.col == i && this._activeGridPos?.row == j) {
           tileColor = 'rgba(74,176,162,0.5)'
           textColor = 'rgba(255,255,255,0.85)'
           //strokeColor = 'rgba(74,176,162,0.5)'
-        } else if (this._activeGridPos?.[0] == i || this._activeGridPos?.[1] == j) {
+        } else if (this._activeGridPos?.col == i || this._activeGridPos?.row == j) {
           //tileColor = 'rgba(142,182,194,0.29)'
           strokeColor = 'rgba(142,182,194,0.29)'
         }
@@ -239,7 +248,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     this._cellsRendered = renderedCells
   }
 
-  public update() {
+  public tick() {
     //console.log('GridSystem.update')
     this.draw(this.gridCtx)
   }

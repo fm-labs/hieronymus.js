@@ -1,5 +1,6 @@
 import { getCellIndex } from '../utils/gridutil.ts'
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
+import { DimetricGridProjection } from '../map/DimetricGridProjection.ts'
 
 export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'TileMapSystem'
@@ -27,9 +28,17 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
     const gridWidth = this.cols * this.tsize
     const gridHeight = this.rows * this.tsize
-    this.worldCanvas.width = gridWidth
-    this.worldCanvas.height = gridHeight
+    //this.worldCanvas.width = gridWidth
+    //this.worldCanvas.height = gridHeight
+    this.worldCanvas.width = this._game.width
+    this.worldCanvas.height = this._game.height
     this.worldCanvas.id = 'worldCanvas'
+
+    //@todo center the grid on the screen
+    if (this.tileMap.projection instanceof DimetricGridProjection) {
+      //this._game.camera.offset.x = -this._game.$container.offsetWidth / 2
+      this._game.camera.offset.x = -gridWidth / 2
+    }
 
     this._game.$container.appendChild(this.worldCanvas)
 
@@ -58,7 +67,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     console.log('TileMapSystem.stop')
   }
 
-  public update(deltaTime: number) {
+  public tick(deltaTime: number) {
     //console.log('TileMapSystem.update', deltaTime)
     this.tileMap.layers.forEach((layer, layerIdx) => {
       this.updateLayer(layerIdx, deltaTime)
@@ -90,6 +99,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private drawTiles(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
+    layerCtx.save()
     for (let c = 0; c < this.cols; c++) {
       for (let r = 0; r < this.rows; r++) {
         const cellIdx = getCellIndex(c, r, this.cols)
@@ -101,12 +111,11 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
         //console.log('entity', entityIdx, component)
         if (component.draw) {
-          layerCtx.save()
           component.draw(layerCtx)
-          layerCtx.restore()
         }
       }
     }
+    layerCtx.restore()
   }
 
   private drawObjects(layerIdx: number, layerCtx: CanvasRenderingContext2D) {

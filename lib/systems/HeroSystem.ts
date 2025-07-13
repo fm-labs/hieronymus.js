@@ -163,7 +163,7 @@ export class HeroSystem extends AbstractGameSystem implements IGameSystem {
     console.log('HeroSystem.stop')
   }
 
-  public update(deltaTime: number) {
+  public tick(deltaTime: number) {
     //console.log('HeroSystem.update')
     if (Math.max(deltaTime, 1000) <= 1000) return
 

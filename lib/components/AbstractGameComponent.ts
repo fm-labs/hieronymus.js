@@ -1,4 +1,5 @@
 export abstract class AbstractGameComponent {
+  public abstract readonly componentType: string
   public readonly properties: GameComponentProperties
 
   protected constructor(properties?: GameComponentProperties) {

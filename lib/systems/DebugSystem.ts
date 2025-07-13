@@ -19,7 +19,7 @@ export class DebugSystem extends AbstractGameSystem implements IGameSystem {
     console.log('DebugSystem.stop')
   }
 
-  public update() {
+  public tick() {
     console.log('DebugSystem.update')
   }
 

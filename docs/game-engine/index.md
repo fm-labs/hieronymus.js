@@ -5,15 +5,17 @@
 
 ```typescript
 interface IGame {
+  // html container
   $container: HTMLDivElement
-  $canvas: HTMLCanvasElement
 
   // config
   config: GameConfig
 
-  // world
-  worldMap: ITileMap
+  // resources
   resources: IGameResources
+
+  // scene
+  mainScene?: IScene
 
   // events
   eventbus: IEventBus
@@ -23,10 +25,9 @@ interface IGame {
   width: number
   height: number
 
-  // systems
+  // game loop
   run: () => void | Promise<void>
   tick: (deltaTime: number) => void | Promise<void>
-  draw: () => void | Promise<void>
 
   // fps
   fps: number

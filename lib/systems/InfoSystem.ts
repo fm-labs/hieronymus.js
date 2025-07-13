@@ -48,7 +48,7 @@ export class InfoSystem extends AbstractGameSystem implements IGameSystem {
     console.log('InfoSystem.stop')
   }
 
-  public update() {
+  public tick() {
     this.draw()
   }
 

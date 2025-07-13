@@ -5,20 +5,20 @@ import { DimetricGridProjection } from './DimetricGridProjection.ts'
 import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'
 
 export class TileMap implements ITileMap {
-  readonly assets: any[]
+  // readonly assets: any[]
 
   columns: number
   rows: number
   tileWidth: number
   tileHeight: number
 
-  public readonly layers: TileMapLayer[] = []
-  public readonly objects: TileMapLayerData[][] = []
-  public readonly entities: EntityManager
+  public /*readonly*/ layers: TileMapLayer[] = []
+  public /*readonly*/ objects: TileMapLayerData[][] = []
+  public /*readonly*/ entities: EntityManager
   public readonly projection: IGrid2DProjection
 
   constructor(config: TileMapConfig) {
-    this.assets = []
+    // this.assets = []
     this.columns = config.columns
     this.rows = config.rows
     this.tileWidth = config.tileSize
@@ -35,9 +35,9 @@ export class TileMap implements ITileMap {
     this.projection = projection
   }
 
-  registerAsset(assetType: string, name: string, asset: any) {
-    this.assets.push({ type: assetType, name, ...asset })
-  }
+  // registerAsset(assetType: string, name: string, asset: any) {
+  //   this.assets.push({ type: assetType, name, ...asset })
+  // }
 
   addLayer(layerId: number, layer: TileMapLayer) {
     this.layers[layerId] = layer
@@ -134,11 +134,30 @@ export class TileMap implements ITileMap {
     this.entities.set(entityId, entity)
   }
 
-  serialize(): any {
+  dump(): TileMapDump {
     return {
-      cols: this.columns,
+      columns: this.columns,
       rows: this.rows,
+      tileHeight: this.tileHeight,
+      tileWidth: this.tileWidth,
       layers: this.layers,
+      objects: this.objects,
+      entities: this.entities.all(),
+    }
+  }
+
+  restore(dump: TileMapDump): void {
+    this.columns = dump.columns
+    this.rows = dump.rows
+    this.tileWidth = dump.tileWidth
+    this.tileHeight = dump.tileHeight
+
+    this.layers = dump.layers
+    this.objects = dump.objects
+
+    this.entities = new EntityManager()
+    for (const entity of Object.values(dump.entities)) {
+      this.entities.set(entity.id, entity)
     }
   }
 }
