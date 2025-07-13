@@ -1,13 +1,13 @@
-import { TileMap } from '../../../lib'
+import { IsoCubeComponent, IsoCylinderComponent, SpriteComponent, TileMap } from '../../../lib'
 import { TextComponent } from '../../../lib'
 import {
   AWS_SERVICE_CATEGORIES,
   AWS_SERVICES,
   AwsServiceIdentifier,
-  IAwsInventoryItemFull,
+  AwsInventoryItemFull,
 } from 'cloudia-common'
 
-const awsWorldBuilder = async (game: IGame): Promise<ITileMap> => {
+const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITileMap> => {
   const ROWS = 30
   const COLUMNS = 30
   const TILE_SIZE = 128
@@ -21,9 +21,7 @@ const awsWorldBuilder = async (game: IGame): Promise<ITileMap> => {
 
   const resources = game.resources
 
-  const awsInventory: IAwsInventoryItemFull[] = await fetch(
-    '/aws/inventory/aws.inventory.json',
-  ).then((response) => {
+  const awsInventory: AwsInventoryItemFull[] = await fetch(inventoryUrl).then((response) => {
     return response.json()
   })
 
@@ -82,7 +80,7 @@ const awsWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     const serviceIds = AWS_SERVICES.filter((item) => item.category === service.id).map(
       (item) => item.id,
     )
-    const inventory: IAwsInventoryItemFull[] = awsInventory.filter(
+    const inventory: AwsInventoryItemFull[] = awsInventory.filter(
       (item) => serviceIds.indexOf(item.service_id as AwsServiceIdentifier) > -1,
     )
     if (inventory.length === 0) return
@@ -99,7 +97,59 @@ const awsWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     )
 
     inventory.forEach((item, index) => {
-      worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgba(255,242,0,0.27)' })
+      // // cube
+      // worldMap.addObjectAt(
+      //   LAYER_OBJECTS,
+      //   colNr,
+      //   rowNr,
+      //   new IsoCubeComponent({
+      //     tileSize: worldMap.tileWidth,
+      //     width: worldMap.tileWidth,
+      //     depth: 64,
+      //     //text: 'M4',
+      //   }),
+      // )
+
+      if (item.resource_type === 'AWS::EC2::Instance') {
+        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(213,32,32)' })
+        worldMap.setTile(
+          LAYER_OBJECTS,
+          colNr,
+          rowNr,
+          new SpriteComponent({
+            tileSize: worldMap.tileWidth,
+            spriteImage: resources.getSprite(6),
+            data: item,
+          }),
+        )
+      } else if (item.resource_type.startsWith('AWS::RDS')) {
+        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(82,124,181)' })
+        worldMap.setTile(
+          LAYER_OBJECTS,
+          colNr,
+          rowNr,
+          new IsoCylinderComponent({
+            tileSize: worldMap.tileWidth,
+            radius: worldMap.tileWidth / 4,
+            depth: 32,
+            //text: 'M4',
+          }),
+        )
+      } else {
+        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(219,136,237)' })
+        worldMap.addObjectAt(
+          LAYER_OBJECTS,
+          colNr,
+          rowNr,
+          new IsoCubeComponent({
+            tileSize: worldMap.tileWidth,
+            width: worldMap.tileWidth / 2,
+            depth: 32,
+            //text: 'M4',
+          }),
+        )
+      }
+
       colNr++
       if (colNr >= COLUMNS) {
         colNr = 0

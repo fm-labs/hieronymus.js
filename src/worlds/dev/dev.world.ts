@@ -16,7 +16,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const LAYER_GROUND = 2
   const LAYER_LABELS = 3
   const LAYER_BUILDINGS = 4
-  const LAYER_OBJECTS = 4
+  const LAYER_OBJECTS = 5
 
   const resources = game.resources
 

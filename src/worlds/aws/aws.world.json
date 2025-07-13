@@ -115,6 +115,8 @@
       "eid": 2,
       "class": "TILE",
       "properties": {
+        "col": 0,
+        "row": 0,
         "tileId": 1
       }
     },
@@ -122,6 +124,8 @@
       "eid": 3,
       "class": "SPRITE",
       "properties": {
+        "x": 0,
+        "y": 0,
         "spriteId": 2
       }
     },

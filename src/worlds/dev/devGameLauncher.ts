@@ -9,7 +9,7 @@ import devWorldBuilder from './dev.world.ts'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
   // Init gamec
-  const config: GameConfig = { name: 'Dev Game' }
+  const config: GameConfig = { id: 'dev', name: 'Dev Game' }
   const game = new Game(app, config)
 
   game.addSystem(new InfoSystem(game))

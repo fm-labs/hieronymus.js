@@ -9,8 +9,11 @@ import awsWorldBuilder from './aws.world.ts'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 
 export const awsGameLauncher = async (app: HTMLDivElement) => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const inventoryUrl = urlParams.get('inventory') || '/aws/inventory/aws.inventory.json'
+
   // Init gamec
-  const config: GameConfig = { name: 'AWS Inventory Game' }
+  const config: GameConfig = { id: 'aws', name: 'AWS Inventory Game' }
   const game = new Game(app, config)
 
   game.addSystem(new InfoSystem(game))
@@ -19,9 +22,13 @@ export const awsGameLauncher = async (app: HTMLDivElement) => {
   //game.addSystem(new GamepadInputSystem())
   //game.addSystem(new HeroSystem(game))
 
-  const tileMap = await awsWorldBuilder(game)
-  game.addSystem(new GridSystem(game, tileMap))
-  game.addSystem(new TileMapSystem(game, tileMap))
+  if (inventoryUrl) {
+    const tileMap = await awsWorldBuilder(game, inventoryUrl)
+    game.addSystem(new GridSystem(game, tileMap))
+    game.addSystem(new TileMapSystem(game, tileMap))
+  } else {
+    throw new Error('No inventory URL provided')
+  }
 
   //game.addSystem(new WebUiSystem(game, tileMap))
 
