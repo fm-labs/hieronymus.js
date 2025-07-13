@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flying Dot on Canvas</title>
+  <style>
+      canvas {
+          display: block;
+          margin: auto;
+          background-color: #f0f0f0;
+      }
+  </style>
+</head>
+<body style="width: 100vw; height: 100vh; margin: 0; padding: 0;">
+<canvas id="myCanvas" width="1000" height="500"></canvas>
+<script>
+  // Get the canvas and its context
+  const canvas = document.getElementById('myCanvas');
+  //canvas.width = document.body.getBoundingClientRect().width;
+  //canvas.height = document.body.getBoundingClientRect().height;
+  console.log("canvas.width: ", canvas.width, "canvas.height: ", canvas.height);
+  const ctx = canvas.getContext('2d');
+
+  let started = 0;
+  let elapsed = 0;
+  let crashval = 0;
+
+  let seconds = 0;
+  let multiplier = 0;
+
+  // Animation loop
+  function animate() {
+    if (!started) {
+      started = performance.now();
+
+      // get a random crash value between 0 and 1000
+      crashval = Math.floor(Math.random() * 1000 * 10);
+    }
+    elapsed = performance.now() - started;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    renderInfo();
+    renderXAxe();
+    renderYAxe();
+    renderDot()
+
+    if (elapsed < crashval) {
+      seconds = elapsed / 10;
+      multiplier = 1;
+
+      requestAnimationFrame(animate);
+      return;
+    }
+
+    // crashed
+    console.log("Crashed at: ", elapsed, " with crashval: ", crashval);
+    console.log("Next game in 5 seconds...");
+    setTimeout(() => {
+      started = 0;
+      animate();
+    }, 5000);
+  }
+
+  function renderInfo() {
+    ctx.fillStyle = 'limegreen';
+    ctx.font = '14px Arial';
+    ctx.fillText('Now time: ' + performance.now(), 10, 20);
+    ctx.fillText('Started time: ' + started, 10, 40);
+    ctx.fillText('Crash val: ' + crashval, 10, 60);
+    ctx.fillText('Elapsed time: ' + elapsed, 10, 80);
+
+  }
+
+  function renderXAxe() {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height - 10);
+    ctx.strokeStyle = 'white';
+    ctx.lineTo(canvas.width, canvas.height -10);
+    ctx.stroke();
+
+    const minTick = 1;
+    const maxTick = 15;
+    const tickInterval = 1;
+    const tickWidth = 100;
+
+    // Draw x-axis ticks and labels every 100 pixels
+    for (let i = minTick; i < maxTick; i += tickInterval) {
+      const _i = (i * tickWidth) + 10;
+      ctx.beginPath();
+      ctx.moveTo(_i, canvas.height - 10);
+      ctx.strokeStyle = 'white';
+      ctx.lineTo(_i, canvas.height - 5);
+      ctx.stroke();
+      ctx.fillText(i, _i, canvas.height - 15);
+    }
+  }
+
+  function renderYAxe() {
+    ctx.beginPath();
+    ctx.moveTo(10, 0);
+    ctx.strokeStyle = 'white';
+    ctx.lineTo(10, canvas.height);
+    ctx.stroke();
+
+    const minTick = 0;
+    const maxTick = 5;
+    const tickInterval = 1;
+    const tickWidth = canvas.height / maxTick;
+
+    // Draw y-axis ticks and labels every 100 pixels
+    for (let i = minTick; i < maxTick; i += tickInterval) {
+      const _i = canvas.height - (i * tickWidth) + 10;
+      ctx.beginPath();
+      ctx.moveTo(10, _i);
+      ctx.strokeStyle = 'white';
+      ctx.lineTo(5, _i);
+      ctx.stroke();
+      ctx.fillText(i, 10, _i);
+    }
+  }
+
+  function renderDot() {
+    const radius = 10;
+    const x = seconds
+    const y = canvas.height - 10 - multiplier;
+    console.log("x: ", x, "y: ", y);
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'blue';
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  // Start the animation
+  //start();
+  animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roulette Table</title>
+  <style>
+      body {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          background-color: #2e2e2e;
+      }
+      canvas {
+          background-color: #006400;
+      }
+  </style>
+</head>
+<body>
+
+<canvas id="rouletteTable" width="800" height="400"></canvas>
+
+<script>
+  const canvas = document.getElementById("rouletteTable");
+  const ctx = canvas.getContext("2d");
+
+  // Table settings
+  const cellWidth = 60;
+  const cellHeight = 40;
+  const zeroWidth = cellWidth * 1.5;
+  const rows = 3;
+  const columns = 12;
+
+  // Colors
+  const blackColor = "#333";
+  const redColor = "#d22";
+  const greenColor = "#0a0";
+  const whiteColor = "#fff";
+
+  // Draw Zero Cell
+  ctx.fillStyle = greenColor;
+  ctx.fillRect(0, 0, zeroWidth, cellHeight * rows);
+  ctx.strokeRect(0, 0, zeroWidth, cellHeight * rows);
+  ctx.fillStyle = whiteColor;
+  ctx.font = "20px Arial";
+  ctx.fillText("0", zeroWidth / 2 - 5, cellHeight * rows / 2 + 7);
+
+  // Draw Numbered Cells
+  for (let col = 0; col < columns; col++) {
+    for (let row = 0; row < rows; row++) {
+      const x = zeroWidth + col * cellWidth;
+      const y = row * cellHeight;
+      const number = col * rows + row + 1;
+
+      // Alternate colors for numbers
+      if ([2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35].includes(number)) {
+        ctx.fillStyle = blackColor;
+      } else {
+        ctx.fillStyle = redColor;
+      }
+
+      ctx.fillRect(x, y, cellWidth, cellHeight);
+      ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+      // Draw number in cell
+      ctx.fillStyle = whiteColor;
+      ctx.fillText(number, x + cellWidth / 2 - 10, y + cellHeight / 2 + 7);
+    }
+  }
+
+  // Draw Outside Bet Areas (Red/Black, Odd/Even, Low/High)
+  const outsideBetY = cellHeight * rows + 10;
+  const outsideBetHeight = 40;
+
+  // Red/Black
+  ctx.fillStyle = redColor;
+  ctx.fillRect(zeroWidth, outsideBetY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth, outsideBetY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("RED", zeroWidth + cellWidth * 3 - 20, outsideBetY + 25);
+
+  ctx.fillStyle = blackColor;
+  ctx.fillRect(zeroWidth + cellWidth * 6, outsideBetY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth + cellWidth * 6, outsideBetY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("BLACK", zeroWidth + cellWidth * 9 - 25, outsideBetY + 25);
+
+  // Odd/Even
+  const oddEvenY = outsideBetY + outsideBetHeight + 10;
+  ctx.fillStyle = "#444";
+  ctx.fillRect(zeroWidth, oddEvenY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth, oddEvenY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("ODD", zeroWidth + cellWidth * 3 - 20, oddEvenY + 25);
+
+  ctx.fillStyle = "#777";
+  ctx.fillRect(zeroWidth + cellWidth * 6, oddEvenY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth + cellWidth * 6, oddEvenY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("EVEN", zeroWidth + cellWidth * 9 - 25, oddEvenY + 25);
+
+  // Low/High
+  const lowHighY = oddEvenY + outsideBetHeight + 10;
+  ctx.fillStyle = "#444";
+  ctx.fillRect(zeroWidth, lowHighY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth, lowHighY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("1 - 18", zeroWidth + cellWidth * 3 - 25, lowHighY + 25);
+
+  ctx.fillStyle = "#777";
+  ctx.fillRect(zeroWidth + cellWidth * 6, lowHighY, cellWidth * 6, outsideBetHeight);
+  ctx.strokeRect(zeroWidth + cellWidth * 6, lowHighY, cellWidth * 6, outsideBetHeight);
+  ctx.fillStyle = whiteColor;
+  ctx.fillText("19 - 36", zeroWidth + cellWidth * 9 - 30, lowHighY + 25);
+
+  // Columns
+  for (let col = 1; col <= columns; col++) {
+    const colX = zeroWidth + (col - 1) * cellWidth;
+    const colY = lowHighY + outsideBetHeight + 10;
+    ctx.fillStyle = "#555";
+    ctx.fillRect(colX, colY, cellWidth, outsideBetHeight);
+    ctx.strokeRect(colX, colY, cellWidth, outsideBetHeight);
+    ctx.fillStyle = whiteColor;
+    ctx.fillText(`2 to 1`, colX + 5, colY + 25);
+  }
+
+</script>
+
+</body>
+</html>
