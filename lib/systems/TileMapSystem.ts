@@ -17,9 +17,6 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
   private _drawCounter: number = 0
 
-  private _spawnTimer: any = undefined
-  //private _objects: number[] = []
-
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
@@ -62,64 +59,10 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
   public start() {
     console.log('TileMapSystem.start')
-
-    this._spawnTimer = window.setInterval(() => {
-      console.log('TileMapSystem spawn timer')
-      // kill a random object if we have more than 10
-      // if (this._objects.length > 100) {
-      //   const idx = Math.floor(Math.random() * this._objects.length)
-      //   const objectToRemove = this._objects[idx]
-      //   //console.log('Removing object:', objectToRemove, this._objects.length)
-      //   this.tileMap.removeObject(5, objectToRemove)
-      //   this._objects.splice(idx, 1)
-      // }
-
-      const randCol = Math.floor(Math.random() * this.cols)
-      const randRow = Math.floor(Math.random() * this.rows)
-      const randSpeed = Math.random() * 2 + 1 // random speed between 1 and 3
-      const randTtl = Math.floor(Math.random() * 50000) + 15000 // random ttl between 15 and 50 seconds
-
-      const object = new IsoCharacterComponent({
-        tilesheetName: 'mech',
-        tileSize: this.tsize,
-        speed: 5 * randSpeed,
-        movementSpeed: randSpeed,
-        movementDirection: 'down',
-        ttl: randTtl, // ttl in ms
-      })
-      const objectId = this.tileMap.addObjectAtGridPos(5, randCol, randRow, object)
-    }, 500)
-
-    //this._game.camera.offset.x = -this.worldCanvas.width / 2
-
-    // this._game.eventbus.on('rerender', () => {
-    //   this.dirty = true
-    // })
-
-    this._game.eventbus.on('mouse.dblclick', (event: any) => {
-      console.log('TileMapSystem mouse doubleclick', event)
-
-      // find the component with name 'hero-character'
-      const components = this.tileMap.components as ComponentManager
-      const hero = components.findByName('hero-character')
-      if (hero) {
-        console.log('Hero component found:', hero)
-        // center the camera on the hero
-        this._game.camera.zoom = 1
-        this._game.camera.offset.x = hero.x - this._game.width / 2
-        this._game.camera.offset.y = hero.y - this._game.height / 2
-      } else {
-        console.warn('Hero component not found')
-      }
-    })
   }
 
   public stop() {
     console.log('TileMapSystem.stop')
-    if (this._spawnTimer) {
-      clearInterval(this._spawnTimer)
-      this._spawnTimer = undefined
-    }
   }
 
   public async tick(deltaTime: number) {

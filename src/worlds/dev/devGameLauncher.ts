@@ -6,6 +6,7 @@ import { TileMapEditorSystem } from '../../../lib'
 import { InfoSystem } from '../../../lib'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import devWorldBuilder from './dev.world.ts'
+import { MechDemoSystem } from '../../../lib/systems/MechDemoSystem.ts'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
   // Init gamec
@@ -22,6 +23,7 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new GridSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
   game.addSystem(new TileMapEditorSystem(game, tileMap))
+  game.addSystem(new MechDemoSystem(game, tileMap))
 
   return game
 }

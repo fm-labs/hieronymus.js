@@ -1,7 +1,6 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellCordsFromIndex } from '../utils/gridutil.ts'
 import { SpriteComponent } from '../components/SpriteComponent.ts'
-import { TileMap } from '../map/TileMap.ts'
 import GameAssets from '../kernel/GameAssets.ts'
 
 export class TileMapEditorSystem extends AbstractGameSystem implements IGameSystem {
@@ -21,9 +20,9 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
   private _selectedLayerIdx: number | undefined
   private _selectedSpriteIdx: number | undefined
   private _selection: IMapSelection | undefined
-  private readonly tileMap: TileMap
+  private readonly tileMap: ITileMap
 
-  constructor(game: IGame, tileMap: TileMap) {
+  constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
     this.tileMap = tileMap
@@ -326,44 +325,44 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       this.controlsDiv.appendChild(cellInfo)
     }
 
-    const cellLayerInfo = document.createElement('div')
-    if (this._selectedCellIdx !== undefined && this._selectedLayerIdx !== undefined) {
-      const layerIdx = this._selectedLayerIdx
-      const layer = this.tileMap.layers[layerIdx]
-      if (layer.type === 'TILE') {
-        // the data array contains component IDs where the index is the cell index
-        const componentId = layer.data[this._selectedCellIdx] || undefined
-        if (componentId !== undefined) {
-          cellLayerInfo.textContent = `Components: ${componentId}`
-          //   const component = this.tileMap.components.get(componentId)
-          //   if (component) {
-          //     cellLayerInfo.title = JSON.stringify(component.properties, null, 2)
-          //   }
-        }
-      } else if (layer.type === 'OBJECT') {
-        // the data array contains component IDs where the index is arbitrary
-        // we need to find the component ID for the selected cell by checking the grid position
-        // against the screen position of the cell
-        const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
-        const componentIds: number[] = this.tileMap.findObjectsAtGridPos(
-          layerIdx,
-          gridPos.col,
-          gridPos.row,
-        )
-        // componentIds.forEach((componentId) => {
-        //   const component = this.tileMap.components.get(componentId)
-        //   if (component) {
-        //     cellLayerInfo.textContent += `Selected: ${componentId}`
-        //     cellLayerInfo.title += JSON.stringify(component.properties, null, 2) + '\n'
-        //   }
-        // })
-        cellLayerInfo.textContent += `Layer Component ID: ${componentIds.join(',')}`
-      } else {
-        cellLayerInfo.textContent = `Layer type ${layer.type} not supported for cell selection`
-        cellLayerInfo.title = 'Only TILE and OBJECT are supported for cell selection'
-      }
-      this.controlsDiv.appendChild(cellLayerInfo)
-    }
+    // const cellLayerInfo = document.createElement('div')
+    // if (this._selectedCellIdx !== undefined && this._selectedLayerIdx !== undefined) {
+    //   const layerIdx = this._selectedLayerIdx
+    //   const layer = this.tileMap.layers[layerIdx]
+    //   if (layer.type === 'TILE') {
+    //     // the data array contains component IDs where the index is the cell index
+    //     const componentId = layer.data[this._selectedCellIdx] || undefined
+    //     if (componentId !== undefined) {
+    //       cellLayerInfo.textContent = `Components: ${componentId}`
+    //       //   const component = this.tileMap.components.get(componentId)
+    //       //   if (component) {
+    //       //     cellLayerInfo.title = JSON.stringify(component.properties, null, 2)
+    //       //   }
+    //     }
+    //   } else if (layer.type === 'OBJECT') {
+    //     // the data array contains component IDs where the index is arbitrary
+    //     // we need to find the component ID for the selected cell by checking the grid position
+    //     // against the screen position of the cell
+    //     const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
+    //     const componentIds: number[] = this.tileMap.findObjectsAtGridPos(
+    //       layerIdx,
+    //       gridPos.col,
+    //       gridPos.row,
+    //     )
+    //     // componentIds.forEach((componentId) => {
+    //     //   const component = this.tileMap.components.get(componentId)
+    //     //   if (component) {
+    //     //     cellLayerInfo.textContent += `Selected: ${componentId}`
+    //     //     cellLayerInfo.title += JSON.stringify(component.properties, null, 2) + '\n'
+    //     //   }
+    //     // })
+    //     cellLayerInfo.textContent += `Layer Component ID: ${componentIds.join(',')}`
+    //   } else {
+    //     cellLayerInfo.textContent = `Layer type ${layer.type} not supported for cell selection`
+    //     cellLayerInfo.title = 'Only TILE and OBJECT are supported for cell selection'
+    //   }
+    //   this.controlsDiv.appendChild(cellLayerInfo)
+    // }
 
     const buttonCellClear = document.createElement('button')
     buttonCellClear.textContent = 'Clear'
