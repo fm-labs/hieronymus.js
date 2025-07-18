@@ -106,7 +106,7 @@ type TileMapConfig = {
 
 type TileMapLayer = {
   name: string
-  type: 'TILELAYER' | 'OBJECTLAYER' | 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
+  type: 'TILELAYER' | 'OBJECTLAYER' //| 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
   data: TileMapLayerData[]
   locked?: boolean
   visible?: boolean
@@ -115,13 +115,10 @@ type TileMapLayer = {
 type TileMapLayerData = number
 
 type TileMapDump = {
-  columns: number
-  rows: number
-  tileWidth: number
-  tileHeight: number
+  config: TileMapConfig
+  resources: any
   layers: TileMapLayer[]
-  objects: TileMapLayerData[][]
-  entities: { [key: number]: GameEntity }
+  components: { id: number; componentType: string; properties: GameComponentProperties }[]
 }
 
 interface ITileMap {
@@ -132,25 +129,39 @@ interface ITileMap {
 
   projection: IGrid2DProjection
 
-  entities: IEntityManager
+  components: IComponentManager
   layers: TileMapLayer[]
-  objects: TileMapLayerData[][]
+  //objects: TileMapLayerData[][]
 
-  addTile(layerId: number, col: number, row: number, properties: GameComponentProperties): void
-  setTile(layerId: number, col: number, row: number, tile: IGameComponent): void
+  /**
+   * Creates a tile at the specified layer, column, and row with the given properties.
+   * @param layerId - The ID of the layer to add the tile to.
+   * @param col - The column index of the tile.
+   * @param row - The row index of the tile.
+   * @param properties - Partial properties for the tile.
+   * @returns The component ID of the created tile.
+   * @deprecated Use assignTile instead
+   */
+  createTile(layerId: number, col: number, row: number, properties: GameComponentProperties): number // returns componentId
+
+  /**
+   * @param layerId
+   * @param col
+   * @param row
+   * @param obj
+   */
+  addTile(layerId: number, col: number, row: number, obj: IGameComponent): number // returns componentId
+  assignTile(layerId: number, col: number, row: number, componentId: number): void
   getTile(layerId: number, col: number, row: number): IGameComponent | undefined
+  resetTile(layerId: number, col: number, row: number): void
 
-  addObject(layerId: number, obj: IGameComponent): void
-  addObjectAt(layerId: number, col: number, row: number, obj: IGameComponent): void
-  getObject(layerId: number, id: number): IGameComponent | undefined
-  updateObject(layerId: number, id: number, obj: IGameComponent): void
+  //addObject(layerId: number, obj: IGameComponent): number // returns componentId
+  addObjectAtGridPos(layerId: number, col: number, row: number, obj: IGameComponent): number // returns componentId
+  //getObject(layerId: number, id: number): IGameComponent | undefined
+  //updateObject(layerId: number, id: number, obj: IGameComponent): void
 
   dump(): TileMapDump
-  restore(dump: TileMapDump): void
-}
-
-type GameComponentData = {
-  [key: string]: any
+  //restore(dump: TileMapDump): void
 }
 
 type GameComponentProperties = {
@@ -158,33 +169,29 @@ type GameComponentProperties = {
   y?: number
   name?: string
   //[key: string]: any
-  data?: GameComponentData
+  data?: { [key: string]: any }
 }
 
 interface IGameComponent {
+  componentType: string
   properties?: GameComponentProperties
   setPosition: (x: number, y: number) => void
   update?: (deltaTime: number) => void | boolean
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
-type GameEntity = {
-  id: number
-  parentId?: number
-  name?: string
-  component: IGameComponent
-}
-
-interface IEntityManager {
+interface IComponentManager {
   add(component: IGameComponent, nextId?: number): number
-  set(id: number, entity: GameEntity): void
-  get(id: number): GameEntity | undefined
+  set(id: number, component: IGameComponent): void
+  get(id: number): IGameComponent | undefined
 }
 
-/** ASSET TYPES **/
-type GameAssetType = 'SPRITESHEET' | 'TILESET' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FONT'
+/** SPRITESHEET ATLAS **/
+type SpritesheetAtlas = {
+  sprites: SpritesheetAtlasItem[]
+}
 
-type SpritesheetItem = {
+type SpritesheetAtlasItem = {
   id: number
   name: string
   x: number
@@ -193,124 +200,124 @@ type SpritesheetItem = {
   height: number
 }
 
-type GameAsset = {
-  nextgid: number
-  type: GameAssetType
-  name: string
-  url: string
-}
-
-type FontAsset = GameAsset & {
-  type: 'FONT'
-  name: string
-  url: string
-}
-
-type ImageAsset = GameAsset & {
-  type: 'IMAGE'
-  name: string
-  url: string
-}
-
-type SpritesheetAsset = ImageAsset & {
-  type: 'SPRITESHEET'
-  name: string
-  url: string
-  //sprites: SpritesheetItem[]
-}
-
-type TilesetAsset = SpritesheetAsset & {
-  type: 'TILESET'
-  name: string
-  url: string
-  //sprites: SpritesheetItem[]
-}
-
-type AudioAsset = GameAsset & {
-  type: 'AUDIO'
-  name: string
-  url: string
-}
+// /** ASSET TYPES **/
+// type GameAssetType = 'SPRITESHEET' | 'TILESET' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'FONT'
+//
+// type GameAsset = {
+//   nextgid: number
+//   type: GameAssetType
+//   name: string
+//   url: string
+// }
+//
+// type FontAsset = GameAsset & {
+//   type: 'FONT'
+//   name: string
+//   url: string
+// }
+//
+// type ImageAsset = GameAsset & {
+//   type: 'IMAGE'
+//   name: string
+//   url: string
+// }
+//
+// type SpritesheetAsset = ImageAsset & {
+//   type: 'SPRITESHEET'
+//   name: string
+//   url: string
+//   //sprites: SpritesheetItem[]
+// }
+//
+// type TilesheetAsset = SpritesheetAsset & {
+//   type: 'TILESET'
+//   name: string
+//   url: string
+//   //sprites: SpritesheetItem[]
+// }
+//
+// type AudioAsset = GameAsset & {
+//   type: 'AUDIO'
+//   name: string
+//   url: string
+// }
 
 /** RESOURCE TYPES **/
 
-type GameResourceType =
-  | 'SPRITESHEET'
-  | 'TILESET'
-  | 'SPRITE'
-  | 'TILE'
-  | 'IMAGE'
-  | 'AUDIO'
-  | 'VIDEO'
-  | 'FONT'
+// type GameResourceType =
+//   | 'SPRITESHEET'
+//   | 'TILESET'
+//   | 'SPRITE'
+//   | 'TILE'
+//   | 'IMAGE'
+//   | 'AUDIO'
+//   | 'VIDEO'
+//   | 'FONT'
 
-type GameResource = {
-  type: GameResourceType
-  $element: HTMLElement
-}
+// type GameResource = {
+//   type: GameResourceType
+//   $element: HTMLElement
+// }
+//
+// type ImageResource = GameResource & {
+//   type: 'IMAGE'
+//   $element: HTMLImageElement
+// }
+//
+// type SpritesheetResource = GameResource & {
+//   type: 'SPRITESHEET'
+//   $element: HTMLImageElement
+//   name: string
+//   sprites: SpritesheetItem[]
+// }
+//
+// type TilesheetResource = GameResource & {
+//   type: 'TILESET'
+//   $element: HTMLImageElement
+//   name: string
+//   tileWidth: number
+//   tileHeight: number
+//   columns: number
+//   rows: number
+//   //count?: number
+// }
+//
+// type SpriteResource = GameResource & {
+//   type: 'SPRITE'
+//   $element: HTMLImageElement
+//   sprite: SpritesheetItem
+// }
 
-type ImageResource = GameResource & {
-  type: 'IMAGE'
-  $element: HTMLImageElement
-}
-
-type SpritesheetResource = GameResource & {
-  type: 'SPRITESHEET'
-  $element: HTMLImageElement
-  name: string
-  sprites: SpritesheetItem[]
-}
-
-type TilesetResource = GameResource & {
-  type: 'TILESET'
-  $element: HTMLImageElement
-  name: string
-  tileWidth: number
-  tileHeight: number
-  columns: number
-  rows: number
-  //count?: number
-}
-
-type SpriteResource = GameResource & {
-  type: 'SPRITE'
-  $element: HTMLImageElement
-  sprite: SpritesheetItem
-}
-
-type AudioResource = GameResource & {
-  type: 'AUDIO'
-  $element: HTMLImageElement
-}
-
-type VideoResource = GameResource & {
-  type: 'VIDEO'
-  $element: HTMLImageElement
-}
-
-type FontResource = GameResource & {
-  type: 'FONT'
-  $font: FontFace
-}
+// type AudioResource = GameResource & {
+//   type: 'AUDIO'
+//   $element: HTMLImageElement
+// }
+//
+// type VideoResource = GameResource & {
+//   type: 'VIDEO'
+//   $element: HTMLImageElement
+// }
+//
+// type FontResource = GameResource & {
+//   type: 'FONT'
+//   $font: FontFace
+// }
 
 /** RESOURCE TYPES **/
 
 interface IGameResources {
-  spritesheets: (SpritesheetResource | TilesetResource)[] // @TODO: remove from interface. Use getter instead.
-  sprites: SpriteResource[] // @TODO: remove from interface. Use getter instead.
   loadFont(name: string, url: string): Promise<void>
-  loadHtmlImage(url: string): Promise<HTMLImageElement>
-  loadSpritesheet(name: string, url: string, nextgid?: number): Promise<void>
-  loadTileset(
+  loadImage(name: string, url: string): Promise<HTMLImageElement>
+  loadSpritesheet(name: string, imageUrl: string, atlasUrl: string, nextgid?: number): Promise<void>
+  loadTilesheet(
     name: string,
     url: string,
     columns: number,
     rows: number,
     nextgid?: number,
   ): Promise<void>
-  loadKenneySpritesheet(name: string, nextgid?: number): Promise<void>
-  getSprite(gid: number): SpriteResource | undefined
-  getSpritesheet(name: string): SpritesheetResource | TilesetResource | undefined
+  //getSprite(gid: number): SpriteResource | undefined
+  //getSpritesheet(name: string): SpritesheetResource | TilesheetResource | undefined
 }
 
 /** INPUT TYPES **/

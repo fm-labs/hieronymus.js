@@ -7,6 +7,8 @@ export class InfoSystem extends AbstractGameSystem implements IGameSystem {
 
   private mousePos: Screen2DPosition = { x: 0, y: 0 }
 
+  private metrics: { [key: string]: number } = {}
+
   constructor(game: IGame) {
     super(game)
 
@@ -21,8 +23,9 @@ export class InfoSystem extends AbstractGameSystem implements IGameSystem {
     systemDiv.style.overflowY = 'scroll'
     systemDiv.style.fontFamily = 'monospace'
     systemDiv.style.fontSize = '10px'
-    systemDiv.style.color = 'rgb(255,0,0)'
-    systemDiv.style.opacity = '0.8'
+    systemDiv.style.color = 'rgb(132,255,0)'
+    systemDiv.style.opacity = '1'
+    systemDiv.style.zIndex = '100000'
     this.systemDiv = systemDiv
   }
 
@@ -33,6 +36,12 @@ export class InfoSystem extends AbstractGameSystem implements IGameSystem {
     this._game.$container.addEventListener('mousemove', (e: MouseEvent) => {
       //console.log('mousemove', e)
       this.mousePos = { x: e.clientX, y: e.clientY }
+    })
+
+    this._game.eventbus.on('system.draw', (event) => {
+      const systemName = event?.system || 'unknown'
+      const metricsKey = `${systemName}DrawCounter`
+      this.metrics[metricsKey] = event?.drawCounter || 0
     })
   }
 
@@ -75,9 +84,14 @@ export class InfoSystem extends AbstractGameSystem implements IGameSystem {
 <div>Screen W:${screen.width} H:${screen.height}</div>
 <div>Window W:${window.innerWidth} H:${window.innerHeight}</div>
 <div>Container W:${this._game.$container.offsetWidth} H:${this._game.$container.offsetHeight}</div>
+<div>Canvas W:${this._game.width} H:${this._game.height}</div>
 <div>Game W:${this._game.width} H:${this._game.height}</div>
 <div>Camera X:${this._game.camera.offset.x} Y:${this._game.camera.offset.y} ZOOM ${this._game.camera.zoom}</div>
 <div>Mouse X:${this.mousePos.x} Y:${this.mousePos.y}</div>
 `
+    // Add metrics
+    for (const [key, value] of Object.entries(this.metrics)) {
+      this.systemDiv.innerHTML += `<div>${key}: ${value}</div>`
+    }
   }
 }

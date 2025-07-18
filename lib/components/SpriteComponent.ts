@@ -1,8 +1,9 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
+import GameAssets from '../kernel/GameAssets.ts'
 
-interface SpriteComponentProps extends GameComponentProperties {
+export interface SpriteComponentProps extends GameComponentProperties {
   tileSize: number
-  spriteImage?: SpriteResource
+  spriteId?: number
 }
 
 export class SpriteComponent extends AbstractGameComponent implements IGameComponent {
@@ -12,7 +13,6 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
     x: 0,
     y: 0,
     tileSize: 0,
-    spriteImage: undefined,
   }
 
   public readonly componentType: string = 'Sprite'
@@ -26,23 +26,32 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
     super({ ...SpriteComponent.defaultProperties, ...properties })
     this.name = properties.name || 'SpriteEntity'
 
-    const spriteImage = this.properties.spriteImage
     this._spriteCanvas = document.createElement('canvas')
 
-    //ctx.save()
-
-    //const spriteImage = this.game.resources.sprites[spriteIdx]
-    if (!spriteImage) {
-      throw new Error(`No sprite image selected`)
+    const spriteId = this.properties.spriteId
+    if (spriteId === undefined) {
+      console.warn(`spriteId is required for SpriteComponent`)
+      return
     }
-    //console.log('spriteImage', spriteImage)
 
-    const sprite = spriteImage.sprite
+    const spriteImage = GameAssets.getSpriteImage(spriteId)
+    if (!spriteImage) {
+      console.warn(`Sprite image element for sprite with id ${spriteId} not found`)
+      return
+    }
+
+    //ctx.save()
+    const sprite = GameAssets.getSprite(spriteId)
+    if (!sprite) {
+      console.warn(`Sprite with id ${spriteId} not found`)
+      return
+    }
+
     this._spriteCanvas.width = sprite.width
     this._spriteCanvas.height = sprite.height
     const spriteCanvasCtx = this._spriteCanvas.getContext('2d')!
     spriteCanvasCtx.drawImage(
-      spriteImage.$element,
+      spriteImage,
       sprite.x,
       sprite.y,
       sprite.width,

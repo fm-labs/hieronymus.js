@@ -2,11 +2,11 @@
  *
  * @param col
  * @param row
- * @param gridWidth
+ * @param columns
  * @deprecated Use getCellIndex instead
  */
-export const mapCellCordsToIndex = (col: number, row: number, gridWidth: number): number => {
-  return row * gridWidth + col
+export const mapCellCordsToIndex = (col: number, row: number, columns: number): number => {
+  return row * columns + col
 }
 
 /**
@@ -25,16 +25,16 @@ export const getWorldCell = (world: World, col: number, row: number): WorldCell 
 /**
  * Determine the cell index from the column and row.
  */
-export function getCellIndex(col: number, row: number, gridWidth: number): number {
-  return row * gridWidth + col
+export function getCellIndex(col: number, row: number, columns: number): number {
+  return row * columns + col
 }
 
 export function getCellCordsFromIndex(
   index: number,
-  gridWidth: number,
+  columns: number,
 ): { col: number; row: number } {
-  const col = index % gridWidth
-  const row = Math.floor(index / gridWidth)
+  const col = index % columns
+  const row = Math.floor(index / columns)
   return { col, row }
 }
 

@@ -39,10 +39,10 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //   '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png',
   //   32,
   // )
-  // await resources.loadTileset('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
-  // await resources.loadTileset('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
-  // await resources.loadTileset('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
-  // await resources.loadTileset('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+  // await resources.loadTilesheet('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
+  // await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+  // await resources.loadTilesheet('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
+  // await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
 
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
@@ -63,7 +63,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
 
   const rowNr = 0
 
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     rowNr,
@@ -86,7 +86,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const zeroX = baseOffsetX
   const zeroY = baseOffsetY
   for (let i = 0; i < 3; i++) {
-    worldMap.addTile(LAYER_TILES, zeroX, zeroY - i, {
+    worldMap.createTile(LAYER_TILES, zeroX, zeroY - i, {
       backgroundColor: 'rgba(62,159,68,0.5)',
       color: 'rgba(255,255,255,0.5)',
       text: '0',
@@ -105,13 +105,13 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       bgColor = colorRed
     }
 
-    worldMap.addTile(LAYER_TILES, x, y, {
+    worldMap.createTile(LAYER_TILES, x, y, {
       backgroundColor: bgColor,
       color: 'rgba(255,255,255,0.8)',
       text: number.toString(),
     })
 
-    worldMap.addObjectAt(
+    worldMap.addObjectAtGridPos(
       LAYER_LABELS,
       x + 1,
       y + 1,
@@ -124,7 +124,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     )
 
     for (let j = 0; j < 5; j++) {
-      worldMap.addObjectAt(
+      worldMap.addObjectAtGridPos(
         LAYER_OBJECTS,
         10 + j,
         11,

@@ -2,7 +2,7 @@ import { Game } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'
 import { InputSystem } from '../../../lib'
-import { WebUiSystem } from '../../../lib'
+import { TileMapEditorSystem } from '../../../lib'
 import { InfoSystem } from '../../../lib'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import devWorldBuilder from './dev.world.ts'
@@ -21,7 +21,7 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   const tileMap = await devWorldBuilder(game)
   game.addSystem(new GridSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
-  game.addSystem(new WebUiSystem(game, tileMap))
+  game.addSystem(new TileMapEditorSystem(game, tileMap))
 
   return game
 }

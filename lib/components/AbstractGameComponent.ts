@@ -1,4 +1,6 @@
 export abstract class AbstractGameComponent {
+  declare static defaultProperties: GameComponentProperties
+
   public abstract readonly componentType: string
   public readonly properties: GameComponentProperties
 

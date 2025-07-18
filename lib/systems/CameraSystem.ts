@@ -23,6 +23,10 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
 
     this._game.eventbus.on('camera.reset', this.handleCameraResetEvent.bind(this))
     this._game.eventbus.on('camera.center', this.handleCameraCenterEvent.bind(this))
+
+    this._game.camera.offset.x = -this._game.width / 2
+    this._game.camera.offset.y = -this._game.height * 0.05 // center vertically
+    this._game.camera.zoom = 0.5 // initial zoom level
   }
 
   public stop() {

@@ -6,6 +6,7 @@ import {
   AwsServiceIdentifier,
   AwsInventoryItemFull,
 } from 'cloudia-common'
+import { TileComponent } from '../../../lib/components/TileComponent.ts'
 
 const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITileMap> => {
   const ROWS = 30
@@ -13,11 +14,11 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   const TILE_SIZE = 128
 
   const LAYER_TILES = 0
-  const LAYER_UNDERGROUND = 1
-  const LAYER_GROUND = 2
+  //const LAYER_UNDERGROUND = 1
+  //const LAYER_GROUND = 2
   const LAYER_LABELS = 3
   const LAYER_BUILDINGS = 4
-  const LAYER_OBJECTS = 4
+  //const LAYER_OBJECTS = 5
 
   const resources = game.resources
 
@@ -29,17 +30,19 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   await resources.loadSpritesheet(
     'fm_iso_buildings',
     '/assets/sprites/fm_iso_buildings/fm_iso_buildings.png',
+    '/assets/sprites/fm_iso_buildings/fm_iso_buildings.json',
     1,
   )
   await resources.loadSpritesheet(
     'fm_iso_pyramids',
     '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png',
+    '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.json',
     32,
   )
-  await resources.loadTileset('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
-  await resources.loadTileset('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
-  await resources.loadTileset('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
-  await resources.loadTileset('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+  await resources.loadTilesheet('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
+  await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+  await resources.loadTilesheet('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
+  await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
 
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
@@ -55,13 +58,13 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
 
   // Init layers
   worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILELAYER', data: [] })
+  //worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILELAYER', data: [] })
+  //worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILELAYER', data: [] })
   worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILELAYER', data: [] })
+  //worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     0,
@@ -85,17 +88,6 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
     )
     if (inventory.length === 0) return
 
-    worldMap.addObjectAt(
-      LAYER_LABELS,
-      colNr,
-      rowNr,
-      new TextComponent({
-        text: service.label + ' (' + serviceIds.length + '/' + inventory.length + ')',
-        font: '24px Tektur',
-        orientation: 'horizontal',
-      }),
-    )
-
     inventory.forEach((item, index) => {
       // // cube
       // worldMap.addObjectAt(
@@ -111,21 +103,23 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
       // )
 
       if (item.resource_type === 'AWS::EC2::Instance') {
-        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(213,32,32)' })
-        worldMap.setTile(
-          LAYER_OBJECTS,
-          colNr,
-          rowNr,
-          new SpriteComponent({
-            tileSize: worldMap.tileWidth,
-            spriteImage: resources.getSprite(6),
-            data: item,
-          }),
-        )
+        const _tile = new TileComponent({
+          width: worldMap.tileWidth,
+          height: worldMap.tileHeight,
+          backgroundColor: 'rgb(213,32,32)',
+        })
+        worldMap.addTile(LAYER_TILES, colNr, rowNr, _tile)
+
+        const _sprite = new SpriteComponent({
+          tileSize: worldMap.tileWidth,
+          spriteId: 6,
+          data: item,
+        })
+        worldMap.addTile(LAYER_BUILDINGS, colNr, rowNr, _sprite)
       } else if (item.resource_type.startsWith('AWS::RDS')) {
-        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(82,124,181)' })
-        worldMap.setTile(
-          LAYER_OBJECTS,
+        worldMap.createTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(82,124,181)' })
+        worldMap.addTile(
+          LAYER_BUILDINGS,
           colNr,
           rowNr,
           new IsoCylinderComponent({
@@ -136,9 +130,9 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
           }),
         )
       } else {
-        worldMap.addTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(219,136,237)' })
-        worldMap.addObjectAt(
-          LAYER_OBJECTS,
+        worldMap.createTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(219,136,237)' })
+        worldMap.addTile(
+          LAYER_BUILDINGS,
           colNr,
           rowNr,
           new IsoCubeComponent({
@@ -159,6 +153,19 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
 
     colNr = 0
     rowNr++
+
+    worldMap.addObjectAtGridPos(
+      LAYER_LABELS,
+      colNr,
+      rowNr,
+      new TextComponent({
+        text: service.label + ' (' + serviceIds.length + '/' + inventory.length + ')',
+        font: '24px Tektur',
+        orientation: 'horizontal',
+        color: 'rgb(255, 255, 255)',
+      }),
+    )
+
     rowNr++
   })
 

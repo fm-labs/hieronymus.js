@@ -24,17 +24,19 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   await resources.loadSpritesheet(
     'fm_iso_buildings',
     '/assets/sprites/fm_iso_buildings/fm_iso_buildings.png',
+    '/assets/sprites/fm_iso_buildings/fm_iso_buildings.json',
     1,
   )
   await resources.loadSpritesheet(
     'fm_iso_pyramids',
     '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.png',
+    '/assets/sprites/fm_iso_pyramids/fm_iso_pyramids.json',
     32,
   )
-  await resources.loadTileset('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
-  await resources.loadTileset('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
-  await resources.loadTileset('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
-  await resources.loadTileset('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+  await resources.loadTilesheet('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
+  await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+  await resources.loadTilesheet('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
+  await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
 
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
@@ -53,12 +55,31 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILELAYER', data: [] })
   worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILELAYER', data: [] })
   worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECTLAYER', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILELAYER', data: [] })
   worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
 
   let rowNr = 0
 
-  worldMap.addObjectAt(
+  // const tilesLayer = new TileMapLayer({ type: 'TILELAYER', name: 'Tiles' })
+  //tilesLayer.data = new Array(COLUMNS * ROWS).fill(0);
+  // row = 1; col = 1;
+  //tilesLayer.setTile(col, row, 'Tile', { backgroundColor: 'rgba(255,242,0,0.27)' });
+
+  // const objectsLayer = new TileMapLayer({ type: 'OBJECTLAYER', name: 'Objects' })
+  //objectsLayer.data = []
+
+  //const componentId = components.add(new IsoCubeComponent({ tileSize: worldMap.tileWidth, width: worldMap.tileWidth, depth: 64 }))
+  //objectsLayer.setTile(col, row, componentId)
+  //objectsLayer.setObject(x, y, componentId)
+
+  // const textEntityId = worldMap.components.add(
+  //   new TextComponent({
+  //     text: 'Tiles',
+  //     font: '48px Tektur',
+  //     orientation: 'horizontal',
+  //   }),
+  // )
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     rowNr,
@@ -70,16 +91,16 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   )
 
   // TILE layer
-  worldMap.addTile(LAYER_TILES, 0, rowNr, { backgroundColor: 'rgba(255,242,0,0.27)' })
-  worldMap.addTile(LAYER_TILES, 1, rowNr, { backgroundColor: 'rgba(255,0,106,0.5)' })
-  worldMap.addTile(LAYER_TILES, 2, rowNr, { backgroundColor: 'rgba(0,81,255,0.5)' })
-  worldMap.addTile(LAYER_TILES, 3, rowNr, {})
+  worldMap.createTile(LAYER_TILES, 0, rowNr, { backgroundColor: 'rgba(255,242,0,0.27)' })
+  worldMap.createTile(LAYER_TILES, 1, rowNr, { backgroundColor: 'rgba(255,0,106,0.5)' })
+  worldMap.createTile(LAYER_TILES, 2, rowNr, { backgroundColor: 'rgba(0,81,255,0.5)' })
+  worldMap.createTile(LAYER_TILES, 3, rowNr, {})
 
   // SHAPES layer
   rowNr++
   rowNr++
   rowNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     rowNr,
@@ -91,7 +112,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   )
 
   // cube
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     0,
     rowNr,
@@ -102,21 +123,18 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       //text: 'M4',
     }),
   )
-  worldMap.addObjectAt(
-    LAYER_OBJECTS,
-    1,
-    rowNr,
-    new IsoCubeComponent({
-      tileSize: worldMap.tileWidth,
-      width: worldMap.tileWidth / 2,
-      depth: 32,
-      //text: 'M4',
-    }),
-  )
+
+  const isoCube2 = worldMap.components.createComponent('IsoCube', {
+    tileSize: worldMap.tileWidth,
+    width: worldMap.tileWidth / 2,
+    depth: 32,
+    //text: 'M4',
+  })
+  worldMap.addObjectAtGridPos(LAYER_OBJECTS, 1, rowNr, isoCube2)
 
   // hexagon
   rowNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     0,
     rowNr,
@@ -126,7 +144,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       depth: 64,
     }),
   )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     1,
     rowNr,
@@ -139,7 +157,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
 
   // cylinder
   rowNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     0,
     rowNr,
@@ -149,7 +167,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       depth: 64,
     }),
   )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     1,
     rowNr,
@@ -164,7 +182,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   rowNr++
   rowNr++
   rowNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     rowNr,
@@ -175,31 +193,34 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     }),
   )
 
-  worldMap.setTile(
+  worldMap.addTile(
     LAYER_BUILDINGS,
     0,
     rowNr,
     new SpriteComponent({
       tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(6),
+      spriteId: 6,
+      //spriteImage: resources.getSprite(6),
     }),
   )
-  worldMap.setTile(
+  worldMap.addTile(
     LAYER_BUILDINGS,
     1,
     rowNr,
     new SpriteComponent({
       tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(7),
+      spriteId: 7,
+      //spriteImage: resources.getSprite(7),
     }),
   )
-  worldMap.setTile(
+  worldMap.addTile(
     LAYER_BUILDINGS,
     2,
     rowNr,
     new SpriteComponent({
       tileSize: worldMap.tileWidth,
-      spriteImage: resources.getSprite(8),
+      spriteId: 8,
+      //spriteImage: resources.getSprite(8),
     }),
   )
 
@@ -208,7 +229,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const secondColStart = 5
   let colNr = secondColStart
 
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 5,
@@ -218,23 +239,23 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       orientation: 'vertical',
     }),
   )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     6,
     2,
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
-      tileset: resources.getSpritesheet('mech-up') as TilesetResource,
+      tilesheetName: 'mech-up',
       speed: 5,
     }),
   )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     5,
     3,
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
-      tileset: resources.getSpritesheet('mech-right') as TilesetResource,
+      tilesheetName: 'mech-right',
       speed: 5,
     }),
   )
@@ -244,17 +265,17 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //   2,
   //   new AnimatedSpriteComponent({
   //     tileSize: worldMap.tileWidth,
-  //     tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+  //     tileset: resources.getSpritesheet('mech-left') as TilesheetResource,
   //     speed: 1,
   //   }),
   // )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     7,
     3,
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
-      tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+      tilesheetName: 'mech-left',
       speed: 5,
     }),
   )
@@ -264,23 +285,23 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //   4,
   //   new AnimatedSpriteComponent({
   //     tileSize: worldMap.tileWidth,
-  //     tileset: resources.getSpritesheet('mech-left') as TilesetResource,
+  //     tileset: resources.getSpritesheet('mech-left') as TilesheetResource,
   //     speed: 10,
   //   }),
   // )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_OBJECTS,
     6,
     4,
     new AnimatedSpriteComponent({
       tileSize: worldMap.tileWidth,
-      tileset: resources.getSpritesheet('mech-down') as TilesetResource,
+      tilesheetName: 'mech-down',
       speed: 5,
     }),
   )
 
   colNr = colNr + 4
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 5,
@@ -293,7 +314,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
 
   // LABELS layer
   colNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 5,
@@ -305,7 +326,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     }),
   )
   colNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 5,
@@ -317,7 +338,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     }),
   )
   colNr++
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 4,
@@ -328,7 +349,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       skewOrientation: 'flat',
     }),
   )
-  worldMap.addObjectAt(
+  worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     colNr,
     rowNr + 5,
@@ -339,6 +360,13 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       skewOrientation: 'upright',
     }),
   )
+
+  // worldMap.addObjectAt(LAYER_LABELS, colNr, rowNr + 5, 'Text', {
+  //   text: 'Horizontal Upright',
+  //   font: '32px BungeeSpice',
+  //   orientation: 'horizontal',
+  //   skewOrientation: 'upright',
+  // })
 
   return worldMap
 }

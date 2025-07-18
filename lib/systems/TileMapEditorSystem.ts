@@ -1,9 +1,11 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellCordsFromIndex } from '../utils/gridutil.ts'
 import { SpriteComponent } from '../components/SpriteComponent.ts'
+import { TileMap } from '../map/TileMap.ts'
+import GameAssets from '../kernel/GameAssets.ts'
 
-export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
-  public name = 'WebUiSystem'
+export class TileMapEditorSystem extends AbstractGameSystem implements IGameSystem {
+  public name = 'TileMapEditorSystem'
   private uiDiv!: HTMLDivElement
   private controlsDiv!: HTMLDivElement
   private dirty = true
@@ -17,11 +19,11 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
   private _selectedCellIdx: number | undefined
   private _selectedLayerIdx: number | undefined
-  private _selectedSpriteIndex: number | undefined
+  private _selectedSpriteIdx: number | undefined
   private _selection: IMapSelection | undefined
-  private readonly tileMap: ITileMap
+  private readonly tileMap: TileMap
 
-  constructor(game: IGame, tileMap: ITileMap) {
+  constructor(game: IGame, tileMap: TileMap) {
     super(game)
 
     this.tileMap = tileMap
@@ -58,6 +60,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
     const controlsDiv = document.createElement('div')
     controlsDiv.id = 'controlsDiv'
+    controlsDiv.style.zIndex = '10000'
     controlsDiv.style.position = 'absolute'
     controlsDiv.style.top = '0px'
     controlsDiv.style.right = '0px'
@@ -67,8 +70,9 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
     //controlsDiv.style.pointerEvents = 'none'
     //controlsDiv.style.display = 'flex'
     //controlsDiv.style.flexDirection = 'row'
-    controlsDiv.style.backgroundColor = 'rgba(134,129,129,0.2)'
+    controlsDiv.style.backgroundColor = 'rgba(37,36,36,0.8)'
     //controlsDiv.style.border = '1px solid rgba(215,6,6,0.5)'
+
     this.controlsDiv = controlsDiv
     this._game.$container.appendChild(controlsDiv)
   }
@@ -95,22 +99,38 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private handleCellClick(cellEvent: { index: number; col: number; row: number }) {
-    console.log('WebUiSystem.handleCellClick', cellEvent, this._selectedSpriteIndex)
+    console.log('WebUiSystem.handleCellClick', cellEvent, this._selectedSpriteIdx)
 
     this._selectedCellIdx = cellEvent.index
-    if (this._selectedSpriteIndex !== undefined) {
-      // add entity to layer
-      console.log('add entity to layer', this._selectedLayerIdx, this._selectedSpriteIndex)
-      this.tileMap.addObjectAt(
-        this._selectedLayerIdx!,
-        cellEvent.col,
-        cellEvent.row,
-        new SpriteComponent({
-          spriteImage: this._game.resources.sprites[this._selectedSpriteIndex!],
-          tileSize: this.tileMap.tileWidth,
-        }),
-      )
+    if (
+      this._selectedSpriteIdx !== undefined &&
+      this._selectedCellIdx !== undefined &&
+      this._selectedLayerIdx !== undefined
+    ) {
+      // add sprite component to layer
+      console.log('add sprite component to layer', this._selectedLayerIdx, this._selectedSpriteIdx)
+      const _component = new SpriteComponent({
+        spriteId: this._selectedSpriteIdx,
+        //spriteImage: this._game.resources.sprites[this._selectedSpriteIdx], // deprecated
+        tileSize: this.tileMap.tileWidth,
+      })
+
+      if (this.tileMap.layers[this._selectedLayerIdx].type === 'TILELAYER') {
+        this.tileMap.addTile(this._selectedLayerIdx, cellEvent.col, cellEvent.row, _component)
+      } else {
+        this.tileMap.addObjectAtGridPos(
+          this._selectedLayerIdx,
+          cellEvent.col,
+          cellEvent.row,
+          _component,
+        )
+      }
+    } else if (this._selectedSpriteIdx !== undefined && !this._selectedLayerIdx) {
+      console.warn('No layer selected, cannot add sprite to cell')
+      alert('No layer selected, cannot add sprite to cell')
     }
+
+    this.dirty = true
   }
 
   public draw() {
@@ -129,15 +149,17 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
     spritesContainer.style.width = 320 + 'px'
     //spritesContainer.style.height = 100 + '%'
     spritesContainer.style.borderTop = '5px solid blue'
-    this._game.resources.sprites.forEach((spriteImage: SpriteResource, spriteIdx) => {
-      const { x, y, width, height } = spriteImage.sprite
+
+    Object.entries(GameAssets.sprites).forEach((entry) => {
+      const spriteIdx = parseInt(entry[0])
+      const { x, y, width, height, imageName, name } = entry[1]
       const spriteCanvas = document.createElement('canvas')
       spriteCanvas.width = spriteWidth
       spriteCanvas.height = spriteHeight
       spriteCanvas.style.position = 'relative'
       const spriteCanvasCtx = spriteCanvas.getContext('2d')!
       spriteCanvasCtx.drawImage(
-        spriteImage.$element,
+        GameAssets.getImage(imageName),
         x,
         y,
         width,
@@ -149,7 +171,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
       )
 
       const spriteDiv = document.createElement('div')
-      spriteDiv.title = `${spriteImage.sprite.id} ${spriteImage.sprite.name} (${x}, ${y})`
+      spriteDiv.title = `${imageName} ${name} (${x}, ${y})`
       spriteDiv.style.width = `${spriteWidth}px`
       spriteDiv.style.height = `${spriteHeight}px`
       spriteDiv.style.border = '1px solid rgba(255,255,255,1)'
@@ -160,10 +182,15 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
       spriteDiv.onclick = (ev) => {
         //const $el = ev.target as HTMLDivElement
         const spriteIdx = parseInt(spriteDiv.dataset.spriteIndex!)
-        console.log('sprite clicked', spriteIdx, ev)
-
-        this._selectedSpriteIndex = spriteIdx
-        this._game.eventbus.emit('editor.selectSprite', { index: spriteIdx })
+        if (spriteIdx === this._selectedSpriteIdx) {
+          console.log('deselect sprite', spriteIdx)
+          this._selectedSpriteIdx = undefined
+          this._game.eventbus.emit('editor.spriteDeselect', { index: spriteIdx })
+        } else {
+          console.log('selectedSpriteIdx is now', spriteIdx, ev)
+          this._selectedSpriteIdx = spriteIdx
+          this._game.eventbus.emit('editor.spriteSelect', { index: spriteIdx })
+        }
 
         this.dirty = true
         this.draw()
@@ -171,7 +198,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
         ev.preventDefault()
         ev.stopPropagation()
       }
-      if (this._selectedSpriteIndex === spriteIdx) {
+      if (this._selectedSpriteIdx === spriteIdx) {
         //spriteDiv.style.border = '2px solid red'
         //spriteDiv.style.borderColor = 'rgba(72,255,0,0.8)'
         spriteDiv.style.backgroundColor = 'rgba(72,255,0,0.8)'
@@ -233,7 +260,8 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
         console.log('restore', jsonString)
         const json = JSON.parse(jsonString)
         this._game.eventbus.emit('editor.restore', { tilemapJson: json })
-        this.tileMap.restore(json)
+        //this.tileMap.restore(json)
+        console.warn('Restoring tilemap from JSON is not implemented yet')
       }
       reader.readAsText(file)
     }
@@ -281,7 +309,7 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
     // CELL
     const headingCell = document.createElement('div')
-    headingCell.textContent = 'Cell'
+    headingCell.textContent = `Selected Cell: ${this._selectedCellIdx}`
     this.controlsDiv.appendChild(headingCell)
 
     if (this._selectedCellIdx !== undefined) {
@@ -344,25 +372,48 @@ export class WebUiSystem extends AbstractGameSystem implements IGameSystem {
 
       const buttonSelectLayer = document.createElement('button')
       buttonSelectLayer.textContent = 'Select'
-      buttonSelectLayer.onclick = () => {
+      buttonSelectLayer.onclick = (e) => {
         console.log('select layer', layer.name)
         this._selectedLayerIdx = layerIdx
         this._game.eventbus.emit('editor.select_layer', { layer: layer.name })
         this.dirty = true
+        e.stopPropagation()
+        e.preventDefault()
       }
 
       const cellLayerInfo = document.createElement('div')
       if (this._selectedCellIdx !== undefined) {
-        const entityIdx = layer.data[this._selectedCellIdx] || undefined
-        //if (entityIdx === undefined) return
-
-        cellLayerInfo.textContent = `EntityIdx: ${entityIdx || '-'}`
-
-        if (entityIdx !== undefined) {
-          const entity = this.tileMap.entities.get(entityIdx)
-          if (entity) {
-            cellLayerInfo.title = JSON.stringify(entity.component.properties, null, 2)
+        if (layer.type === 'TILELAYER') {
+          // the data array contains component IDs where the index is the cell index
+          const componentId = layer.data[this._selectedCellIdx] || undefined
+          if (componentId !== undefined) {
+            cellLayerInfo.textContent = `Components: ${componentId}`
+            //   const component = this.tileMap.components.get(componentId)
+            //   if (component) {
+            //     cellLayerInfo.title = JSON.stringify(component.properties, null, 2)
+            //   }
           }
+        } else if (layer.type === 'OBJECTLAYER') {
+          // the data array contains component IDs where the index is arbitrary
+          // we need to find the component ID for the selected cell by checking the grid position
+          // against the screen position of the cell
+          const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
+          const componentIds: number[] = this.tileMap.findObjectsAtGridPos(
+            layerIdx,
+            gridPos.col,
+            gridPos.row,
+          )
+          // componentIds.forEach((componentId) => {
+          //   const component = this.tileMap.components.get(componentId)
+          //   if (component) {
+          //     cellLayerInfo.textContent += `Selected: ${componentId}`
+          //     cellLayerInfo.title += JSON.stringify(component.properties, null, 2) + '\n'
+          //   }
+          // })
+          cellLayerInfo.textContent += `Components: ${componentIds.join(',')}`
+        } else {
+          cellLayerInfo.textContent = `Layer type ${layer.type} not supported for cell selection`
+          cellLayerInfo.title = 'Only TILELAYER and OBJECTLAYER are supported for cell selection'
         }
       }
 

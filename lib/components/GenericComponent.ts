@@ -1,6 +1,6 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
-export class GameComponent extends AbstractGameComponent implements IGameComponent {
+export class GenericComponent extends AbstractGameComponent implements IGameComponent {
   public readonly componentType: string = 'Generic'
   public static readonly defaultProperties: GameComponentProperties = {
     x: 0,
@@ -8,7 +8,7 @@ export class GameComponent extends AbstractGameComponent implements IGameCompone
   }
   constructor(properties?: GameComponentProperties) {
     properties = properties || {}
-    super({ ...GameComponent.defaultProperties, ...properties })
+    super({ ...GenericComponent.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

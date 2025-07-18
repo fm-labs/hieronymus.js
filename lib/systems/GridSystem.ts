@@ -246,6 +246,12 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     }
     //this._dirty = false
     this._cellsRendered = renderedCells
+
+    this._game.eventbus.emit('system.draw', {
+      system: this.name,
+      context: gridCtx,
+      drawCounter: this._cellsRendered,
+    })
   }
 
   public tick() {

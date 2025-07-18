@@ -1,10 +1,11 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
+import GameAssets, { Sprite, Tilesheet } from '../kernel/GameAssets.ts'
 
 const DEFAULT_SPEED = 1
 
 interface AnimatedSpriteComponentProps extends GameComponentProperties {
+  tilesheetName: string
   tileSize: number
-  tileset: TilesetResource
   startIdx?: number
   endIdx?: number
   speed?: number
@@ -30,10 +31,30 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
   private _spriteIdx: number = 0
   private _lastUpdate: number = 0
 
+  private _tilesheet: Tilesheet
+  private _tilesheetImage: HTMLImageElement
+
   constructor(properties: AnimatedSpriteComponentProps) {
     properties = properties || {}
     super({ ...AnimatedSpriteComponent.defaultProperties, ...properties })
     this.name = properties.name || 'AnimatedSpriteEntity'
+
+    const tilesheetName = this.properties.tilesheetName
+    if (!tilesheetName) {
+      throw new Error(`tilesheetName is required for AnimatedSpriteComponent`)
+    }
+
+    const tilesheet = GameAssets.getTilesheet(tilesheetName)
+    if (!tilesheet) {
+      throw new Error(`Tilesheet with name ${tilesheetName} not found`)
+    }
+    this._tilesheet = tilesheet
+
+    const tilesheetImage = GameAssets.getTilesheetImage(tilesheetName)
+    if (!tilesheetImage) {
+      throw new Error(`Tilesheet image for tilesheet with name ${tilesheetName} not found`)
+    }
+    this._tilesheetImage = tilesheetImage
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -42,22 +63,22 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     const y = this.properties.y
     if (x === undefined || y === undefined) return
 
-    const tileset = this.properties.tileset
+    const tilesheet = this._tilesheet
 
     const spriteIdx = this._spriteIdx
-    const col = spriteIdx % tileset.columns
-    const row = Math.floor(spriteIdx / tileset.columns)
+    const col = spriteIdx % tilesheet.columns
+    const row = Math.floor(spriteIdx / tilesheet.columns)
 
-    const spriteX = col * tileset.tileWidth
-    const spriteY = row * tileset.tileHeight
+    const spriteX = col * tilesheet.tileWidth
+    const spriteY = row * tilesheet.tileHeight
 
-    const sprite: SpritesheetItem = {
-      id: spriteIdx,
+    const sprite: Sprite = {
       x: spriteX,
       y: spriteY,
-      width: tileset.tileWidth,
-      height: tileset.tileHeight,
+      width: tilesheet.tileWidth,
+      height: tilesheet.tileHeight,
       name: `sprite-${spriteIdx}`,
+      imageName: this.properties.tilesheetName,
     }
 
     //console.log('sprite', sprite)
@@ -67,7 +88,7 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     spriteCanvas.height = sprite.height
     const spriteCanvasCtx = spriteCanvas.getContext('2d')!
     spriteCanvasCtx.drawImage(
-      tileset.$element,
+      this._tilesheetImage,
       sprite.x,
       sprite.y,
       sprite.width,
@@ -114,8 +135,8 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
   }
 
   update(deltaTime: number): void | boolean {
-    const cols = this.properties.tileset.columns
-    const rows = this.properties.tileset.rows
+    const cols = this._tilesheet.columns
+    const rows = this._tilesheet.rows
     const speed = this.properties.speed || DEFAULT_SPEED
     const startIdx = this.properties.startIdx || 0
     const endIdx = this.properties.endIdx || cols * rows

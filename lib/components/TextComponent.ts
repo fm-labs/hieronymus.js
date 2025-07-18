@@ -1,7 +1,7 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
 
-interface TextComponentProps extends GameComponentProperties {
+export interface TextComponentProps extends GameComponentProperties {
   text: string
   font?: string
   color?: string

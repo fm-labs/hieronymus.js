@@ -91,12 +91,12 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
   // }
 
   private handleKeyboardEvent(e: KeyboardEvent) {
-    console.log('keyboard event', e.type, e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey, e)
+    //console.log('keyboard event', e.type, e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey, e)
     this._game.eventbus.emit(`keyboard.${e.type}`, e)
   }
 
   private handleMouseEvent(e: MouseEvent) {
-    console.log('mouse event', e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+    //console.log('mouse event', e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
     this._game.eventbus.emit(`mouse.${e.type}`, e)
   }
 
@@ -106,10 +106,10 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
 
     if (e.deltaX === 0 && e.deltaY % 1 !== 0) {
       this._game.eventbus.emit('zoom', e)
-      console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+      //console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
     } else {
       //this._game.eventbus.emit(`mouse.${e.type}`, e)
-      console.log('wheel event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+      //console.log('wheel event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
       this._game.eventbus.emit('wheel', e)
     }
 

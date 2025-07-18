@@ -1,7 +1,7 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { drawIsometricCube } from '../draw2d/drawiso.ts'
 
-interface IsoCubeProps extends GameComponentProperties {
+export interface IsoCubeComponentProps extends GameComponentProperties {
   width: number
   depth: number
   tileSize: number
@@ -9,9 +9,9 @@ interface IsoCubeProps extends GameComponentProperties {
 }
 
 export class IsoCubeComponent extends AbstractGameComponent implements IGameComponent {
-  declare properties: IsoCubeProps
+  declare properties: IsoCubeComponentProps
 
-  public static readonly defaultProperties: IsoCubeProps = {
+  public static readonly defaultProperties: IsoCubeComponentProps = {
     x: 0,
     y: 0,
     width: 32,
@@ -22,7 +22,7 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
 
   public readonly componentType: string = 'IsoCube'
 
-  constructor(properties: IsoCubeProps) {
+  constructor(properties: IsoCubeComponentProps) {
     super({ ...IsoCubeComponent.defaultProperties, ...properties })
   }
 

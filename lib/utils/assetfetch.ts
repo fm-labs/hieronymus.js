@@ -16,26 +16,6 @@ export const fetchImage = (url: string): Promise<HTMLImageElement> => {
   })
 }
 
-export const fetchSpritesheet = async (
-  url: string,
-): Promise<{ $element: HTMLImageElement; sprites: SpritesheetItem[] }> => {
-  const image = await fetchImage(url)
-  const mapUrl = url.replace('.png', '.json')
-  const info: any = await fetch(mapUrl).then(loaderSuccessHandler).catch(loaderErrorHandler)
-  return {
-    $element: image,
-    sprites: info.sprites as SpritesheetItem[],
-  }
-}
-
-/**
- * Load a kenney repacked spritesheet by name
- * @param name
- * @deprecated Use loadSpritesheetImage instead
- */
-export const fetchKenneySpritesheet = async (
-  name: string,
-): Promise<{ $element: HTMLImageElement; sprites: SpritesheetItem[] }> => {
-  const url = `/assets/sprites/kenney-assets/2d/${name}/${name}.png`
-  return fetchSpritesheet(url)
+export const fetchSpritesheetAtlas = async (url: string): Promise<SpritesheetAtlas> => {
+  return await fetch(url).then(loaderSuccessHandler).catch(loaderErrorHandler)
 }

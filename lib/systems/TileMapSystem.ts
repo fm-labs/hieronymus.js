@@ -13,6 +13,8 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   private readonly worldCanvas: HTMLCanvasElement
   //private dirty = true
 
+  private _drawCounter: number = 0
+
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
@@ -42,11 +44,11 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
     this._game.$container.appendChild(this.worldCanvas)
 
-    // this._game.eventbus.on('resize', (event: any) => {
-    //   console.log('resize tilemap', event)
-    //   //this.worldCanvas.width = event.width
-    //   //this.worldCanvas.height = event.height
-    // })
+    this._game.eventbus.on('resize', (event: any) => {
+      console.log('resize tilemap', event)
+      //this.worldCanvas.width = event.width
+      //this.worldCanvas.height = event.height
+    })
   }
 
   public onUnload() {
@@ -78,6 +80,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   public draw(layerCanvasCtx: CanvasRenderingContext2D) {
     //if (!this.dirty) return
     //console.log('TileMapSystem.draw')
+    this._drawCounter = 0
 
     layerCanvasCtx.reset()
     layerCanvasCtx.translate(-this._game.camera.offset.x, -this._game.camera.offset.y)
@@ -88,59 +91,57 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
         this.drawTiles(layerIdx, layerCanvasCtx)
       } else if (layer.type === 'OBJECTLAYER') {
         this.drawObjects(layerIdx, layerCanvasCtx)
-      } else if (layer.type === 'BACKGROUND') {
-        //this.drawBackground(layerIdx, layerCanvasCtx)
-      } else if (layer.type === 'OVERLAY') {
-        //this.drawOverlay(layerIdx, layerCanvasCtx)
       }
     })
 
     //this.dirty = false
+
+    this._game.eventbus.emit('system.draw', {
+      system: this.name,
+      context: layerCanvasCtx,
+      drawCounter: this._drawCounter,
+    })
   }
 
   private drawTiles(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
-    layerCtx.save()
     for (let c = 0; c < this.cols; c++) {
       for (let r = 0; r < this.rows; r++) {
         const cellIdx = getCellIndex(c, r, this.cols)
-        const entityIdx = this.tileMap.layers[layerIdx]?.data[cellIdx]
-        if (!entityIdx) continue
+        const componentIdx = this.tileMap.layers[layerIdx]?.data[cellIdx]
+        if (!componentIdx) continue
 
         const component = this.tileMap.getTile(layerIdx, c, r)
         if (!component) continue
 
-        //console.log('entity', entityIdx, component)
+        //console.log('entity', componentIdx, component)
         if (component.draw) {
+          layerCtx.save()
           component.draw(layerCtx)
+          layerCtx.restore()
+          this._drawCounter++
         }
       }
     }
-    layerCtx.restore()
   }
 
   private drawObjects(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
-    //const objects = this._game.worldMap.objects[layerIdx] || []
     const objects = this.tileMap.layers[layerIdx].data || []
-    //console.log('drawObjects', layerIdx, objects)
-    objects.forEach((entityId, idx) => {
-      const entity = this.tileMap.entities.get(entityId)
-      const component = entity?.component
-      //const component = this._game.worldMap.entities.get(entityId)?.component
-      //const component = this._game.worldMap.getObject(layerIdx, idx)
+    objects.forEach((componentId, idx) => {
+      const component = this.tileMap.components.get(componentId)
       if (component && component.draw) {
-        //console.log('entity', entityId, component)
+        //console.log('entity', componentId, component)
         layerCtx.save()
         component.draw(layerCtx)
         layerCtx.restore()
+        this._drawCounter++
       }
     })
   }
 
   private updateLayer(layerIdx: number, deltaTime: number) {
     const layerData = this.tileMap.layers[layerIdx].data
-    layerData.forEach((entityId, idx) => {
-      const entity = this.tileMap.entities.get(entityId)
-      const component = entity?.component
+    layerData.forEach((componentId, idx) => {
+      const component = this.tileMap.components.get(componentId)
       if (component && component.update) {
         if (component.update(deltaTime) === true) {
           //console.log('update', layerIdx, idx, component)

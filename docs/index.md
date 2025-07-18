@@ -29,10 +29,10 @@ await resources.loadSpritesheet(
   32,
 )
 // init tilesets
-await resources.loadTileset('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
-await resources.loadTileset('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
-await resources.loadTileset('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
-await resources.loadTileset('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+await resources.loadTilesheet('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
+await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+await resources.loadTilesheet('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
+await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
 // init font resources
 await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
 await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
@@ -47,7 +47,7 @@ game.addSystem(new TileMapSystem(game))
 game.addSystem(new HeroSystem(game))
 game.addSystem(new InputSystem(game))
 game.addSystem(new GamepadInputSystem())
-game.addSystem(new WebUiSystem(game))
+game.addSystem(new TileMapEditorSystem(game))
 game.addSystem(new InfoSystem(game))
 
 await game.run()
