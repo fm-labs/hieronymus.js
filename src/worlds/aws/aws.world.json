@@ -153,7 +153,7 @@
     },
     {
       "name": "tiles",
-      "type": "TILELAYER",
+      "type": "TILE",
       "data": [
         [0,0,0,0,0,0,0,0,0,0],
         [0,1,2,3,4,5,6,7,8,0],
@@ -169,27 +169,27 @@
     },
     {
       "name": "underground",
-      "type": "TILELAYER",
+      "type": "TILE",
       "data": []
     },
     {
       "name": "ground",
-      "type": "TILELAYER",
+      "type": "TILE",
       "data": []
     },
     {
       "name": "objects",
-      "type": "OBJECTLAYER",
+      "type": "OBJECT",
       "data": []
     },
     {
       "name": "hero",
-      "type": "OBJECTLAYER",
+      "type": "OBJECT",
       "data": []
     },
     {
       "name": "overlay",
-      "type": "OBJECTLAYER",
+      "type": "OBJECT",
       "data": []
     }
   ],

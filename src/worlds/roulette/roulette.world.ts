@@ -57,9 +57,9 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const worldMap = new TileMap(worldConfig)
 
   // Init layers
-  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
+  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECT', data: [] })
+  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [] })
 
   const rowNr = 0
 

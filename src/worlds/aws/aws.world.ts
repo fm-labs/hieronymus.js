@@ -57,12 +57,12 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   const worldMap = new TileMap(worldConfig)
 
   // Init layers
-  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILELAYER', data: [] })
-  //worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILELAYER', data: [] })
-  //worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILELAYER', data: [] })
-  //worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
+  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
+  //worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILE', data: [] })
+  //worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECT', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILE', data: [] })
+  //worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [] })
 
   worldMap.addObjectAtGridPos(
     LAYER_LABELS,

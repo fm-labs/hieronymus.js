@@ -52,21 +52,21 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const worldMap = new TileMap(worldConfig)
 
   // Init layers
-  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECTLAYER', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILELAYER', data: [] })
-  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECTLAYER', data: [] })
+  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECT', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [] })
 
   let rowNr = 0
 
-  // const tilesLayer = new TileMapLayer({ type: 'TILELAYER', name: 'Tiles' })
+  // const tilesLayer = new TileMapLayer({ type: 'TILE', name: 'Tiles' })
   //tilesLayer.data = new Array(COLUMNS * ROWS).fill(0);
   // row = 1; col = 1;
   //tilesLayer.setTile(col, row, 'Tile', { backgroundColor: 'rgba(255,242,0,0.27)' });
 
-  // const objectsLayer = new TileMapLayer({ type: 'OBJECTLAYER', name: 'Objects' })
+  // const objectsLayer = new TileMapLayer({ type: 'OBJECT', name: 'Objects' })
   //objectsLayer.data = []
 
   //const componentId = components.add(new IsoCubeComponent({ tileSize: worldMap.tileWidth, width: worldMap.tileWidth, depth: 64 }))
