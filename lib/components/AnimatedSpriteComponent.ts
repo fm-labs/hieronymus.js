@@ -1,5 +1,6 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import GameAssets, { Sprite, Tilesheet } from '../kernel/GameAssets.ts'
+import { drawElevation } from '../draw2d/drawelevation.ts'
 
 const DEFAULT_SPEED = 1
 
@@ -11,6 +12,8 @@ export interface AnimatedSpriteComponentProps extends GameComponentProperties {
   speed?: number
   loop?: number
   autoPlay?: boolean
+  ttl?: number // Time to live in milliseconds
+  elevation?: number // Elevation adjustment
 }
 
 export class AnimatedSpriteComponent extends AbstractGameComponent implements IGameComponent {
@@ -21,6 +24,7 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     speed: DEFAULT_SPEED,
     loop: 0,
     autoPlay: true,
+    elevation: 0,
   }
 
   public readonly componentType: string = 'AnimatedSprite'
@@ -119,21 +123,32 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
 
     //console.log('sprite', cellIdx, spriteIdx, ratio, imgW, imgH)
 
-    const offsetX = -(imgW / 2)
-    const offsetY = -imgH + theight
+    const centerX = x
+    const centerY = y + this.properties.tileSize / 2 / 2
+
+    // draw a center dot
+    // ctx.fillStyle = 'blue'
+    // ctx.beginPath()
+    // ctx.arc(centerX, centerY, 4, 0, Math.PI * 2)
+    // ctx.fill()
+
+    const elevation = this.properties.elevation || 0
+    drawElevation(ctx, elevation, centerX, centerY)
+
+    const _x = x - imgW / 2
+    const _y = y - imgH + theight - elevation
+
+    ctx.drawImage(spriteCanvas, 0, 0, sprite.width, sprite.height, _x, _y, imgW, imgH)
 
     //ctx.globalAlpha = 0.5
-    ctx.drawImage(
-      spriteCanvas,
-      0,
-      0,
-      sprite.width,
-      sprite.height,
-      x + offsetX,
-      y + offsetY,
-      imgW,
-      imgH,
-    )
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+    ctx.lineWidth = 1
+    //ctx.strokeRect(x + offsetX, y + offsetY, imgW, imgH)
+    ctx.strokeRect(_x, _y, imgW, imgH)
+    ctx.save()
+    //ctx.setTransform(1, 0, 0, 1, 0, 0) // Reset the transformation matrix to the identity matrix
+    ctx.resetTransform()
+    ctx.restore()
     //ctx.globalAlpha = 1
 
     //ctx.restore()

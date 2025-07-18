@@ -1,10 +1,12 @@
 import { AbstractGameComponent } from './AbstractGameComponent.ts'
 import { drawIsometricCube } from '../draw2d/drawiso.ts'
+import { drawElevation } from '../draw2d/drawelevation.ts'
 
 export interface IsoCubeComponentProps extends GameComponentProperties {
+  tileSize: number
   width: number
   depth: number
-  tileSize: number
+  elevation?: number
   text?: string
 }
 
@@ -12,9 +14,10 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
   declare properties: IsoCubeComponentProps
 
   public static readonly defaultProperties: IsoCubeComponentProps = {
+    tileSize: 0,
     width: 32,
     depth: 16,
-    tileSize: 32,
+    elevation: 0,
     text: undefined,
   }
 
@@ -38,9 +41,21 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
     const tileSize = this.properties.tileSize
 
     // Define cube position
-    const tileCenterY = y + tileSize / 2 / 2
-    const cubeY = tileCenterY - cubeHeight / 2 - cubeDepth
-    drawIsometricCube(ctx, x, cubeY, cubeWidth, cubeHeight, cubeDepth, text)
+
+    const centerX = x
+    const centerY = y + tileSize / 2 / 2
+
+    // Elevation adjustment
+    const elevation = this.properties.elevation || 0
+    drawElevation(ctx, elevation, centerX, centerY)
+
+    const cubeY = centerY - cubeHeight / 2 - cubeDepth - elevation
+
+    // Translate to center of shape
+    ctx.save()
+    ctx.translate(centerX, cubeY)
+    drawIsometricCube(ctx, 0, 0, cubeWidth, cubeHeight, cubeDepth, text)
+    ctx.restore()
   }
 
   update(deltaTime: number): void {}

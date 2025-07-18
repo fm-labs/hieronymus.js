@@ -166,10 +166,9 @@ interface ITileMap {
 }
 
 type GameComponentProperties = {
-  x?: number
-  y?: number
   name?: string
-  data?: { [key: string]: any }
+  ttl?: number // time to live in seconds
+  [key: string]: any
 }
 
 interface IGameComponent {

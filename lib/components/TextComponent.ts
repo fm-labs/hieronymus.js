@@ -17,7 +17,7 @@ export class TextComponent extends AbstractGameComponent implements IGameCompone
   public static readonly defaultProperties: TextComponentProps = {
     text: '',
     font: '12px Arial,Helvetica,sans-serif',
-    color: 'red',
+    color: 'rgba(238,238,238,0.5)',
     direction: 'ltr',
     orientation: 'vertical', // vertical | horizontal
     skewOrientation: 'flat', // upright | flat

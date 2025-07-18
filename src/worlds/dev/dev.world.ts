@@ -130,8 +130,18 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     width: worldMap.tileWidth / 2,
     depth: 32,
     //text: 'M4',
+    elevation: 30,
   })
   worldMap.addObjectAtGridPos(LAYER_OBJECTS, 1, rowNr, isoCube2)
+
+  const isoCube3 = worldMap.components.createComponent('IsoCube', {
+    tileSize: worldMap.tileWidth,
+    width: worldMap.tileWidth / 3,
+    depth: 24,
+    //text: 'M4',
+    elevation: 90,
+  })
+  worldMap.addObjectAtGridPos(LAYER_OBJECTS, 3, rowNr, isoCube3)
 
   // hexagon
   rowNr++
@@ -258,6 +268,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       tileSize: worldMap.tileWidth,
       tilesheetName: 'mech-right',
       speed: 5,
+      elevation: 50,
     }),
   )
   // worldMap.addObjectAt(
