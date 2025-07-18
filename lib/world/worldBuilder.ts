@@ -1,4 +1,4 @@
-import { mapCellCordsToIndex } from '../utils/gridutil.ts'
+import { getCellIndex } from '../utils/gridutil.ts'
 
 /**
  * @deprecated
@@ -21,7 +21,7 @@ export const worldBuilder: WorldBuilder = ({
     cells = new Array(width * height)
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const idx = mapCellCordsToIndex(x, y, width)
+        const idx = getCellIndex(x, y, width)
         cells[idx] = {
           type: 'default',
           x: x,

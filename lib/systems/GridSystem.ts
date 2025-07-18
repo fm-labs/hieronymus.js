@@ -42,6 +42,8 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     infoDiv.style.padding = '0.1rem'
     infoDiv.style.fontFamily = 'monospace'
     infoDiv.style.fontSize = '10px'
+    infoDiv.style.color = 'lime'
+    infoDiv.style.zIndex = '10000'
     this.infoDiv = infoDiv
   }
 
@@ -120,11 +122,11 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     //console.log('handleMouseMove', x, y, index)
     if (this.infoDiv) {
-      this.infoDiv.textContent = `MOUSE: ${e.clientX.toFixed(2)},${e.clientY.toFixed(2)}
-      CANVASPOS: ${x.toFixed(2)},${y.toFixed(2)}
-      GRIDPOS: [${pos.col},${pos.row}]
-      IDX: ${index}
-      CELLSRND: ${this._cellsRendered}
+      this.infoDiv.innerHTML = `<div>MOUSE: ${e.clientX.toFixed(2)},${e.clientY.toFixed(2)}</div>
+      <div>CANVASPOS: ${x.toFixed(2)},${y.toFixed(2)}</div>
+      <div>GRIDPOS: [${pos.col},${pos.row}]</div>
+      <div>IDX: ${index}</div>
+      <div>CELLSRND: ${this._cellsRendered}</div>
       `
     }
   }
@@ -174,7 +176,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
     const gridDimensions = this.projection.getGridDimensions()
     gridCtx.fillStyle = 'white'
-    gridCtx.fillText(`${gridDimensions.width}/${gridDimensions.height}`, 0, 10)
+    gridCtx.fillText(`${gridDimensions.width}/${gridDimensions.height}`, -20, -20)
 
     // @todo draw grid lines
     // draw grid tiles

@@ -1,5 +1,5 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { getCellCordsFromIndex } from '../utils/gridutil.ts'
+import { getGridPosFromIndex } from '../utils/gridutil.ts'
 import { SpriteComponent } from '../components/SpriteComponent.ts'
 import GameAssets from '../kernel/GameAssets.ts'
 
@@ -316,7 +316,7 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
     this.controlsDiv.appendChild(headingCell)
 
     if (this._selectedCellIdx !== undefined) {
-      const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
+      const gridPos = getGridPosFromIndex(this._selectedCellIdx, this.cols)
       const screenPos = this.tileMap.projection.mapGridToScreen(gridPos.col, gridPos.row)
       const cellInfo = document.createElement('div')
       cellInfo.innerHTML = `CellIdx: ${this._selectedCellIdx}`

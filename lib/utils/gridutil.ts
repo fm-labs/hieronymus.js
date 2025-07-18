@@ -1,68 +1,21 @@
 /**
- *
- * @param col
- * @param row
- * @param columns
- * @deprecated Use getCellIndex instead
- */
-export const mapCellCordsToIndex = (col: number, row: number, columns: number): number => {
-  return row * columns + col
-}
-
-/**
- *
- * @param world
- * @param col
- * @param row
- * @deprecated
- */
-export const getWorldCell = (world: World, col: number, row: number): WorldCell | undefined => {
-  const idx = mapCellCordsToIndex(col, row, world.width)
-  console.log('GETCELL', col, row, idx)
-  return world.cells ? world.cells[idx] : undefined
-}
-
-/**
- * Determine the cell index from the column and row.
+ * Determine the one-dimensional cell index from the column and row.
  */
 export function getCellIndex(col: number, row: number, columns: number): number {
   return row * columns + col
 }
 
-export function getCellCordsFromIndex(
-  index: number,
-  columns: number,
-): { col: number; row: number } {
+/**
+ * Get the grid position from the one-dimensional cell index.
+ *
+ * @param index - The cell index.
+ * @param columns - The number of columns in the grid.
+ * @returns An object containing the column and row of the grid position.
+ */
+export function getGridPosFromIndex(index: number, columns: number): { col: number; row: number } {
   const col = index % columns
   const row = Math.floor(index / columns)
   return { col, row }
-}
-
-/**
- * Get the isometric cell coords
- * @param col
- * @param row
- * @param tsize
- * @deprecated Use getIsometricScreenPosition instead
- */
-export function getIsometricCellCords(col: number, row: number, tsize: number) {
-  const twidth = tsize
-  const theight = tsize / 2
-
-  return {
-    x: col * (twidth / 2) + row * (twidth / 2),
-    y: row * (theight / 2) - col * (theight / 2),
-  }
-}
-
-export function getTileIndexFromIsometricGridPosition(
-  x: number,
-  y: number,
-  tsize: number,
-  gridwith: number,
-): number {
-  const { col, row } = getIsometricGridPosition(x, y, tsize)
-  return getCellIndex(col, row, gridwith)
 }
 
 /** ISOMETRIC GRID */
@@ -74,7 +27,7 @@ export function getTileIndexFromIsometricGridPosition(
  * @param tileWidth
  * @deprecated Use IsometricGridProjection instead
  */
-export function getIsometricGridPosition(x: number, y: number, tileWidth: number) {
+export function isometricScreenToGrid(x: number, y: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
   const tileWidthHalf = tileWidth / 2
   const tileHeightHalf = tileHeight / 2
@@ -90,7 +43,7 @@ export function getIsometricGridPosition(x: number, y: number, tileWidth: number
  * @param tileWidth
  * @deprecated Use IsometricGridProjection instead
  */
-export function getIsometricScreenPosition(col: number, row: number, tileWidth: number) {
+export function isometricGridToScreen(col: number, row: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
   //const x = col * (tileWidth / 2) - row * (tileWidth / 2)
   //const y = col * (tileHeight / 2) + row * (tileHeight / 2)
@@ -110,7 +63,7 @@ export function getIsometricScreenPosition(col: number, row: number, tileWidth: 
  * @param tileSize
  * @deprecated Use OrthogonalGridProjection instead
  */
-export function getOrthogonalScreenPosition(col: number, row: number, tileSize: number) {
+export function orthogonalGridToScreen(col: number, row: number, tileSize: number) {
   const tileWidth = tileSize
   const tileHeight = tileSize
   const x = col * tileWidth
@@ -125,7 +78,7 @@ export function getOrthogonalScreenPosition(col: number, row: number, tileSize: 
  * @param tileSize
  * @deprecated Use OrthogonalGridProjection instead
  */
-export function getOrthogonalGridPosition(x: number, y: number, tileSize: number) {
+export function orthogonalScreenToGrid(x: number, y: number, tileSize: number) {
   const tileWidth = tileSize
   const tileHeight = tileSize
   const col = Math.floor(x / tileWidth)
