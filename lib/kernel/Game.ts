@@ -79,6 +79,19 @@ export class Game implements IGame {
       console.log('resize game', event)
       this.updateDimensions(event.width, event.height)
     })
+
+    // hot-reloading support
+    if (import.meta.hot) {
+      import.meta.hot.accept(() => {
+        console.log('🔥 Hot Module Reload triggered!')
+        this.start()
+      })
+
+      import.meta.hot.dispose(() => {
+        console.log('♻️ Module about to be replaced')
+        this.stop()
+      })
+    }
   }
 
   public updateDimensions(width: number, height: number) {
@@ -156,50 +169,50 @@ export class Game implements IGame {
 
   public async run() {
     console.log('RUN GAME')
-
-    //start systems
-    this.systems.forEach((system) => {
-      if (system.start) {
-        system.start()
-      }
-    })
-
-    // start game loop
-    this.gameRunning = true
-    // setTimeout(() => {
-    //   this.stop()
-    // }, 15000)
-    // console.log('STOPPING GAME in 15 seconds')
+    this.start()
     requestAnimationFrame(this.tick)
   }
 
-  public stop() {
+  private start() {
+    console.info('START GAME')
+    this.gameRunning = true
+    // start systems
+    this.systems.forEach((system) => {
+      if (system.start) {
+        console.warn('START GAME SYSTEM', system.name)
+        system.start()
+      }
+    })
+  }
+
+  private stop() {
     console.info('STOP GAME')
     this.gameRunning = false
     // stop systems
     this.systems.forEach((system) => {
       if (system.stop) {
+        console.warn('STOP GAME SYSTEM', system.name)
         system.stop()
       }
     })
   }
 
-  async saveState(state: any) {}
+  // async saveState(state: any) {}
+  //
+  // async restoreState(): Promise<any> {}
+  //
+  // public log(...msg: any[]) {
+  //   console.log(...msg)
+  //   const div = document.createElement('div')
+  //   div.textContent = msg.join(' ')
+  //   this.$logContainer.appendChild(div)
+  // }
 
-  async restoreState(): Promise<any> {}
-
-  public log(...msg: any[]) {
-    console.log(...msg)
-    const div = document.createElement('div')
-    div.textContent = msg.join(' ')
-    this.$logContainer.appendChild(div)
-  }
-
-  public logwarn(...msg: any[]) {
-    console.warn(...msg)
-  }
-
-  public logerr(...msg: any[]) {
-    console.error(...msg)
-  }
+  // public logwarn(...msg: any[]) {
+  //   console.warn(...msg)
+  // }
+  //
+  // public logerr(...msg: any[]) {
+  //   console.error(...msg)
+  // }
 }
