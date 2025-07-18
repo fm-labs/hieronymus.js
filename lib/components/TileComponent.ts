@@ -13,8 +13,6 @@ export class TileComponent extends AbstractGameComponent implements IGameCompone
   declare properties: TileComponentProps
 
   public static readonly defaultProperties: TileComponentProps = {
-    x: 0,
-    y: 0,
     width: 32,
     height: 32,
     // visible: true,
@@ -53,8 +51,8 @@ export class TileComponent extends AbstractGameComponent implements IGameCompone
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
 
     const width = this.properties.width

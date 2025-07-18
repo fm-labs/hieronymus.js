@@ -12,8 +12,6 @@ export class IsoCylinderComponent extends AbstractGameComponent implements IGame
   public readonly componentType: string = 'IsoCylinder'
 
   public static readonly defaultProperties: IsoCylinderComponentProps = {
-    x: 0,
-    y: 0,
     radius: 16,
     depth: 16,
     tileSize: 32,
@@ -24,8 +22,8 @@ export class IsoCylinderComponent extends AbstractGameComponent implements IGame
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
 
     const radius = this.properties.radius

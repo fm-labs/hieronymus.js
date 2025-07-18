@@ -10,8 +10,6 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
   declare properties: SpriteComponentProps
 
   public static readonly defaultProperties: SpriteComponentProps = {
-    x: 0,
-    y: 0,
     tileSize: 0,
   }
 
@@ -66,8 +64,8 @@ export class SpriteComponent extends AbstractGameComponent implements IGameCompo
   draw(ctx: CanvasRenderingContext2D): void {
     if (this._rendered) return
 
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
 
     const tsize = this.properties.tileSize

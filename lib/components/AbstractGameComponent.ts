@@ -4,19 +4,24 @@ export abstract class AbstractGameComponent {
   public abstract readonly componentType: string
   public readonly properties: GameComponentProperties
 
-  protected constructor(properties?: GameComponentProperties) {
+  x: number = 0
+  y: number = 0
+
+  protected constructor(properties?: GameComponentProperties, x: number = 0, y: number = 0) {
     this.properties = properties || {}
+    this.x = x
+    this.y = y
   }
 
   public setPosition(x: number, y: number): this {
-    this.properties.x = x
-    this.properties.y = y
+    this.x = x
+    this.y = y
     return this
   }
 
   public getPosition(): { x: number; y: number } {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return { x: 0, y: 0 }
 
     return { x, y }

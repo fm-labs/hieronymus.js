@@ -11,8 +11,6 @@ export class IsoHexagonComponent extends AbstractGameComponent implements IGameC
   declare properties: IsoHexagonComponentProps
 
   public static readonly defaultProperties: IsoHexagonComponentProps = {
-    x: 0,
-    y: 0,
     sideLength: 32,
     depth: 16,
     tileSize: 32,
@@ -25,8 +23,8 @@ export class IsoHexagonComponent extends AbstractGameComponent implements IGameC
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
 
     const sideLength = this.properties.sideLength

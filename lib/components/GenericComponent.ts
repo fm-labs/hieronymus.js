@@ -2,18 +2,15 @@ import { AbstractGameComponent } from './AbstractGameComponent.ts'
 
 export class GenericComponent extends AbstractGameComponent implements IGameComponent {
   public readonly componentType: string = 'Generic'
-  public static readonly defaultProperties: GameComponentProperties = {
-    x: 0,
-    y: 0,
-  }
+  public static readonly defaultProperties: GameComponentProperties = {}
   constructor(properties?: GameComponentProperties) {
     properties = properties || {}
     super({ ...GenericComponent.defaultProperties, ...properties })
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
 
     // @TODO: draw the object
   }

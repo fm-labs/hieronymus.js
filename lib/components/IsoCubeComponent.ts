@@ -12,8 +12,6 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
   declare properties: IsoCubeComponentProps
 
   public static readonly defaultProperties: IsoCubeComponentProps = {
-    x: 0,
-    y: 0,
     width: 32,
     depth: 16,
     tileSize: 32,
@@ -27,8 +25,8 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
 
     const text = this.properties.text

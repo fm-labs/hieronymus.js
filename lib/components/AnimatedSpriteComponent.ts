@@ -3,8 +3,8 @@ import GameAssets, { Sprite, Tilesheet } from '../kernel/GameAssets.ts'
 
 const DEFAULT_SPEED = 1
 
-interface AnimatedSpriteComponentProps extends GameComponentProperties {
-  tilesheetName: string
+export interface AnimatedSpriteComponentProps extends GameComponentProperties {
+  tilesheetName?: string
   tileSize: number
   startIdx?: number
   endIdx?: number
@@ -17,8 +17,6 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
   declare properties: AnimatedSpriteComponentProps
 
   public static readonly defaultProperties: Partial<AnimatedSpriteComponentProps> = {
-    x: 0,
-    y: 0,
     tileSize: 32,
     speed: DEFAULT_SPEED,
     loop: 0,
@@ -31,8 +29,8 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
   private _spriteIdx: number = 0
   private _lastUpdate: number = 0
 
-  private _tilesheet: Tilesheet
-  private _tilesheetImage: HTMLImageElement
+  private _tilesheet?: Tilesheet
+  private _tilesheetImage?: HTMLImageElement
 
   constructor(properties: AnimatedSpriteComponentProps) {
     properties = properties || {}
@@ -40,8 +38,14 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     this.name = properties.name || 'AnimatedSpriteEntity'
 
     const tilesheetName = this.properties.tilesheetName
+    this.applyTilesheet(tilesheetName)
+  }
+
+  protected applyTilesheet(tilesheetName: string | undefined): void {
     if (!tilesheetName) {
-      throw new Error(`tilesheetName is required for AnimatedSpriteComponent`)
+      this._tilesheet = undefined
+      this._tilesheetImage = undefined
+      return
     }
 
     const tilesheet = GameAssets.getTilesheet(tilesheetName)
@@ -59,9 +63,10 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
 
   draw(ctx: CanvasRenderingContext2D): void {
     //console.log('AnimatedSpriteComponent.draw')
-    const x = this.properties.x
-    const y = this.properties.y
+    const x = this.x
+    const y = this.y
     if (x === undefined || y === undefined) return
+    if (!this._tilesheet || !this._tilesheetImage) return
 
     const tilesheet = this._tilesheet
 
@@ -78,7 +83,7 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
       width: tilesheet.tileWidth,
       height: tilesheet.tileHeight,
       name: `sprite-${spriteIdx}`,
-      imageName: this.properties.tilesheetName,
+      imageName: this.properties.tilesheetName!, //tilesheetName is guaranteed to be defined
     }
 
     //console.log('sprite', sprite)
@@ -135,6 +140,8 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
   }
 
   update(deltaTime: number): void | boolean {
+    if (!this._tilesheet || !this._tilesheetImage) return
+
     const cols = this._tilesheet.columns
     const rows = this._tilesheet.rows
     const speed = this.properties.speed || DEFAULT_SPEED
