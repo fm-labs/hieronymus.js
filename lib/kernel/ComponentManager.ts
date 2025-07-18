@@ -83,13 +83,7 @@ export class ComponentManager implements IComponentManager {
     }
   }
 
-  createComponent(componentType: string, data: any): IGameComponent {
-    const properties: GameComponentProperties = {
-      x: data.x || 0,
-      y: data.y || 0,
-      name: data.name || componentType + new Date().getTime(),
-      data: data.data || {},
-    }
+  createComponent(componentType: string, properties: any): IGameComponent {
     switch (componentType) {
       case 'Tile':
         return new TileComponent(properties as TileComponentProps)
