@@ -93,9 +93,13 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
     this._game.eventbus.off('grid.cellClick', this.handleCellClick)
   }
 
-  public tick() {
+  public async tick() {
     //console.log('WebUiSystem.update')
-    this.draw()
+    // Update the UI if needed
+    if (this._game.frameCount % 60 === 0 || this.dirty) {
+      this.dirty = true
+      this.draw()
+    }
   }
 
   private handleCellClick(cellEvent: { index: number; col: number; row: number }) {
@@ -115,7 +119,7 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
         tileSize: this.tileMap.tileWidth,
       })
 
-      if (this.tileMap.layers[this._selectedLayerIdx].type === 'TILELAYER') {
+      if (this.tileMap.layers[this._selectedLayerIdx].type === 'TILE') {
         this.tileMap.addTile(this._selectedLayerIdx, cellEvent.col, cellEvent.row, _component)
       } else {
         this.tileMap.addObjectAtGridPos(
@@ -322,6 +326,45 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       this.controlsDiv.appendChild(cellInfo)
     }
 
+    const cellLayerInfo = document.createElement('div')
+    if (this._selectedCellIdx !== undefined && this._selectedLayerIdx !== undefined) {
+      const layerIdx = this._selectedLayerIdx
+      const layer = this.tileMap.layers[layerIdx]
+      if (layer.type === 'TILE') {
+        // the data array contains component IDs where the index is the cell index
+        const componentId = layer.data[this._selectedCellIdx] || undefined
+        if (componentId !== undefined) {
+          cellLayerInfo.textContent = `Components: ${componentId}`
+          //   const component = this.tileMap.components.get(componentId)
+          //   if (component) {
+          //     cellLayerInfo.title = JSON.stringify(component.properties, null, 2)
+          //   }
+        }
+      } else if (layer.type === 'OBJECT') {
+        // the data array contains component IDs where the index is arbitrary
+        // we need to find the component ID for the selected cell by checking the grid position
+        // against the screen position of the cell
+        const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
+        const componentIds: number[] = this.tileMap.findObjectsAtGridPos(
+          layerIdx,
+          gridPos.col,
+          gridPos.row,
+        )
+        // componentIds.forEach((componentId) => {
+        //   const component = this.tileMap.components.get(componentId)
+        //   if (component) {
+        //     cellLayerInfo.textContent += `Selected: ${componentId}`
+        //     cellLayerInfo.title += JSON.stringify(component.properties, null, 2) + '\n'
+        //   }
+        // })
+        cellLayerInfo.textContent += `Layer Component ID: ${componentIds.join(',')}`
+      } else {
+        cellLayerInfo.textContent = `Layer type ${layer.type} not supported for cell selection`
+        cellLayerInfo.title = 'Only TILE and OBJECT are supported for cell selection'
+      }
+      this.controlsDiv.appendChild(cellLayerInfo)
+    }
+
     const buttonCellClear = document.createElement('button')
     buttonCellClear.textContent = 'Clear'
     buttonCellClear.onclick = () => {
@@ -347,10 +390,11 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       const layerDiv = document.createElement('div')
       layerDiv.style.display = 'flex'
       layerDiv.style.flexDirection = 'row'
-      layerDiv.style.justifyContent = 'space-between'
+      layerDiv.style.justifyContent = 'flex-start'
       layerDiv.style.marginBottom = '5px'
       layerDiv.style.padding = '2px 0'
       layerDiv.style.borderBottom = '1px solid rgba(255,0,255,0.8)'
+      layerDiv.style.fontSize = '12px'
 
       const layerIcons = document.createElement('div')
       layerIcons.style.display = 'flex'
@@ -368,7 +412,8 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       layerIcons.appendChild(layerVisible)
 
       const layerName = document.createElement('div')
-      layerName.textContent = layer.name
+      layerName.style.fontSize = '12px'
+      layerName.textContent = `${layer.name} (${layer.type}) - ${layer.data.filter((d) => d !== 0).length} comp`
 
       const buttonSelectLayer = document.createElement('button')
       buttonSelectLayer.textContent = 'Select'
@@ -381,48 +426,11 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
         e.preventDefault()
       }
 
-      const cellLayerInfo = document.createElement('div')
-      if (this._selectedCellIdx !== undefined) {
-        if (layer.type === 'TILELAYER') {
-          // the data array contains component IDs where the index is the cell index
-          const componentId = layer.data[this._selectedCellIdx] || undefined
-          if (componentId !== undefined) {
-            cellLayerInfo.textContent = `Components: ${componentId}`
-            //   const component = this.tileMap.components.get(componentId)
-            //   if (component) {
-            //     cellLayerInfo.title = JSON.stringify(component.properties, null, 2)
-            //   }
-          }
-        } else if (layer.type === 'OBJECTLAYER') {
-          // the data array contains component IDs where the index is arbitrary
-          // we need to find the component ID for the selected cell by checking the grid position
-          // against the screen position of the cell
-          const gridPos = getCellCordsFromIndex(this._selectedCellIdx, this.cols)
-          const componentIds: number[] = this.tileMap.findObjectsAtGridPos(
-            layerIdx,
-            gridPos.col,
-            gridPos.row,
-          )
-          // componentIds.forEach((componentId) => {
-          //   const component = this.tileMap.components.get(componentId)
-          //   if (component) {
-          //     cellLayerInfo.textContent += `Selected: ${componentId}`
-          //     cellLayerInfo.title += JSON.stringify(component.properties, null, 2) + '\n'
-          //   }
-          // })
-          cellLayerInfo.textContent += `Components: ${componentIds.join(',')}`
-        } else {
-          cellLayerInfo.textContent = `Layer type ${layer.type} not supported for cell selection`
-          cellLayerInfo.title = 'Only TILELAYER and OBJECTLAYER are supported for cell selection'
-        }
-      }
-
+      layerDiv.appendChild(buttonSelectLayer)
       layerDiv.appendChild(layerIcons)
       layerDiv.appendChild(layerName)
-      layerDiv.appendChild(buttonSelectLayer)
 
       this.controlsDiv.appendChild(layerDiv)
-      this.controlsDiv.appendChild(cellLayerInfo)
     })
 
     this.dirty = false

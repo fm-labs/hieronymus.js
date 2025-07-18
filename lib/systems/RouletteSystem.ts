@@ -34,7 +34,7 @@ export class RoutletteSystem extends AbstractGameSystem implements IGameSystem {
     console.log('RoutletteSystem.stop')
   }
 
-  public tick() {
+  public async tick() {
     //console.log('RoutletteSystem.update')
     this.draw(this.objCanvas.getContext('2d')!)
   }

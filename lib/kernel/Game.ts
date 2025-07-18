@@ -133,7 +133,7 @@ export class Game implements IGame {
   public fps = 0
   public deltaTime = 0
 
-  public tick(currentTime: number) {
+  public async tick(currentTime: number) {
     // if (!currentTime) {
     //   currentTime = Date.now()
     // }
@@ -155,13 +155,15 @@ export class Game implements IGame {
       //console.log('FPS', this.fps)
     }
 
-    this.systems.forEach((system) => {
-      if (system.tick) {
-        system.tick(this.deltaTime)
-      }
-    })
+    // Call tick on all systems synchronously
+    // this.systems.forEach((system) => {
+    //   if (system.tick) {
+    //     system.tick(this.deltaTime)
+    //   }
+    // })
 
-    //this.draw()
+    // Call tick on all systems asynchronously / in parallel
+    await Promise.all(this.systems.map((system) => system.tick?.(this.deltaTime)))
 
     if (!this.gameRunning) return
     requestAnimationFrame(this.tick)
@@ -169,32 +171,37 @@ export class Game implements IGame {
 
   public async run() {
     console.log('RUN GAME')
-    this.start()
+    await this.start()
     requestAnimationFrame(this.tick)
   }
 
-  private start() {
+  private async start() {
     console.info('START GAME')
     this.gameRunning = true
     // start systems
-    this.systems.forEach((system) => {
-      if (system.start) {
-        console.warn('START GAME SYSTEM', system.name)
-        system.start()
-      }
-    })
+    // this.systems.forEach((system) => {
+    //   if (system.start) {
+    //     console.warn('START GAME SYSTEM', system.name)
+    //     system.start()
+    //   }
+    // })
+
+    // start all systems asynchronously
+    await Promise.all(this.systems.map((system) => system.start?.()))
   }
 
-  private stop() {
+  private async stop() {
     console.info('STOP GAME')
     this.gameRunning = false
     // stop systems
-    this.systems.forEach((system) => {
-      if (system.stop) {
-        console.warn('STOP GAME SYSTEM', system.name)
-        system.stop()
-      }
-    })
+    // this.systems.forEach((system) => {
+    //   if (system.stop) {
+    //     console.warn('STOP GAME SYSTEM', system.name)
+    //     system.stop()
+    //   }
+    // })
+    // start all systems asynchronously
+    await Promise.all(this.systems.map((system) => system.start?.()))
   }
 
   // async saveState(state: any) {}

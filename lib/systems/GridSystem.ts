@@ -254,8 +254,12 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     })
   }
 
-  public tick() {
-    //console.log('GridSystem.update')
+  public async tick(deltaTime: number) {
+    // only draw the grid every X frames to reduce CPU usage
+    // if (this._game.frameCount % 2 !== 0) {
+    //   return
+    // }
+
     this.draw(this.gridCtx)
   }
 }

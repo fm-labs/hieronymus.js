@@ -33,7 +33,7 @@ export class GamepadInputSystem extends AbstractGameSystem implements IGameSyste
     console.log('GamepadInputSystem.stop')
   }
 
-  public tick(delta: number) {
+  public async tick(delta: number) {
     const now = Date.now()
     if (this.lastInputTime && now - this.lastInputTime < 200) return
     //console.log('GamepadInputSystem.update', delta)

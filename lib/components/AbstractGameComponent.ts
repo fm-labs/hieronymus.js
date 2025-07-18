@@ -27,6 +27,6 @@ export abstract class AbstractGameComponent {
     return { x, y }
   }
 
-  public abstract update(deltaTime: number): void
+  public abstract update(deltaTime: number): void | boolean | null
   public abstract draw(ctx: CanvasRenderingContext2D): void
 }

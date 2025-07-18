@@ -44,7 +44,7 @@ interface IGameSystem {
   onUnload?: () => void
   start?: () => void
   stop?: () => void
-  tick?: (deltaTime: number) => void
+  tick?: (deltaTime: number) => Promise<void>
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
@@ -106,7 +106,7 @@ type TileMapConfig = {
 
 type TileMapLayer = {
   name: string
-  type: 'TILELAYER' | 'OBJECTLAYER' //| 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
+  type: 'TILE' | 'OBJECT' //| 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
   data: TileMapLayerData[]
   locked?: boolean
   visible?: boolean
@@ -159,7 +159,7 @@ interface ITileMap {
   addObjectAtGridPos(layerId: number, col: number, row: number, obj: IGameComponent): number // returns componentId
   //getObject(layerId: number, id: number): IGameComponent | undefined
   //updateObject(layerId: number, id: number, obj: IGameComponent): void
-  removeObject(layerId: number, id: number): void
+  removeObject(layerId: number, componentId: number): void
 
   dump(): TileMapDump
   //restore(dump: TileMapDump): void
@@ -177,7 +177,7 @@ interface IGameComponent {
   x: number
   y: number
   properties?: GameComponentProperties
-  update?: (deltaTime: number) => void | boolean
+  update?: (deltaTime: number) => void | boolean | null
   draw?: (ctx: CanvasRenderingContext2D) => void
   setPosition: (x: number, y: number) => void
 }

@@ -139,7 +139,7 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     //ctx.restore()
   }
 
-  update(deltaTime: number): void | boolean {
+  update(deltaTime: number): void | boolean | null {
     if (!this._tilesheet || !this._tilesheetImage) return
 
     const cols = this._tilesheet.columns

@@ -18,7 +18,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   private _drawCounter: number = 0
 
   private _spawnTimer: any = undefined
-  private _objects: number[] = []
+  //private _objects: number[] = []
 
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
@@ -64,19 +64,20 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     console.log('TileMapSystem.start')
 
     this._spawnTimer = window.setInterval(() => {
-      //console.log('TileMapSystem spawn timer')
+      console.log('TileMapSystem spawn timer')
       // kill a random object if we have more than 10
-      if (this._objects.length > 100) {
-        const idx = Math.floor(Math.random() * this._objects.length)
-        const objectToRemove = this._objects[idx]
-        //console.log('Removing object:', objectToRemove, this._objects.length)
-        this.tileMap.removeObject(5, objectToRemove)
-        this._objects.splice(idx, 1)
-      }
+      // if (this._objects.length > 100) {
+      //   const idx = Math.floor(Math.random() * this._objects.length)
+      //   const objectToRemove = this._objects[idx]
+      //   //console.log('Removing object:', objectToRemove, this._objects.length)
+      //   this.tileMap.removeObject(5, objectToRemove)
+      //   this._objects.splice(idx, 1)
+      // }
 
       const randCol = Math.floor(Math.random() * this.cols)
       const randRow = Math.floor(Math.random() * this.rows)
       const randSpeed = Math.random() * 2 + 1 // random speed between 1 and 3
+      const randTtl = Math.floor(Math.random() * 50000) + 15000 // random ttl between 15 and 50 seconds
 
       const object = new IsoCharacterComponent({
         tilesheetName: 'mech',
@@ -84,10 +85,10 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
         speed: 5 * randSpeed,
         movementSpeed: randSpeed,
         movementDirection: 'down',
+        ttl: randTtl, // ttl in ms
       })
       const objectId = this.tileMap.addObjectAtGridPos(5, randCol, randRow, object)
-      this._objects.push(objectId)
-    }, 1000)
+    }, 500)
 
     //this._game.camera.offset.x = -this.worldCanvas.width / 2
 
@@ -121,7 +122,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     }
   }
 
-  public tick(deltaTime: number) {
+  public async tick(deltaTime: number) {
     //console.log('TileMapSystem.update', deltaTime)
     this.tileMap.layers.forEach((layer, layerIdx) => {
       this.updateLayer(layerIdx, deltaTime)
@@ -139,9 +140,9 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     layerCanvasCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
     this.tileMap.layers.forEach((layer, layerIdx) => {
       //console.log('layer', layerIdx, layer.type)
-      if (layer.type === 'TILELAYER') {
+      if (layer.type === 'TILE') {
         this.drawTiles(layerIdx, layerCanvasCtx)
-      } else if (layer.type === 'OBJECTLAYER') {
+      } else if (layer.type === 'OBJECT') {
         this.drawObjects(layerIdx, layerCanvasCtx)
       }
     })
@@ -196,9 +197,11 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     layerData.forEach((componentId, idx) => {
       const component = this.tileMap.components.get(componentId)
       if (component && component.update) {
-        if (component.update(deltaTime) === true) {
-          //console.log('update', layerIdx, idx, component)
-          //this.dirty = true
+        const updateResult = component.update(deltaTime)
+        if (updateResult === null) {
+          // NULL means the component should be removed
+          console.log('updateTriggeredRemoval', layerIdx, componentId)
+          this.tileMap.removeObject(layerIdx, componentId)
         }
       }
     })

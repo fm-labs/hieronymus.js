@@ -32,7 +32,7 @@ export class DevPanelSystem extends AbstractGameSystem implements IGameSystem {
     console.log('DevPanelSystem.stop')
   }
 
-  public tick() {
+  public async tick() {
     console.log('DevPanelSystem.update')
   }
 

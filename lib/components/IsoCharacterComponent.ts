@@ -6,6 +6,7 @@ export interface IsoCharacterComponentProps extends AnimatedSpriteComponentProps
   tilesheetName: string // Base tilesheet name, e.g., 'mech'
   movementSpeed?: number
   movementDirection?: MovementDirection
+  ttl?: number // Time to live in milliseconds
 }
 
 class IsoCharacterComponent extends AnimatedSpriteComponent {
@@ -19,6 +20,7 @@ class IsoCharacterComponent extends AnimatedSpriteComponent {
 
   public readonly componentType: string = 'IsoCharacter'
 
+  private _spawnTime: number = Date.now()
   private _baseTilesheetName: string
   private _lastMove: number = 0
   private _moves: number = 0
@@ -36,10 +38,14 @@ class IsoCharacterComponent extends AnimatedSpriteComponent {
     this._baseTilesheetName = baseTilesheetName
   }
 
-  update(deltaTime: number): void | boolean {
+  update(deltaTime: number): void | boolean | null {
     super.update(deltaTime)
 
-    //if (deltaTime <= 100) return
+    const ttl = this.properties.ttl
+    if (ttl && Date.now() - this._spawnTime > ttl) {
+      console.log(`IsoCharacterComponent expired after ${ttl}ms`)
+      return null // Indicate that this component should be removed
+    }
 
     const speed = this.properties.movementSpeed
     const direction = this.properties.movementDirection

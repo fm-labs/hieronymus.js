@@ -51,7 +51,7 @@ export class TileMap implements ITileMap {
     // Initialize the layer data array with empty values
     const totalCells = this.columns * this.rows
 
-    if (layer.type === 'TILELAYER') {
+    if (layer.type === 'TILE') {
       layer.data = new Array(totalCells).fill(0)
     } else {
       layer.data = []
@@ -107,8 +107,8 @@ export class TileMap implements ITileMap {
    */
   addTile(layerId: number, col: number, row: number, tile: IGameComponent) {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
-    if (this.layers[layerId].type !== 'TILELAYER') {
-      throw new Error(`Layer ${layerId} is not a TILELAYER`)
+    if (this.layers[layerId].type !== 'TILE') {
+      throw new Error(`Layer ${layerId} is not a TILE`)
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
@@ -126,8 +126,8 @@ export class TileMap implements ITileMap {
     console.log('assignTile', layerId, col, row, componentId)
 
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
-    if (this.layers[layerId].type !== 'TILELAYER') {
-      throw new Error(`Layer ${layerId} is not a TILELAYER`)
+    if (this.layers[layerId].type !== 'TILE') {
+      throw new Error(`Layer ${layerId} is not a TILE`)
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
@@ -174,8 +174,8 @@ export class TileMap implements ITileMap {
 
   addObjectAtGridPos(layerId: number, col: number, row: number, obj: IGameComponent): number {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
-    if (this.layers[layerId].type !== 'OBJECTLAYER') {
-      throw new Error(`Layer ${layerId} is not an OBJECTLAYER`)
+    if (this.layers[layerId].type !== 'OBJECT') {
+      throw new Error(`Layer ${layerId} is not an OBJECT`)
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
@@ -187,8 +187,8 @@ export class TileMap implements ITileMap {
 
   removeObject(layerId: number, componentId: number): void {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
-    if (this.layers[layerId].type !== 'OBJECTLAYER') {
-      throw new Error(`Layer ${layerId} is not an OBJECTLAYER`)
+    if (this.layers[layerId].type !== 'OBJECT') {
+      throw new Error(`Layer ${layerId} is not an OBJECT`)
     }
 
     const index = this.layers[layerId].data.indexOf(componentId)
@@ -202,8 +202,8 @@ export class TileMap implements ITileMap {
 
   findObjectsAtGridPos(layerId: number, col: number, row: number): number[] {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
-    if (this.layers[layerId].type !== 'OBJECTLAYER') {
-      throw new Error(`Layer ${layerId} is not an OBJECTLAYER`)
+    if (this.layers[layerId].type !== 'OBJECT') {
+      throw new Error(`Layer ${layerId} is not an OBJECT`)
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
