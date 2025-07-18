@@ -5,6 +5,7 @@ import { IsoCubeComponent } from '../../../lib'
 import { IsoHexagonComponent } from '../../../lib'
 import { IsoCylinderComponent } from '../../../lib'
 import { AnimatedSpriteComponent } from '../../../lib'
+import IsoCharacterComponent from '../../../lib/components/IsoCharacterComponent.ts'
 
 const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 30
@@ -34,9 +35,9 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     32,
   )
   await resources.loadTilesheet('mech-up', '/assets/sprites/mechanoid/Walk_Body_045.png', 6, 4, 64)
-  await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
+  await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_135.png', 6, 4)
   await resources.loadTilesheet('mech-down', '/assets/sprites/mechanoid/Walk_Body_225.png', 6, 4)
-  await resources.loadTilesheet('mech-right', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
+  await resources.loadTilesheet('mech-left', '/assets/sprites/mechanoid/Walk_Body_315.png', 6, 4)
 
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
@@ -293,10 +294,13 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_OBJECTS,
     6,
     4,
-    new AnimatedSpriteComponent({
+    new IsoCharacterComponent({
+      name: 'hero-character',
       tileSize: worldMap.tileWidth,
-      tilesheetName: 'mech-down',
+      tilesheetName: 'mech',
       speed: 5,
+      movementSpeed: 2,
+      movementDirection: 'down',
     }),
   )
 
