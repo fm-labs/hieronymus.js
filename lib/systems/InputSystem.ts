@@ -21,6 +21,7 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     window.addEventListener('keyup', this.handleKeyboardEvent.bind(this))
     window.addEventListener('mouseup', this.handleMouseEvent.bind(this))
     window.addEventListener('mousedown', this.handleMouseEvent.bind(this))
+    window.addEventListener('dblclick', this.handleMouseEvent.bind(this))
 
     // The `{ passive: false }` option is important to allow `preventDefault` to work.
     window.addEventListener('wheel', this.handleWheelEvent.bind(this), { passive: false })
@@ -96,7 +97,7 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private handleMouseEvent(e: MouseEvent) {
-    //console.log('mouse event', e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+    console.log('mouse event', e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
     this._game.eventbus.emit(`mouse.${e.type}`, e)
   }
 
