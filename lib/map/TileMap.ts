@@ -14,7 +14,7 @@ export class TileMap implements ITileMap {
   readonly tileWidth: number
   readonly tileHeight: number
 
-  public readonly layers: TileMapLayer[] = []
+  public layers: TileMapLayer[] = []
   public readonly components: ComponentManager
   public readonly projection: IGrid2DProjection
 
@@ -183,6 +183,21 @@ export class TileMap implements ITileMap {
     const componentId = this.components.add(obj)
     this.layers[layerId].data.push(componentId)
     return componentId
+  }
+
+  removeObject(layerId: number, componentId: number): void {
+    if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
+    if (this.layers[layerId].type !== 'OBJECTLAYER') {
+      throw new Error(`Layer ${layerId} is not an OBJECTLAYER`)
+    }
+
+    const index = this.layers[layerId].data.indexOf(componentId)
+    if (index === -1) {
+      throw new Error(`Component ID ${componentId} not found in layer ${layerId}`)
+    }
+    //console.log('removeObject', layerId, componentId, index, this.layers[layerId].data)
+    this.layers[layerId].data.splice(index, 1)
+    this.components.remove(componentId)
   }
 
   findObjectsAtGridPos(layerId: number, col: number, row: number): number[] {

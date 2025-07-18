@@ -16,7 +16,7 @@ export class ComponentManager implements IComponentManager {
 
   add(component: IGameComponent, nextId?: number): number {
     const _nextId = nextId || this._lastId + 1
-    console.log(`Adding component with ID ${_nextId} of type ${component.componentType}`)
+    //console.log(`Adding component with ID ${_nextId} of type ${component.componentType}`)
     if (_nextId < this._lastId) throw new Error('nextId must be greater than previous')
 
     this._components.set(_nextId, component)
@@ -29,6 +29,22 @@ export class ComponentManager implements IComponentManager {
 
   set(id: number, c: IGameComponent): void {
     this._components.set(id, c)
+  }
+
+  remove(id: number): void {
+    if (!this._components.has(id)) {
+      throw new Error(`Component with ID ${id} does not exist`)
+    }
+    this._components.delete(id)
+  }
+
+  findByName(name: string): IGameComponent | undefined {
+    for (const component of this._components.values()) {
+      if (component?.properties?.name === name) {
+        return component
+      }
+    }
+    return undefined
   }
 
   all(): { [key: number]: IGameComponent } {

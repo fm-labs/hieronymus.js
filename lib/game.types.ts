@@ -159,6 +159,7 @@ interface ITileMap {
   addObjectAtGridPos(layerId: number, col: number, row: number, obj: IGameComponent): number // returns componentId
   //getObject(layerId: number, id: number): IGameComponent | undefined
   //updateObject(layerId: number, id: number, obj: IGameComponent): void
+  removeObject(layerId: number, id: number): void
 
   dump(): TileMapDump
   //restore(dump: TileMapDump): void
@@ -168,16 +169,17 @@ type GameComponentProperties = {
   x?: number
   y?: number
   name?: string
-  //[key: string]: any
   data?: { [key: string]: any }
 }
 
 interface IGameComponent {
   componentType: string
+  x: number
+  y: number
   properties?: GameComponentProperties
-  setPosition: (x: number, y: number) => void
   update?: (deltaTime: number) => void | boolean
   draw?: (ctx: CanvasRenderingContext2D) => void
+  setPosition: (x: number, y: number) => void
 }
 
 interface IComponentManager {
