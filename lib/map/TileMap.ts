@@ -1,7 +1,7 @@
 import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
 import { ComponentManager } from '../kernel/ComponentManager.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
-import { DimetricGridProjection } from './DimetricGridProjection.ts'
+import { IsometricGridProjection } from './IsometricGridProjection.ts'
 import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'
 
 export class TileMap implements ITileMap {
@@ -33,10 +33,12 @@ export class TileMap implements ITileMap {
     }
 
     let projection: IGrid2DProjection
-    if (config.projection === 'dimetric') {
-      projection = new DimetricGridProjection(this.tileWidth, config.columns, config.rows)
-    } else {
+    if (config.projection === 'isometric') {
+      projection = new IsometricGridProjection(this.tileWidth, config.columns, config.rows)
+    } else if (config.projection === 'orthogonal') {
       projection = new OrthogonalGridProjection(this.tileWidth, config.columns, config.rows)
+    } else {
+      throw new Error(`Unsupported projection type: ${config.projection}`)
     }
     this.projection = projection
   }

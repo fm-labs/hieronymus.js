@@ -25,7 +25,6 @@ export function getGridPosFromIndex(index: number, columns: number): { col: numb
  * @param x
  * @param y
  * @param tileWidth
- * @deprecated Use IsometricGridProjection instead
  */
 export function isometricScreenToGrid(x: number, y: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
@@ -41,7 +40,6 @@ export function isometricScreenToGrid(x: number, y: number, tileWidth: number) {
  * @param col
  * @param row
  * @param tileWidth
- * @deprecated Use IsometricGridProjection instead
  */
 export function isometricGridToScreen(col: number, row: number, tileWidth: number) {
   const tileHeight = tileWidth / 2
@@ -61,7 +59,6 @@ export function isometricGridToScreen(col: number, row: number, tileWidth: numbe
  * @param col
  * @param row
  * @param tileSize
- * @deprecated Use OrthogonalGridProjection instead
  */
 export function orthogonalGridToScreen(col: number, row: number, tileSize: number) {
   const tileWidth = tileSize
@@ -76,7 +73,6 @@ export function orthogonalGridToScreen(col: number, row: number, tileSize: numbe
  * @param x
  * @param y
  * @param tileSize
- * @deprecated Use OrthogonalGridProjection instead
  */
 export function orthogonalScreenToGrid(x: number, y: number, tileSize: number) {
   const tileWidth = tileSize
@@ -84,4 +80,38 @@ export function orthogonalScreenToGrid(x: number, y: number, tileSize: number) {
   const col = Math.floor(x / tileWidth)
   const row = Math.floor(y / tileHeight)
   return { col, row }
+}
+
+/**
+ * Find neighboring cells in a 2D grid within a given distance.
+ * @param col - Column index of the cell (x-axis)
+ * @param row - Row index of the cell (y-axis)
+ * @param totalCols - Total number of columns in the grid
+ * @param totalRows - Total number of rows in the grid
+ * @param distance - Distance from the center cell to search for neighbors
+ * @returns An array of [col, row] pairs representing neighboring cells
+ */
+export function findCellNeighbors(
+  col: number,
+  row: number,
+  totalCols: number,
+  totalRows: number,
+  distance: number = 1,
+): [number, number][] {
+  const neighbors: [number, number][] = []
+
+  for (let dy = -distance; dy <= distance; dy++) {
+    for (let dx = -distance; dx <= distance; dx++) {
+      if (dx === 0 && dy === 0) continue // Skip the center cell itself
+
+      const nCol = col + dx
+      const nRow = row + dy
+
+      if (nCol >= 0 && nCol < totalCols && nRow >= 0 && nRow < totalRows) {
+        neighbors.push([nCol, nRow])
+      }
+    }
+  }
+
+  return neighbors
 }

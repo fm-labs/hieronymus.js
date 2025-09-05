@@ -52,7 +52,7 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
     rows: ROWS,
     tileSize: TILE_SIZE,
     //projection: 'orthogonal',
-    projection: 'dimetric',
+    projection: 'isometric',
   }
   const worldMap = new TileMap(worldConfig)
 

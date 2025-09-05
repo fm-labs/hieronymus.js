@@ -46,7 +46,7 @@ game.addSystem(new GridSystem(game))
 game.addSystem(new TileMapSystem(game))
 game.addSystem(new HeroSystem(game))
 game.addSystem(new InputSystem(game))
-game.addSystem(new GamepadInputSystem())
+game.addSystem(new GamepadSystem())
 game.addSystem(new TileMapEditorSystem(game))
 game.addSystem(new InfoSystem(game))
 

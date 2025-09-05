@@ -1,6 +1,6 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
 
-export class GamepadInputSystem extends AbstractGameSystem implements IGameSystem {
+export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'GamepadInputSystem'
   private lastInputTime = 0
   private gamepads: Gamepad[] = []

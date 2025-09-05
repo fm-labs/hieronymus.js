@@ -1,4 +1,4 @@
-import { TileMap } from '../../../lib'
+import { isometricGridToScreen, TileMap } from '../../../lib'
 import { SpriteComponent } from '../../../lib'
 import { TextComponent } from '../../../lib'
 import { IsoCubeComponent } from '../../../lib'
@@ -47,7 +47,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     rows: ROWS,
     tileSize: TILE_SIZE,
     //projection: 'orthogonal',
-    projection: 'dimetric',
+    projection: 'isometric',
   }
   const worldMap = new TileMap(worldConfig)
 
@@ -301,19 +301,19 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //     speed: 10,
   //   }),
   // )
-  worldMap.addObjectAtGridPos(
-    LAYER_OBJECTS,
-    6,
-    4,
-    new IsoCharacterComponent({
-      name: 'hero-character',
-      tileSize: worldMap.tileWidth,
-      tilesheetName: 'mech',
-      speed: 5,
-      movementSpeed: 2,
-      movementDirection: 'down',
-    }),
-  )
+  // worldMap.addObjectAtGridPos(
+  //   LAYER_OBJECTS,
+  //   6,
+  //   4,
+  //   new IsoCharacterComponent({
+  //     name: 'hero-character',
+  //     tileSize: worldMap.tileWidth,
+  //     tilesheetName: 'mech',
+  //     speed: 5,
+  //     movementSpeed: 2,
+  //     movementDirection: undefined,
+  //   }),
+  // )
 
   colNr = colNr + 4
   worldMap.addObjectAtGridPos(

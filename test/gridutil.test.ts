@@ -1,9 +1,10 @@
-import { assert, expect, test } from 'vitest'
+import { assert, expect, test, describe, it } from 'vitest'
 import {
   isometricScreenToGrid,
   isometricGridToScreen,
   orthogonalScreenToGrid,
   orthogonalGridToScreen,
+  findCellNeighbors,
 } from '../lib/utils/gridutil'
 
 test('orthogonalGridToScreen', () => {
@@ -45,4 +46,58 @@ test('isometricGridToScreen', () => {
       // expect(screenPos3.row).toBe(j)
     }
   }
+})
+
+describe('findCellNeighbors', () => {
+  it('returns all 8 neighbors for a center cell in a 3x3 grid', () => {
+    const neighbors = findCellNeighbors(1, 1, 3, 3, 1)
+    expect(neighbors).toHaveLength(8)
+    expect(neighbors).toEqual(
+      expect.arrayContaining([
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [0, 1],
+        [2, 1],
+        [0, 2],
+        [1, 2],
+        [2, 2],
+      ]),
+    )
+  })
+
+  it('returns correct neighbors at a corner cell (0,0)', () => {
+    const neighbors = findCellNeighbors(0, 0, 3, 3, 1)
+    expect(neighbors).toEqual(
+      expect.arrayContaining([
+        [1, 0],
+        [0, 1],
+        [1, 1],
+      ]),
+    )
+  })
+
+  it('returns correct neighbors at the edge cell (2,1)', () => {
+    const neighbors = findCellNeighbors(2, 1, 3, 3, 1)
+    expect(neighbors).toEqual(
+      expect.arrayContaining([
+        [1, 0],
+        [2, 0],
+        [1, 1],
+        [1, 2],
+        [2, 2],
+      ]),
+    )
+  })
+
+  it('returns more neighbors when distance = 2', () => {
+    const neighbors = findCellNeighbors(2, 2, 5, 5, 2)
+    expect(neighbors.length).toBe(24) // 5x5 grid around center minus self
+    expect(neighbors).not.toContainEqual([2, 2]) // center excluded
+  })
+
+  it('returns empty array if no valid neighbors', () => {
+    const neighbors = findCellNeighbors(0, 0, 1, 1, 1)
+    expect(neighbors).toEqual([])
+  })
 })

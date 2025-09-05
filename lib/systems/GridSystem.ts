@@ -1,7 +1,7 @@
 import { drawIsoTile } from '../draw2d/drawiso.ts'
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
 import { getCellIndex } from '../utils/gridutil.ts'
-import { DimetricGridProjection } from '../map/DimetricGridProjection.ts'
+import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
 
 export class GridSystem extends AbstractGameSystem implements IGameSystem {
   public readonly name = 'GridSystem'
@@ -215,7 +215,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
         //   strokeColor = 'rgba(91,255,2,0.85)'
         // }
 
-        if (this.projection instanceof DimetricGridProjection) {
+        if (this.projection instanceof IsometricGridProjection) {
           drawIsoTile(
             gridCtx,
             x,

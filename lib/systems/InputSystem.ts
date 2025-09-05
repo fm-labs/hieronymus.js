@@ -77,8 +77,9 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     console.log('InputSystem.stop')
     window.removeEventListener('keydown', this.handleKeyboardEvent)
     window.removeEventListener('keyup', this.handleKeyboardEvent)
-    window.removeEventListener('mouseup', this.handleMouseEvent)
     window.removeEventListener('mousedown', this.handleMouseEvent)
+    window.removeEventListener('mouseup', this.handleMouseEvent)
+    window.removeEventListener('dblclick', this.handleMouseEvent)
     window.removeEventListener('wheel', this.handleWheelEvent)
     window.removeEventListener('resize', this.handleWindowResizeEvent)
   }

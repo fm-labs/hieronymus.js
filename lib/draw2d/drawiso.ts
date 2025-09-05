@@ -1,7 +1,7 @@
 import { OrthogonalGridProjection } from '../map/OrthogonalGridProjection.ts'
 import { degreeToRadian } from '../utils/mathutil.ts'
 import { FILL_COLORS, STROKE_COLORS } from '../constants.ts'
-import { DimetricGridProjection } from '../map/DimetricGridProjection.ts'
+import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
 
 export function drawIsoTile(
   ctx: CanvasRenderingContext2D,
@@ -264,7 +264,7 @@ function orthogonalToIsometric(orthoX: number, orthoY: number, tileSize: number)
   // return [isoX, isoY]
   //console.log('orthoScreenPos', orthoX, orthoY)
   const orthoProjection = new OrthogonalGridProjection(tileSize, 1, 1)
-  const isoProjection = new DimetricGridProjection(tileSize, 1, 1)
+  const isoProjection = new IsometricGridProjection(tileSize, 1, 1)
 
   const orthoGridPos = orthoProjection.mapScreenToGrid(orthoX, orthoY)
   //console.log('orthoGridPos', orthoGridPos)
@@ -279,7 +279,7 @@ function isometricToOrthogonal(isoX: number, isoY: number, tileSize: number): [n
   // const orthoX = (isoX / tileWidth + isoY / tileHeight) / 2
   // const orthoY = (isoY / tileHeight - isoX / tileWidth) / 2
   // return [orthoX, orthoY]
-  const isoProjection = new DimetricGridProjection(tileSize, 1, 1)
+  const isoProjection = new IsometricGridProjection(tileSize, 1, 1)
   const orthoProjection = new OrthogonalGridProjection(tileSize, 1, 1)
   const gridPos = isoProjection.mapScreenToGrid(isoX, isoY)
   const screenPos = orthoProjection.mapGridToScreen(gridPos.col, gridPos.row)

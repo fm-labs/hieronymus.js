@@ -22,6 +22,8 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
   private _selection: IMapSelection | undefined
   private readonly tileMap: ITileMap
 
+  private _editorMode: 'select' | 'draw' = 'select'
+
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
@@ -102,35 +104,41 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
   }
 
   private handleCellClick(cellEvent: { index: number; col: number; row: number }) {
-    console.log('WebUiSystem.handleCellClick', cellEvent, this._selectedSpriteIdx)
+    console.log('WebUiSystem.handleCellClick', cellEvent, this._editorMode)
 
-    this._selectedCellIdx = cellEvent.index
-    if (
-      this._selectedSpriteIdx !== undefined &&
-      this._selectedCellIdx !== undefined &&
-      this._selectedLayerIdx !== undefined
-    ) {
-      // add sprite component to layer
-      console.log('add sprite component to layer', this._selectedLayerIdx, this._selectedSpriteIdx)
-      const _component = new SpriteComponent({
-        spriteId: this._selectedSpriteIdx,
-        //spriteImage: this._game.resources.sprites[this._selectedSpriteIdx], // deprecated
-        tileSize: this.tileMap.tileWidth,
-      })
-
-      if (this.tileMap.layers[this._selectedLayerIdx].type === 'TILE') {
-        this.tileMap.addTile(this._selectedLayerIdx, cellEvent.col, cellEvent.row, _component)
-      } else {
-        this.tileMap.addObjectAtGridPos(
+    if (this._editorMode === 'draw') {
+      this._selectedCellIdx = cellEvent.index
+      if (
+        this._selectedSpriteIdx !== undefined &&
+        this._selectedCellIdx !== undefined &&
+        this._selectedLayerIdx !== undefined
+      ) {
+        // add sprite component to layer
+        console.log(
+          'add sprite component to layer',
           this._selectedLayerIdx,
-          cellEvent.col,
-          cellEvent.row,
-          _component,
+          this._selectedSpriteIdx,
         )
+        const _component = new SpriteComponent({
+          spriteId: this._selectedSpriteIdx,
+          //spriteImage: this._game.resources.sprites[this._selectedSpriteIdx], // deprecated
+          tileSize: this.tileMap.tileWidth,
+        })
+
+        if (this.tileMap.layers[this._selectedLayerIdx].type === 'TILE') {
+          this.tileMap.addTile(this._selectedLayerIdx, cellEvent.col, cellEvent.row, _component)
+        } else {
+          this.tileMap.addObjectAtGridPos(
+            this._selectedLayerIdx,
+            cellEvent.col,
+            cellEvent.row,
+            _component,
+          )
+        }
+      } else if (this._selectedSpriteIdx !== undefined && !this._selectedLayerIdx) {
+        console.warn('No layer selected, cannot add sprite to cell')
+        alert('No layer selected, cannot add sprite to cell')
       }
-    } else if (this._selectedSpriteIdx !== undefined && !this._selectedLayerIdx) {
-      console.warn('No layer selected, cannot add sprite to cell')
-      alert('No layer selected, cannot add sprite to cell')
     }
 
     this.dirty = true
@@ -214,6 +222,13 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       spritesContainer.appendChild(spriteDiv)
     })
     this.uiDiv.appendChild(spritesContainer)
+    if (this._editorMode !== 'draw') {
+      this.uiDiv.style.display = 'none'
+      this.uiDiv.style.visibility = 'hidden'
+    } else {
+      this.uiDiv.style.display = 'block'
+      this.uiDiv.style.visibility = 'visible'
+    }
 
     // controls
     this.controlsDiv.innerHTML = ''
@@ -301,12 +316,22 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
     this.controlsDiv.appendChild(document.createElement('hr'))
 
     const buttonSelectCell = document.createElement('button')
-    buttonSelectCell.textContent = 'Select'
+    buttonSelectCell.textContent = 'Select Mode'
     buttonSelectCell.onclick = () => {
       console.log('select cell')
+      this._editorMode = 'select'
       this._game.eventbus.emit('editor.set_mode', { mode: 'select' })
     }
     this.controlsDiv.appendChild(buttonSelectCell)
+
+    const buttonDrawCell = document.createElement('button')
+    buttonDrawCell.textContent = 'Draw Mode'
+    buttonDrawCell.onclick = () => {
+      console.log('select cell')
+      this._editorMode = 'draw'
+      this._game.eventbus.emit('editor.set_mode', { mode: 'draw' })
+    }
+    this.controlsDiv.appendChild(buttonDrawCell)
 
     this.controlsDiv.appendChild(document.createElement('hr'))
 

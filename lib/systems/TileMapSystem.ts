@@ -1,6 +1,6 @@
 import { getCellIndex } from '../utils/gridutil.ts'
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { DimetricGridProjection } from '../map/DimetricGridProjection.ts'
+import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
 import { ComponentManager } from '../kernel/ComponentManager.ts'
 import IsoCharacterComponent from '../components/IsoCharacterComponent.ts'
 
@@ -39,7 +39,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     this.worldCanvas.id = 'worldCanvas'
 
     //@todo center the grid on the screen
-    if (this.tileMap.projection instanceof DimetricGridProjection) {
+    if (this.tileMap.projection instanceof IsometricGridProjection) {
       //this._game.camera.offset.x = -this._game.$container.offsetWidth / 2
       this._game.camera.offset.x = -gridWidth / 2
     }

@@ -13,6 +13,11 @@ export const drawElevation = (
 
   //ctx.globalAlpha = 0.5
 
+  // write the x and y coordinates
+  ctx.font = '12px Arial'
+  ctx.fillStyle = 'lime'
+  ctx.fillText(`(${centerX.toFixed(0)}, ${centerY.toFixed(0)})`, centerX + 10, centerY + 5)
+
   // draw a center dot
   ctx.fillStyle = 'lime'
   ctx.beginPath()

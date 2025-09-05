@@ -9,7 +9,7 @@ export class DimetricGridProjection implements IGrid2DProjection {
 
   constructor(tileSize: number, cols: number, rows: number) {
     this.tileWidth = tileSize
-    this.tileHeight = tileSize / 2
+    this.tileHeight = tileSize
 
     this.cols = cols
     this.rows = rows

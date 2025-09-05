@@ -2,11 +2,13 @@ import { devGameLauncher } from './worlds/dev/devGameLauncher.ts'
 import { awsGameLauncher } from './worlds/aws/awsGameLauncher.ts'
 import { Game } from '../lib'
 import { rouletteGameLauncher } from './worlds/roulette/rouletteGameLauncher.ts'
+import { viennaGameLauncher } from './worlds/vienna/viennaGameLauncher.ts'
 
 const gameLaunchers: Record<string, (app: HTMLDivElement) => Promise<Game>> = {
   dev: devGameLauncher,
   aws: awsGameLauncher,
   roulette: rouletteGameLauncher,
+  vienna: viennaGameLauncher,
 }
 
 // read the 'world' query parameter

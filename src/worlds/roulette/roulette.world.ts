@@ -52,7 +52,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     rows: ROWS,
     tileSize: TILE_SIZE,
     //projection: 'orthogonal',
-    projection: 'dimetric',
+    projection: 'isometric',
   }
   const worldMap = new TileMap(worldConfig)
 
