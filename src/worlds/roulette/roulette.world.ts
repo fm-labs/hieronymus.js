@@ -1,6 +1,6 @@
 import { TileMap } from '../../../lib'
 import { SpriteComponent } from '../../../lib'
-import { TextComponent } from '../../../lib'
+import { IsoTextComponent } from '../../../lib'
 import { IsoCubeComponent } from '../../../lib'
 import { IsoHexagonComponent } from '../../../lib'
 import { IsoCylinderComponent } from '../../../lib'
@@ -67,7 +67,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     0,
     rowNr,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Roulette',
       font: '48px Tektur',
       orientation: 'horizontal',
@@ -115,7 +115,7 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       LAYER_LABELS,
       x + 1,
       y + 1,
-      new TextComponent({
+      new IsoTextComponent({
         text: number.toString(),
         font: '32px BungeeSpice',
         orientation: 'vertical',

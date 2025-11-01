@@ -1,11 +1,12 @@
 import { isometricGridToScreen, TileMap } from '../../../lib'
 import { SpriteComponent } from '../../../lib'
-import { TextComponent } from '../../../lib'
+import { IsoTextComponent } from '../../../lib'
 import { IsoCubeComponent } from '../../../lib'
 import { IsoHexagonComponent } from '../../../lib'
 import { IsoCylinderComponent } from '../../../lib'
 import { AnimatedSpriteComponent } from '../../../lib'
 import IsoCharacterComponent from '../../../lib/components/IsoCharacterComponent.ts'
+import { IsoImageComponent } from '../../../lib/components/IsoImageComponent.ts'
 
 const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 30
@@ -41,6 +42,11 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
 
   await resources.loadFont('BungeeSpice', '/assets/fonts/Bungee_Spice/BungeeSpice-Regular.ttf')
   await resources.loadFont('Tektur', '/assets/fonts/Tektur/Tektur-VariableFont_wdth,wght.ttf')
+
+  await resources.loadImage(
+    'icon1',
+    '/aws/awsicons/Architecture-Service-Icons_01312023/Arch_Compute/64/Arch_Amazon-EC2_64.png',
+  )
 
   const worldConfig: TileMapConfig = {
     columns: COLUMNS,
@@ -80,11 +86,26 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //     orientation: 'horizontal',
   //   }),
   // )
+
+  worldMap.addObjectAtGridPos(
+    LAYER_LABELS,
+    6,
+    6,
+    new IsoImageComponent({
+      columns: COLUMNS,
+      rows: ROWS,
+      tileSize: TILE_SIZE,
+      scale: 1,
+      imageName: 'icon1',
+      orientation: 'floor',
+    }),
+  )
+
   worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     0,
     rowNr,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Tiles',
       font: '48px Tektur',
       orientation: 'horizontal',
@@ -105,7 +126,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     0,
     rowNr,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Shapes',
       font: '48px Tektur',
       orientation: 'horizontal',
@@ -197,7 +218,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     0,
     rowNr,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Sprites',
       font: '48px Tektur',
       orientation: 'horizontal',
@@ -244,7 +265,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 5,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Animations',
       font: '48px Tektur',
       orientation: 'vertical',
@@ -320,7 +341,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 5,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Fonts',
       font: '48px Tektur',
       orientation: 'vertical',
@@ -333,7 +354,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 5,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Vertical Flat',
       font: '32px BungeeSpice',
       orientation: 'vertical',
@@ -345,7 +366,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 5,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Vertical Upright',
       font: '32px BungeeSpice',
       orientation: 'vertical',
@@ -357,7 +378,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 4,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Horizontal Flat',
       font: '32px BungeeSpice',
       orientation: 'horizontal',
@@ -368,7 +389,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     colNr,
     rowNr + 5,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'Horizontal Upright',
       font: '32px BungeeSpice',
       orientation: 'horizontal',

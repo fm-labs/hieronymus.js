@@ -1,5 +1,5 @@
 import { IsoCubeComponent, IsoCylinderComponent, SpriteComponent, TileMap } from '../../../lib'
-import { TextComponent } from '../../../lib'
+import { IsoTextComponent } from '../../../lib'
 import { TileComponent } from '../../../lib/components/TileComponent.ts'
 import viennaInventoryData from './vienna.inventory.json'
 
@@ -65,7 +65,7 @@ const viennaWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     LAYER_LABELS,
     0,
     0,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'VIENNA Inventory',
       font: '48px Tektur',
       orientation: 'horizontal',

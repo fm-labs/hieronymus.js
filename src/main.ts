@@ -3,12 +3,20 @@ import { awsGameLauncher } from './worlds/aws/awsGameLauncher.ts'
 import { Game } from '../lib'
 import { rouletteGameLauncher } from './worlds/roulette/rouletteGameLauncher.ts'
 import { viennaGameLauncher } from './worlds/vienna/viennaGameLauncher.ts'
+import { awsgraphGameLauncher } from './worlds/awsgraph/awsgraphGameLauncher.ts'
+import { containerGameLauncher } from './worlds/container/containerGameLauncher.ts'
+import { casinoGameLauncher } from './worlds/casino/casinoGameLauncher.ts'
+import { chessGameLauncher } from './worlds/chess/chessGameLauncher.ts'
 
 const gameLaunchers: Record<string, (app: HTMLDivElement) => Promise<Game>> = {
   dev: devGameLauncher,
   aws: awsGameLauncher,
+  awsgraph: awsgraphGameLauncher,
   roulette: rouletteGameLauncher,
   vienna: viennaGameLauncher,
+  container: containerGameLauncher,
+  casino: casinoGameLauncher,
+  chess: chessGameLauncher,
 }
 
 // read the 'world' query parameter

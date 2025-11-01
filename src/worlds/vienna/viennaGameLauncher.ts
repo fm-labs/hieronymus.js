@@ -21,7 +21,7 @@ export const viennaGameLauncher = async (app: HTMLDivElement) => {
   //game.addSystem(new HeroSystem(game))
 
   if (inventoryUrl) {
-    const tileMap = await viennaWorldBuilder(game, inventoryUrl)
+    const tileMap = await viennaWorldBuilder(game)
     game.addSystem(new GridSystem(game, tileMap))
     game.addSystem(new TileMapSystem(game, tileMap))
   } else {
