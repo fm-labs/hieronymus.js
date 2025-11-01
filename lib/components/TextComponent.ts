@@ -7,8 +7,8 @@ export interface TextComponentProps extends GameComponentProperties {
   color?: string
   direction?: CanvasDirection
   orientation?: 'vertical' | 'horizontal'
-  skewOrientation?: 'upright' | 'flat'
-  //angle: number
+  inverse?: boolean
+  angle?: number // custom angle in degrees
 }
 
 export class TextComponent extends AbstractGameComponent implements IGameComponent {
@@ -17,10 +17,11 @@ export class TextComponent extends AbstractGameComponent implements IGameCompone
   public static readonly defaultProperties: TextComponentProps = {
     text: '',
     font: '12px Arial,Helvetica,sans-serif',
-    color: 'rgba(238,238,238,0.5)',
+    color: 'rgba(238,238,238,1)',
     direction: 'ltr',
     orientation: 'vertical', // vertical | horizontal
-    skewOrientation: 'flat', // upright | flat
+    inverse: false,
+    angle: 0,
   }
 
   public readonly componentType: string = 'Text'
@@ -40,38 +41,41 @@ export class TextComponent extends AbstractGameComponent implements IGameCompone
     const orientation = this.properties.orientation
     const font = this.properties.font
 
-    //const angle = degreeToRadian(26.565)
-    const angle = Math.atan(Math.sin(degreeToRadian(30)))
-    const rotationAngle = orientation === 'vertical' ? -angle : angle
-    let skewAngle = 0
-    if (this.properties.skewOrientation === 'flat') {
-      skewAngle = orientation === 'vertical' ? 0.75 : -0.75
-    } else {
-      skewAngle = orientation === 'vertical' ? -angle : angle
+    let angle = this.properties.angle || 0
+    if (angle === 0) {
+      angle = orientation === 'vertical' ? 90 : 0
+      if (this.properties.inverse) {
+        angle = -angle
+      }
     }
 
-    //ctx.save()
+    // let skewAngle = 0
+    // if (this.properties.skewOrientation === 'flat') {
+    //   skewAngle = orientation === 'vertical' ? 0.75 : -0.75
+    // } else if (this.properties.skewOrientation === 'upright') {
+    //   skewAngle = orientation === 'vertical' ? -angle : angle
+    // }
+
+    ctx.save()
     //ctx.direction = 'ltr'
+    ctx.translate(x, y)
+    // orientation / rotation
+    ctx.rotate(degreeToRadian(angle))
+
+    // skew
+    //ctx.transform(1, 0, skewAngle, 1, 0, 0)
+    //ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+    // text
     if (color) {
       ctx.fillStyle = color
     }
     if (font) {
       ctx.font = font
     }
-    ctx.translate(x, y)
-    ctx.rotate(rotationAngle)
-    ctx.transform(1, 0, skewAngle, 1, 0, 0)
-    //ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.fillText(text, 0, 0)
-    //ctx.restore()
 
-    //ctx.setTransform(1, 0.8, 0, 1, 0, 0)
-    //ctx.transform(1, 0, 0, 1, 0, 0)
-    //ctx.beginPath()
-    //ctx.arc(0, 0, 20, 0, 2 * Math.PI)
-    //ctx.closePath()
-    //ctx.fill()
-    //ctx.restore()
+    ctx.restore()
   }
 
   update(deltaTime: number): void {}

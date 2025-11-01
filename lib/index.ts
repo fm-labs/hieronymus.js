@@ -21,7 +21,7 @@ export * from './components/IsoCubeComponent'
 export * from './components/IsoCylinderComponent'
 export * from './components/IsoHexagonComponent'
 export * from './components/SpriteComponent'
-export * from './components/TextComponent'
+export * from './components/IsoTextComponent.ts'
 
 export * from './systems/AbstractGameSystem.ts'
 export * from './systems/DebugSystem'

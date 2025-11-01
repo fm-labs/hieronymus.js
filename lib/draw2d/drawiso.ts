@@ -49,6 +49,9 @@ export function drawIsometricCube(
   height: number,
   depth: number,
   text?: string,
+  lineDash: number[] = [3, 3],
+  //lineColor: string = 'rgba(0,0,0,0.2)',
+  //fillColor: string = 'rgba(200,200,200,0.5)',
 ) {
   const topFacePaths = [
     [x, y],
@@ -70,7 +73,7 @@ export function drawIsometricCube(
   ]
 
   // Draw top face
-  ctx.setLineDash([3, 3]) // [dashLength, gapLength]
+  ctx.setLineDash(lineDash) // [dashLength, gapLength]
   //ctx.translate(0, height / 2)
 
   const paths = [topFacePaths, leftFacePaths, rightFacePaths]

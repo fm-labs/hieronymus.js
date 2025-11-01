@@ -43,7 +43,10 @@ export class Game implements IGame {
     zoom: 1,
   }
 
-  private gameRunning: boolean = false
+  public data = {} as any
+
+  public gameRunning: boolean = false
+  public gamePaused: boolean = false
 
   constructor($container: HTMLDivElement, config: GameConfig, resources?: IGameResources) {
     console.log('Game constructor', config, resources)
@@ -52,14 +55,19 @@ export class Game implements IGame {
 
     // container
     this.$container = $container
-    this.$container.style.position = 'absolute'
-    this.$container.style.top = '0px'
-    this.$container.style.left = '0px'
-    this.$container.style.width = '100vw'
-    this.$container.style.height = '100vh'
-    //this.$container.style.border = '1px solid red'
+    //this.width = config?.width || this.$container.offsetWidth || this.width
+    //this.height = config?.height || this.$container.offsetHeight || this.height
 
-    // Dimensions
+    if (config?.fullscreen) {
+      this.$container.style.position = 'absolute'
+      this.$container.style.top = '0px'
+      this.$container.style.left = '0px'
+      this.$container.style.width = '100vw'
+      this.$container.style.height = '100vh'
+      //this.$container.style.border = '1px solid red'
+
+      // Dimensions
+    }
     this.width = this.$container.offsetWidth
     this.height = this.$container.offsetHeight
 
@@ -134,11 +142,16 @@ export class Game implements IGame {
   public deltaTime = 0
 
   public async tick(currentTime: number) {
+    if (currentTime <= 1) {
+      console.log('GAME TICK', currentTime)
+    }
     // if (!currentTime) {
     //   currentTime = Date.now()
     // }
     // Convert time to seconds
     //currentTime *= 0.001;
+
+    if (!this.gameRunning) return
 
     // Calculate the difference in seconds
     this.deltaTime = currentTime - this.lastFrameTime
@@ -162,10 +175,14 @@ export class Game implements IGame {
     //   }
     // })
 
+    if (this.gamePaused) {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      requestAnimationFrame(this.tick)
+      return
+    }
+
     // Call tick on all systems asynchronously / in parallel
     await Promise.all(this.systems.map((system) => system.tick?.(this.deltaTime)))
-
-    if (!this.gameRunning) return
     requestAnimationFrame(this.tick)
   }
 
@@ -200,8 +217,18 @@ export class Game implements IGame {
     //     system.stop()
     //   }
     // })
-    // start all systems asynchronously
-    await Promise.all(this.systems.map((system) => system.start?.()))
+    // stop all systems asynchronously
+    await Promise.all(this.systems.map((system) => system.stop?.()))
+  }
+
+  public pause() {
+    console.info('PAUSE GAME')
+    this.gamePaused = true
+  }
+
+  public resume() {
+    console.info('RESUME GAME')
+    this.gamePaused = false
   }
 
   // async saveState(state: any) {}

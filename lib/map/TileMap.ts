@@ -14,9 +14,10 @@ export class TileMap implements ITileMap {
   readonly tileWidth: number
   readonly tileHeight: number
 
-  public layers: TileMapLayer[] = []
+  public readonly layers: TileMapLayer[] = []
   public readonly components: ComponentManager
   public readonly projection: IGrid2DProjection
+  public activeCellPos: Grid2DPoint = [0, 0] // current selected grid position
 
   constructor(config: TileMapConfig, layers: TileMapLayer[] = [], components?: any) {
     this.config = config
@@ -47,7 +48,7 @@ export class TileMap implements ITileMap {
   //   this.assets.push({ type: assetType, name, ...asset })
   // }
 
-  addLayer(layerId: number, layer: TileMapLayer, data: TileMapLayerData[] = []) {
+  addLayer(layerId: number, layer: TileMapLayer) {
     this.layers[layerId] = layer
 
     // Initialize the layer data array with empty values
@@ -58,6 +59,14 @@ export class TileMap implements ITileMap {
     } else {
       layer.data = []
     }
+  }
+
+  getLayer(layerId: number): TileMapLayer | undefined {
+    return this.layers[layerId] || undefined
+  }
+
+  removeLayer(layerId: number): void {
+    this.layers.splice(layerId, 1)
   }
 
   // addTileAtPosition(
@@ -110,7 +119,7 @@ export class TileMap implements ITileMap {
   addTile(layerId: number, col: number, row: number, tile: IGameComponent) {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
     if (this.layers[layerId].type !== 'TILE') {
-      throw new Error(`Layer ${layerId} is not a TILE`)
+      throw new Error(`Layer ${layerId} is not of type TILE`)
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
@@ -119,8 +128,9 @@ export class TileMap implements ITileMap {
     // @todo check if tile is already assigned to this position
 
     const componentId = this.components.add(tile)
-    console.log('addTile', layerId, col, row, componentId)
+    //console.log('addTile', layerId, col, row, componentId)
     this.setTileLayerData(layerId, col, row, componentId)
+    this.activeCellPos = [col, row]
     return componentId
   }
 
@@ -138,6 +148,7 @@ export class TileMap implements ITileMap {
 
     tile.setPosition(screenPos.x, screenPos.y)
     this.setTileLayerData(layerId, col, row, componentId)
+    this.activeCellPos = [col, row]
   }
 
   resetTile(layerId: number, col: number, row: number) {
@@ -145,11 +156,13 @@ export class TileMap implements ITileMap {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
     const cellIdx = getCellIndex(col, row, this.columns)
     this.layers[layerId].data[cellIdx] = 0 // Reset to empty
+    this.activeCellPos = [col, row]
   }
 
   getTile(layerId: number, col: number, row: number): IGameComponent | undefined {
     const componentId = this.getTileLayerData(layerId, col, row)
     if (!componentId) return undefined
+    this.activeCellPos = [col, row]
     return this.components.get(componentId)
   }
 
@@ -177,20 +190,23 @@ export class TileMap implements ITileMap {
   addObjectAtGridPos(layerId: number, col: number, row: number, obj: IGameComponent): number {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
     if (this.layers[layerId].type !== 'OBJECT') {
-      throw new Error(`Layer ${layerId} is not an OBJECT`)
+      throw new Error(
+        `Layer ${layerId} is not of type OBJECT. You are trying to add an object to a ${this.layers[layerId].type} layer`,
+      )
     }
 
     const screenPos = this.projection.mapGridToScreen(col, row)
     obj.setPosition(screenPos.x, screenPos.y)
     const componentId = this.components.add(obj)
     this.layers[layerId].data.push(componentId)
+    this.activeCellPos = [col, row]
     return componentId
   }
 
   removeObject(layerId: number, componentId: number): void {
     if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
     if (this.layers[layerId].type !== 'OBJECT') {
-      throw new Error(`Layer ${layerId} is not an OBJECT`)
+      throw new Error(`Layer ${layerId} is not of type OBJECT`)
     }
 
     const index = this.layers[layerId].data.indexOf(componentId)
@@ -200,6 +216,7 @@ export class TileMap implements ITileMap {
     //console.log('removeObject', layerId, componentId, index, this.layers[layerId].data)
     this.layers[layerId].data.splice(index, 1)
     this.components.remove(componentId)
+    //todo this.activeCellPos = [col, row]
   }
 
   findObjectsAtGridPos(layerId: number, col: number, row: number): number[] {
@@ -260,6 +277,18 @@ export class TileMap implements ITileMap {
   //   // this.components.set(componentId, component)
   //   console.warn('Method updateObject is not implemented yet')
   // }
+
+  clearLayer(layerId: number): void {
+    if (!this.layers[layerId]) throw new Error(`Layer ${layerId} does not exist`)
+
+    // Clear layer data
+    if (this.layers[layerId].type === 'TILE') {
+      const totalCells = this.columns * this.rows
+      this.layers[layerId].data = new Array(totalCells).fill(0)
+    } else {
+      this.layers[layerId].data = []
+    }
+  }
 
   dump(): TileMapDump {
     return {

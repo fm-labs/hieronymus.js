@@ -106,25 +106,33 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     // event.deltaX - The horizontal scroll amount
     // event.deltaY - The vertical scroll amount
 
+    const isCtrlPressed = e.ctrlKey || e.metaKey // metaKey for Mac command key
+
     if (e.deltaX === 0 && e.deltaY % 1 !== 0) {
       this._game.eventbus.emit('zoom', e)
-      //console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+      console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
+    } else if (isCtrlPressed && e.deltaY !== 0) {
+      this._game.eventbus.emit('zoom', e)
+      console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
     } else {
       //this._game.eventbus.emit(`mouse.${e.type}`, e)
       //console.log('wheel event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
       this._game.eventbus.emit('wheel', e)
     }
 
-    // Disable browser zoom when using wheel / trackpad gesture
-    e.preventDefault()
-    e.stopPropagation()
-    e.stopImmediatePropagation()
+    // @todo Evaluate: Disable browser zoom when using wheel / trackpad gesture
+    //e.preventDefault()
+    //e.stopPropagation()
+    //e.stopImmediatePropagation()
   }
 
   private handleWindowResizeEvent(e: UIEvent) {
-    const width = window.innerWidth
-    const height = window.innerHeight
-    console.log('resize', width, height)
+    const _width = window.innerWidth
+    const _height = window.innerHeight
+
+    const width = _width // Math.min(_width, 800)
+    const height = _height // Math.min(_height, 600)
+    console.log('resize', _width, _height, width, height)
     this._game.eventbus.emit('resize', { width, height })
   }
 }

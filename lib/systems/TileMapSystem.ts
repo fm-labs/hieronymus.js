@@ -12,19 +12,20 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   private readonly cols: number
   private readonly rows: number
 
-  private readonly worldCanvas: HTMLCanvasElement
+  public readonly worldCanvas: HTMLCanvasElement
   //private dirty = true
 
   private _drawCounter: number = 0
 
-  constructor(game: IGame, tileMap: ITileMap) {
+  constructor(game: IGame, tileMap: ITileMap, canvas?: HTMLCanvasElement) {
     super(game)
 
     this.tileMap = tileMap
     this.cols = tileMap.columns
     this.rows = tileMap.rows
     this.tsize = tileMap.tileWidth
-    this.worldCanvas = document.createElement('canvas')
+    this.worldCanvas = canvas ? canvas : document.createElement('canvas')
+    console.log('TileMapSystem.constructor', this.cols, this.rows, this.tsize)
   }
 
   public onLoad() {
@@ -48,8 +49,8 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
     this._game.eventbus.on('resize', (event: any) => {
       console.log('resize tilemap', event)
-      //this.worldCanvas.width = event.width
-      //this.worldCanvas.height = event.height
+      this.worldCanvas.width = event.width
+      this.worldCanvas.height = event.height
     })
   }
 
@@ -66,7 +67,7 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   public async tick(deltaTime: number) {
-    //console.log('TileMapSystem.update', deltaTime)
+    //console.log('TileMapSystem.update', deltaTime, this.tileMap.layers.length)
     this.tileMap.layers.forEach((layer, layerIdx) => {
       this.updateLayer(layerIdx, deltaTime)
     })
@@ -75,20 +76,31 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
   public draw(layerCanvasCtx: CanvasRenderingContext2D) {
     //if (!this.dirty) return
-    //console.log('TileMapSystem.draw')
+    //console.log('TileMapSystem.draw', this.tileMap.layers.length)
     this._drawCounter = 0
 
     layerCanvasCtx.reset()
+    //layerCanvasCtx.imageSmoothingEnabled = true
+    //layerCanvasCtx.imageSmoothingQuality = 'high'
     layerCanvasCtx.translate(-this._game.camera.offset.x, -this._game.camera.offset.y)
     layerCanvasCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
     this.tileMap.layers.forEach((layer, layerIdx) => {
-      //console.log('layer', layerIdx, layer.type)
+      //console.log('layer', layerIdx, layer.type, layer.data.length)
       if (layer.type === 'TILE') {
         this.drawTiles(layerIdx, layerCanvasCtx)
       } else if (layer.type === 'OBJECT') {
         this.drawObjects(layerIdx, layerCanvasCtx)
       }
     })
+
+    // draw border for debugging
+    /*
+    layerCanvasCtx.save()
+    layerCanvasCtx.strokeStyle = 'red'
+    layerCanvasCtx.lineWidth = 2
+    layerCanvasCtx.strokeRect(0, 0, this.cols * this.tsize, this.rows * this.tsize)
+    layerCanvasCtx.restore()
+    */
 
     //this.dirty = false
 

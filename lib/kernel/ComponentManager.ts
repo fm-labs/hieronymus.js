@@ -1,5 +1,5 @@
 import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
-import { TextComponent, TextComponentProps } from '../components/TextComponent.ts'
+import { IsoTextComponent, IsoTextComponentProps } from '../components/IsoTextComponent.ts'
 import { IsoCubeComponent, IsoCubeComponentProps } from '../components/IsoCubeComponent.ts'
 import { SpriteComponent, SpriteComponentProps } from '../components/SpriteComponent.ts'
 import { IsoHexagonComponent, IsoHexagonComponentProps } from '../components/IsoHexagonComponent.ts'
@@ -88,7 +88,7 @@ export class ComponentManager implements IComponentManager {
       case 'Tile':
         return new TileComponent(properties as TileComponentProps)
       case 'Text':
-        return new TextComponent(properties as TextComponentProps)
+        return new IsoTextComponent(properties as IsoTextComponentProps)
       case 'Sprite':
         return new SpriteComponent(properties as SpriteComponentProps)
       case 'IsoCube':

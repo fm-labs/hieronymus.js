@@ -8,6 +8,8 @@ export interface IsoCubeComponentProps extends GameComponentProperties {
   depth: number
   elevation?: number
   text?: string
+  offset?: { x: number; y: number }
+  lineDash?: number[]
 }
 
 export class IsoCubeComponent extends AbstractGameComponent implements IGameComponent {
@@ -19,6 +21,8 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
     depth: 16,
     elevation: 0,
     text: undefined,
+    offset: { x: 0, y: 0 },
+    lineDash: [4, 0],
   }
 
   public readonly componentType: string = 'IsoCube'
@@ -42,8 +46,9 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
 
     // Define cube position
 
-    const centerX = x
-    const centerY = y + tileSize / 2 / 2
+    const offset = this.properties.offset || { x: 0, y: 0 }
+    const centerX = x + offset.x
+    const centerY = y + tileSize / 2 / 2 + offset.y
 
     // Elevation adjustment
     const elevation = this.properties.elevation || 0
@@ -54,7 +59,7 @@ export class IsoCubeComponent extends AbstractGameComponent implements IGameComp
     // Translate to center of shape
     ctx.save()
     ctx.translate(centerX, cubeY)
-    drawIsometricCube(ctx, 0, 0, cubeWidth, cubeHeight, cubeDepth, text)
+    drawIsometricCube(ctx, 0, 0, cubeWidth, cubeHeight, cubeDepth, text, this.properties.lineDash)
     ctx.restore()
   }
 

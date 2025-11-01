@@ -3,6 +3,9 @@
 type GameConfig = {
   id: string
   name?: string
+  fullscreen?: boolean
+  width?: number
+  height?: number
 }
 
 interface IGame {
@@ -25,6 +28,13 @@ interface IGame {
   camera: Camera2D
   width: number
   height: number
+
+  // state
+  gameRunning: boolean
+  gamePaused: boolean
+  pause: () => void
+  resume: () => void
+  data: { [key: string]: any }
 
   // systems
   run: () => void | Promise<void>
@@ -132,6 +142,11 @@ interface ITileMap {
   components: IComponentManager
   layers: TileMapLayer[]
   //objects: TileMapLayerData[][]
+
+  addLayer(layerId: number, layer: TileMapLayer): void
+  getLayer(layerId: number): TileMapLayer | undefined
+  removeLayer(layerId: number): void
+  clearLayer(layerId: number): void
 
   /**
    * Creates a tile at the specified layer, column, and row with the given properties.

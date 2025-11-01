@@ -32,6 +32,11 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
   public stop() {
     console.log('CameraSystem.stop')
     this._game.eventbus.off('keyboard.keydown', this.handleKeyboardKeyDownEvent)
+    this._game.eventbus.off('wheel', this.handleWheelEvent)
+    this._game.eventbus.off('zoom', this.handleZoomEvent)
+
+    this._game.eventbus.off('camera.reset', this.handleCameraResetEvent)
+    this._game.eventbus.off('camera.center', this.handleCameraCenterEvent)
   }
 
   // public update() {
@@ -62,6 +67,10 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private handleWheelEvent(e: WheelEvent) {
+    if (this._game.gamePaused) {
+      return
+    }
+
     const deltaX = e.deltaX
     const deltaY = e.deltaY
     const moveStep = 1
@@ -103,5 +112,29 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
     const oldCam = this._game.camera
     const newOffset = { x: 0, y: 0 }
     this._game.camera = { ...oldCam, offset: newOffset }
+  }
+
+  public moveTo(x: number, y: number) {
+    const oldCam = this._game.camera
+    const newOffset = { x, y }
+    this._game.camera = { ...oldCam, offset: newOffset }
+  }
+
+  public setZoom(zoom: number) {
+    const oldCam = this._game.camera
+    this._game.camera = { ...oldCam, zoom }
+  }
+
+  public centerTo(x: number, y: number) {
+    const oldCam = this._game.camera
+    const newOffset = { x: x - this._game.width / 2, y: y - this._game.height / 2 }
+    this._game.camera = { ...oldCam, offset: newOffset }
+  }
+
+  public resetCamera() {
+    this._game.camera = {
+      offset: { x: 0, y: 0 },
+      zoom: 1,
+    }
   }
 }

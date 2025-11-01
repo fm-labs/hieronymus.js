@@ -20,6 +20,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
   private _activeGridPos?: Grid2DPosition = undefined
   private _cellsRendered: number = 0
 
+  private _selectedCellIdx?: number = undefined
+  private _selectedCell?: Grid2DPosition = undefined
+
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
@@ -65,6 +68,12 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
       this.gridCanvas.width = event.width
       this.gridCanvas.height = event.height
     })
+
+    // this._game.eventbus.on('grid.cellSelect', (event: any) => {
+    //   const index = event?.index
+    //   const col = event?.col
+    //   const row = event?.row
+    // })
   }
 
   public onUnload() {
@@ -144,6 +153,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     const pos = this._activeGridPos
     if (index !== undefined && pos !== undefined) {
       this._game.eventbus.emit('grid.cellClick', { index: index, col: pos.col, row: pos.row })
+      this._selectedCellIdx = index
+      this._selectedCell = pos
+      //this._dirty = true
     }
     // if (pos.col >= 0 && pos.col < this.cols && pos.row >= 0 && pos.row < this.rows) {
     //   if (index != this._selectedCellIdx) {
@@ -163,7 +175,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     const cols = this.cols
     const rows = this.rows
     const tileSize = this.tsize
-    const gridColor = 'rgba(0,0,0,0.03)'
+    const fillColor = 'rgba(131,127,127,0)'
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
 
@@ -195,24 +207,37 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
 
         //renderedCells.push([i, j])
 
-        let tileColor = gridColor
-        let strokeColor = 'rgba(200,218,255,0.38)'
+        let tileColor = fillColor
+        //let strokeColor = 'rgba(101,159,29,0.17)'
+        let strokeColor = 'rgba(117,195,20,0.6)'
         let textColor = undefined
         // const index = getCellIndex(i, j, this.cols)
         // if (index == this._activeCellIdx) {
         //   tileColor = 'rgba(255,0,0,0.5)'
         // }
-        if (this._activeGridPos?.col == i && this._activeGridPos?.row == j) {
-          tileColor = 'rgba(74,176,162,0.5)'
+        let shouldRender = false
+        if (this._selectedCell?.col == i && this._selectedCell?.row == j) {
+          tileColor = 'rgba(255,196,0,0.5)'
+          textColor = 'rgba(0,0,0,0.85)'
+          strokeColor = 'rgba(255,196,0,0.5)'
+          shouldRender = true
+        } else if (this._activeGridPos?.col == i && this._activeGridPos?.row == j) {
+          tileColor = 'rgba(4,230,8,0.37)'
           textColor = 'rgba(255,255,255,0.85)'
           //strokeColor = 'rgba(74,176,162,0.5)'
+          shouldRender = true
         } else if (this._activeGridPos?.col == i || this._activeGridPos?.row == j) {
-          //tileColor = 'rgba(142,182,194,0.29)'
-          strokeColor = 'rgba(142,182,194,0.29)'
+          //tileColor = 'rgba(4,230,8,0.64)'
+          strokeColor = 'rgba(4,230,8,0.32)'
+          shouldRender = true
         }
 
         // if (index == this._selectedCellIdx) {
         //   strokeColor = 'rgba(91,255,2,0.85)'
+        // }
+
+        // if (!shouldRender) {
+        //   continue
         // }
 
         if (this.projection instanceof IsometricGridProjection) {
@@ -224,7 +249,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
             tileSize / 2,
             tileColor,
             strokeColor,
-            `[${i},${j}]`,
+            '', // `[${i},${j}]`,
             textColor,
           )
         } else {
@@ -239,8 +264,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
           gridCtx.fillText(`[${i},${j}]`, x + 2, y + 10)
         }
 
-        gridCtx.fillStyle = 'rgba(154,2,255,0.48)'
-        gridCtx.fillRect(x - 1, y - 1, 2, 2)
+        // grid point
+        //gridCtx.fillStyle = 'rgba(154,2,255,0.48)'
+        //gridCtx.fillRect(x - 1, y - 1, 2, 2)
 
         renderedCells++
       }
