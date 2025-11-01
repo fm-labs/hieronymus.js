@@ -1,5 +1,11 @@
-import { IsoCubeComponent, IsoCylinderComponent, SpriteComponent, TileMap } from '../../../lib'
-import { TextComponent } from '../../../lib'
+import {
+  IsoCubeComponent,
+  IsoCylinderComponent,
+  orthogonalGridToScreen,
+  SpriteComponent,
+  TileMap,
+} from '../../../lib'
+import { IsoTextComponent } from '../../../lib'
 import {
   AWS_SERVICE_CATEGORIES,
   AWS_SERVICES,
@@ -7,8 +13,12 @@ import {
   AwsInventoryItemFull,
 } from 'cloudia-common'
 import { TileComponent } from '../../../lib/components/TileComponent.ts'
+import { LineComponent } from '../../../lib/components/LineComponent.ts'
 
-const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITileMap> => {
+const awsWorldBuilder = async (
+  game: IGame,
+  awsInventory: AwsInventoryItemFull[],
+): Promise<ITileMap> => {
   const ROWS = 30
   const COLUMNS = 30
   const TILE_SIZE = 128
@@ -21,10 +31,6 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   //const LAYER_OBJECTS = 5
 
   const resources = game.resources
-
-  const awsInventory: AwsInventoryItemFull[] = await fetch(inventoryUrl).then((response) => {
-    return response.json()
-  })
 
   // Init resources
   await resources.loadSpritesheet(
@@ -56,6 +62,8 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   }
   const worldMap = new TileMap(worldConfig)
 
+  const gameData: { nodes: any[]; edges: any[] } = { nodes: [], edges: [] }
+
   // Init layers
   worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
   //worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILE', data: [] })
@@ -68,7 +76,7 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
     LAYER_LABELS,
     0,
     0,
-    new TextComponent({
+    new IsoTextComponent({
       text: 'AWS Inventory',
       font: '48px Tektur',
       orientation: 'horizontal',
@@ -78,7 +86,8 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
   let rowNr = 1
   let colNr = 0
   AWS_SERVICE_CATEGORIES.forEach((service, index) => {
-    if (service.id === 'ManagementGovernance') return
+    //if (service.id === 'ManagementGovernance') return
+    //if (service.id === 'SecurityIdentityCompliance') return
 
     const serviceIds = AWS_SERVICES.filter((item) => item.category === service.id).map(
       (item) => item.id,
@@ -101,6 +110,15 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
       //     //text: 'M4',
       //   }),
       // )
+
+      const node = {
+        id: index + 1000,
+        type: item.resource_type,
+        label: item.name || item.id || 'unknown',
+        item: item,
+        pos: { x: colNr, y: rowNr },
+      }
+      gameData.nodes.push(node)
 
       if (item.resource_type === 'AWS::EC2::Instance') {
         const _tile = new TileComponent({
@@ -129,6 +147,19 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
             //text: 'M4',
           }),
         )
+      } else if (item.resource_type.startsWith('AWS::S3')) {
+        worldMap.createTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(18,236,11)' })
+        worldMap.addTile(
+          LAYER_BUILDINGS,
+          colNr,
+          rowNr,
+          new IsoCubeComponent({
+            tileSize: worldMap.tileWidth,
+            width: worldMap.tileWidth / 2,
+            depth: 32,
+            //text: 'M4',
+          }),
+        )
       } else {
         worldMap.createTile(LAYER_TILES, colNr, rowNr, { backgroundColor: 'rgb(219,136,237)' })
         worldMap.addTile(
@@ -144,6 +175,19 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
         )
       }
 
+      worldMap.addObjectAtGridPos(
+        LAYER_LABELS,
+        colNr,
+        rowNr,
+        new IsoTextComponent({
+          text: item.service_id,
+          font: '10px Arial',
+          orientation: 'vertical',
+          skewOrientation: 'upright',
+          color: 'rgb(255,255,255)',
+        }),
+      )
+
       colNr++
       if (colNr >= COLUMNS) {
         colNr = 0
@@ -158,7 +202,7 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
       LAYER_LABELS,
       colNr,
       rowNr,
-      new TextComponent({
+      new IsoTextComponent({
         text: service.label + ' (' + serviceIds.length + '/' + inventory.length + ')',
         font: '24px Tektur',
         orientation: 'horizontal',
@@ -167,6 +211,26 @@ const awsWorldBuilder = async (game: IGame, inventoryUrl: string): Promise<ITile
     )
 
     rowNr++
+
+    worldMap.addObjectAtGridPos(
+      LAYER_LABELS,
+      6,
+      6,
+      new LineComponent({
+        lineWidth: 3,
+        to: [
+          worldMap.projection.mapGridToScreen(6, 9),
+          worldMap.projection.mapGridToScreen(9, 9),
+          worldMap.projection.mapGridToScreen(9, 13),
+          worldMap.projection.mapGridToScreen(10, 13),
+          worldMap.projection.mapGridToScreen(10, 12),
+        ],
+        offset: { y: worldMap.tileHeight / 2, x: 0 }, // center of tile
+        strokeColor: 'rgb(14,239,239)',
+      }),
+    )
+
+    game.data = gameData
   })
 
   return worldMap
