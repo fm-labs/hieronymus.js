@@ -19,10 +19,9 @@ const awsWorldBuilder = async (
   game: IGame,
   awsInventory: AwsInventoryItemFull[],
 ): Promise<ITileMap> => {
-  const ROWS = 30
+  const ROWS = 50
   const COLUMNS = 30
-  const TILE_SIZE = 128
-
+  const TILE_SIZE = 64
   const LAYER_TILES = 0
   //const LAYER_UNDERGROUND = 1
   //const LAYER_GROUND = 2

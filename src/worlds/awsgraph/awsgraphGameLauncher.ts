@@ -28,7 +28,6 @@ export const awsgraphGameLauncher = async (app: HTMLDivElement) => {
   const config: GameConfig = { id: 'aws', name: 'AWS Inventory Game' }
   const game = new Game(app, config)
 
-  game.addSystem(new InfoSystem(game))
   game.addSystem(new InputSystem(game))
   game.addSystem(new CameraSystem(game))
   //game.addSystem(new GamepadInputSystem())
@@ -40,6 +39,7 @@ export const awsgraphGameLauncher = async (app: HTMLDivElement) => {
     game.addSystem(new TileMapSystem(game, tileMap))
     game.addSystem(new GraphSystem(game, graphData))
     game.addSystem(new GridSystem(game, tileMap))
+    game.addSystem(new InfoSystem(game))
     //game.addSystem(new MechDemoSystem(game, tileMap))
   } else {
     throw new Error('No inventory URL provided')

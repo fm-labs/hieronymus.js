@@ -7,11 +7,12 @@ import { IsoCylinderComponent } from '../../../lib'
 import { AnimatedSpriteComponent } from '../../../lib'
 import IsoCharacterComponent from '../../../lib/components/IsoCharacterComponent.ts'
 import { IsoImageComponent } from '../../../lib/components/IsoImageComponent.ts'
+import { MovingTileComponent } from '../../../lib/components/MovingTileComponent.ts'
 
 const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 30
   const COLUMNS = 30
-  const TILE_SIZE = 128
+  const TILE_SIZE = 64
 
   const LAYER_TILES = 0
   const LAYER_UNDERGROUND = 1
@@ -87,6 +88,18 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   //   }),
   // )
 
+  // moving tile
+  worldMap.addObjectAtGridPos(
+    LAYER_OBJECTS,
+    10,
+    10,
+    new MovingTileComponent({
+      width: worldMap.tileWidth,
+      height: worldMap.tileHeight,
+    }),
+  )
+
+  // image
   worldMap.addObjectAtGridPos(
     LAYER_LABELS,
     6,
@@ -195,7 +208,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     rowNr,
     new IsoCylinderComponent({
       tileSize: worldMap.tileWidth,
-      radius: 48,
+      radius: worldMap.tileWidth / 4,
       depth: 64,
     }),
   )
@@ -205,7 +218,7 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
     rowNr,
     new IsoCylinderComponent({
       tileSize: worldMap.tileWidth,
-      radius: 32,
+      radius: worldMap.tileWidth / 8,
       depth: 32,
     }),
   )

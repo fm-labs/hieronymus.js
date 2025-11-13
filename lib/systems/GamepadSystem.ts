@@ -35,7 +35,7 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
 
   public async tick(delta: number) {
     const now = Date.now()
-    if (this.lastInputTime && now - this.lastInputTime < 200) return
+    if (this.lastInputTime && now - this.lastInputTime < 50) return // throttle
     //console.log('GamepadInputSystem.update', delta)
 
     this.gamepads = navigator.getGamepads() as Gamepad[]
@@ -54,14 +54,14 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
   // Function to handle gamepad connections
   private handleGamepadConnected(event: GamepadEvent) {
     const gamepad = event.gamepad
-    console.log(`Gamepad connected: ${gamepad.id}`)
+    console.log(`[gamepad.connected] Gamepad ID: ${gamepad.id}`)
     this._game.eventbus.emit('gamepad.connected', gamepad)
   }
 
   // Function to handle gamepad disconnections
   private handleGamepadDisconnected(event: GamepadEvent) {
     const gamepad = event.gamepad
-    console.log(`Gamepad disconnected: ${gamepad.id}`)
+    console.log(`[gamepad.disconnected] Gamepad ID: ${gamepad.id}`)
     this._game.eventbus.emit('gamepad.disconnected', gamepad)
   }
 
@@ -75,15 +75,15 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
     const stickY = gamepad.axes[1]
 
     if (stickX < -stickThreshold) {
-      console.log('Left pressed')
+      console.log('[gamepad] Left')
     } else if (stickX > stickThreshold) {
-      console.log('Right pressed')
+      console.log('[gamepad] Right')
     }
 
     if (stickY < -stickThreshold) {
-      console.log('Up pressed')
+      console.log('[gamepad] Up')
     } else if (stickY > stickThreshold) {
-      console.log('Down pressed')
+      console.log('[gamepad] Down')
     }
 
     const stick = {
@@ -114,6 +114,7 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
     //   13: down,
     //   14: left,
     //   15: right,
+    //   16: home,
     // } = buttons
 
     // // Check A and B buttons
@@ -128,7 +129,7 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
     // Check other buttons
     for (let i = 0; i < buttons.length; i++) {
       if (buttons[i].pressed) {
-        console.log(`Button ${i} pressed`)
+        console.log(`[gamepad] Button ${i} pressed`)
         this._game.eventbus.emit('gamepad.buttonPress', { button: i, state: 'pressed' })
       }
     }

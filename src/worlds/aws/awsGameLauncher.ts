@@ -9,6 +9,7 @@ import awsWorldBuilder from './aws.world.ts'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import { AwsInventoryItemFull } from '../../../../cloudia-common/src'
 import { InventorySystem } from './InventorySystem.ts'
+import { GridLinesSystem } from '../../../lib/systems/GridLinesSystem.ts'
 
 const fetchInventory = async (url: string): Promise<AwsInventoryItemFull[]> => {
   return await fetch(url).then((response) => {
@@ -38,6 +39,7 @@ export const awsGameLauncher = async (app: HTMLDivElement) => {
   if (inventoryUrl) {
     const tileMap = await awsWorldBuilder(game, awsInventory)
     game.addSystem(new GridSystem(game, tileMap))
+    game.addSystem(new GridLinesSystem(game, tileMap))
     game.addSystem(new TileMapSystem(game, tileMap))
     game.addSystem(new InventorySystem(game, awsInventory))
   } else {

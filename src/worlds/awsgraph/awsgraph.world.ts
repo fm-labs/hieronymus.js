@@ -5,9 +5,9 @@ import { LineComponent } from '../../../lib/components/LineComponent.ts'
 import { AwsItemComponent } from './AwsItemComponent.ts'
 
 const awsgraphWorldBuilder = async (game: IGame, graphData: AwsGraphData): Promise<ITileMap> => {
-  const ROWS = 30
-  const COLUMNS = 30
-  const TILE_SIZE = 128
+  const ROWS = 350
+  const COLUMNS = 350
+  const TILE_SIZE = 64
 
   const LAYER_TILES = 0
   //const LAYER_UNDERGROUND = 1

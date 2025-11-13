@@ -82,7 +82,7 @@ export class GraphSystem extends AbstractGameSystem implements IGameSystem {
       console.log('GraphSystem.onMouseOut')
     })
 
-    this._game.$container.appendChild(this.graphDiv)
+    //this._game.$container.appendChild(this.graphDiv)
     this._game.$container.appendChild(this.popupDiv)
 
     // this._game.$container.addEventListener('mousemove', (e: MouseEvent) => {

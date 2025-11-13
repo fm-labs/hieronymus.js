@@ -4,6 +4,8 @@ import {
   SpriteComponent,
   IsoTextComponent,
   TileMap,
+  IsoCubeComponent,
+  IsoCylinderComponent,
 } from '../../../lib'
 import { ContainerComponent } from './ContainerComponent.ts'
 
@@ -261,7 +263,7 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
     console.log(containerHosts)
     for (let h = 0; h < containerHosts.length; h++) {
       const host = containerHosts[h]
-      const hostLayerIdx = 10 + h * 3
+      const hostLayerIdx = 10 + h * 4
       this._hostLayerMap.set(host.id, hostLayerIdx)
       this._tileMap.addLayer(hostLayerIdx, {
         name: `Host_Underground_${host.id}`,
@@ -339,7 +341,7 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
     //let rowNr = 0 + worldMap.activeCellPos[0]
     //let colNr = 0 + worldMap.activeCellPos[1]
     const rowNrStart = undergroundLayerIdx - 10
-    const rowNr = rowNrStart
+    const rowNr = rowNrStart + 1
     let colNr = 0
 
     //console.log('Adding host tile at', layerIdx, colNr, rowNr)
@@ -389,6 +391,29 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
           animated: container?.State?.Status?.toLowerCase() === 'running',
           container: container,
           hostId: host.id,
+        }),
+      )
+
+      this._tileMap.createTile(undergroundLayerIdx, colNr, rowNr, { backgroundColor: tileColor })
+      //console.log('Adding container tile at', idx, colNr, rowNr, 'Status:', status)
+      this._tileMap.addTile(
+        buildingLayerIdx,
+        colNr,
+        rowNr + 1,
+        new IsoCubeComponent({
+          tileSize: this._tileMap.tileWidth,
+          width: this._tileMap.tileWidth / 2,
+          depth: 8,
+        }),
+      )
+      this._tileMap.addTile(
+        buildingLayerIdx,
+        colNr,
+        rowNr - 1,
+        new IsoCylinderComponent({
+          tileSize: this._tileMap.tileWidth,
+          depth: 8,
+          radius: this._tileMap.tileWidth / 4,
         }),
       )
 

@@ -161,6 +161,8 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
     //spritesContainer.style.height = 100 + '%'
     spritesContainer.style.borderTop = '5px solid blue'
 
+    console.log('GameAssets.sprites', GameAssets.sprites)
+
     Object.entries(GameAssets.sprites).forEach((entry) => {
       const spriteIdx = parseInt(entry[0])
       const { x, y, width, height, imageName, name } = entry[1]
@@ -218,13 +220,12 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
       spriteImg.src = spriteCanvas.toDataURL('image/png')
       spriteDiv.appendChild(spriteImg)
       //spriteDiv.appendChild(spriteCanvas)
-
       spritesContainer.appendChild(spriteDiv)
     })
     this.uiDiv.appendChild(spritesContainer)
     if (this._editorMode !== 'draw') {
-      this.uiDiv.style.display = 'none'
-      this.uiDiv.style.visibility = 'hidden'
+      //this.uiDiv.style.display = 'none'
+      //this.uiDiv.style.visibility = 'hidden'
     } else {
       this.uiDiv.style.display = 'block'
       this.uiDiv.style.visibility = 'visible'

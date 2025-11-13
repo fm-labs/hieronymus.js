@@ -1,7 +1,4 @@
 import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { ComponentManager } from '../kernel/ComponentManager.ts'
-import IsoCharacterComponent from '../components/IsoCharacterComponent.ts'
-import { isometricGridToScreen, isometricScreenToGrid } from '../utils/gridutil.ts'
 import IsoCharacterComponent2 from '../components/IsoCharacterComponent2.ts'
 
 export class MechDemoSystem extends AbstractGameSystem implements IGameSystem {

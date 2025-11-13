@@ -30,18 +30,18 @@ class IsoCharacter2Component extends AnimatedSpriteComponent {
   private _targetY?: number
   //private _waypoints: { x: number; y: number }[] = []
   //private _waypointIndex: number = 0
+  private _movementDirection?: MovementDirection
 
   constructor(properties: IsoCharacter2ComponentProps) {
     const baseTilesheetName = properties.tilesheetName
-    const movementDirection = properties.movementDirection || 'down'
-    const tilesheetName = `${baseTilesheetName}-${movementDirection}`
     const constructedProperties: IsoCharacter2ComponentProps = {
       ...IsoCharacter2Component.defaultProperties,
       ...properties,
-      tilesheetName: tilesheetName,
+      tilesheetName: baseTilesheetName + '-down',
     }
     super(constructedProperties)
     this._baseTilesheetName = baseTilesheetName
+    this.setMovementDirection(properties.movementDirection || 'down')
   }
 
   setPosition(x: number, y: number): this {
@@ -50,13 +50,20 @@ class IsoCharacter2Component extends AnimatedSpriteComponent {
     return this
   }
 
-  setTargetPosition(x: number, y: number): void {
+  setTargetPosition(x: number, y: number): this {
     this._targetX = x
     this._targetY = y
     console.log(
       `IsoCharacter2Component set target position to (${this.x}, ${this.y}) -> (${x}, ${y})`,
     )
     //this.updateWaypoints()
+    return this
+  }
+
+  setMovementDirection(movementDirection: MovementDirection): this {
+    const tilesheetName = `${this._baseTilesheetName}-${movementDirection}`
+    this.applyTilesheet(tilesheetName)
+    return this
   }
 
   public moveToGridPosition(col: number, row: number): void {

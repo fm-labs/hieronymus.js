@@ -1,4 +1,4 @@
-import { Game } from '../../../lib'
+import { Game, GamepadSystem, HeroSystem, TileMapEditorSystem } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'
 import { InputSystem } from '../../../lib'
@@ -8,6 +8,7 @@ import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import { GridLinesSystem } from '../../../lib/systems/GridLinesSystem.ts'
 import { ContainerSystem } from './ContainerSystem.ts'
 import { MechDemoSystem } from '../../../lib/systems/MechDemoSystem.ts'
+import { WebUiSystem2 } from '../../../lib/systems/WebUiSystem2.ts'
 
 const API_BASE_URL = 'http://127.0.0.1:13080/'
 const API_KEY_LOCAL_STORAGE_KEY = 'container_api_key'
@@ -126,8 +127,6 @@ export const containerGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new InfoSystem(game))
   game.addSystem(new InputSystem(game))
   game.addSystem(new CameraSystem(game))
-  //game.addSystem(new GamepadInputSystem())
-  //game.addSystem(new HeroSystem(game))
 
   if (inventoryUrl) {
     const api = containerApiInit()
@@ -137,12 +136,13 @@ export const containerGameLauncher = async (app: HTMLDivElement) => {
     game.addSystem(new GridSystem(game, tileMap))
     game.addSystem(new ContainerSystem(game, tileMap, api))
     game.addSystem(new TileMapSystem(game, tileMap))
-    game.addSystem(new MechDemoSystem(game, tileMap))
+    //game.addSystem(new MechDemoSystem(game, tileMap))
+    //game.addSystem(new TileMapEditorSystem(game, tileMap))
   } else {
     throw new Error('No inventory URL provided')
   }
-
-  //game.addSystem(new WebUiSystem(game, tileMap))
+  game.addSystem(new GamepadSystem(game))
+  game.addSystem(new HeroSystem(game))
 
   return game
 }

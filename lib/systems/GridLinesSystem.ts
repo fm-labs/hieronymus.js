@@ -22,6 +22,7 @@ export class GridLinesSystem extends AbstractGameSystem implements IGameSystem {
 
   private _selectedCellIdx?: number = undefined
   private _selectedCell?: Grid2DPosition = undefined
+  private _gridColor = 'rgba(230,151,82,0.4)'
 
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
@@ -168,8 +169,8 @@ export class GridLinesSystem extends AbstractGameSystem implements IGameSystem {
 
     const cols = this.cols
     const rows = this.rows
-    const tileSize = this.tsize
-    const gridColor = 'rgba(234,116,116,0.4)'
+    //const tileSize = this.tsize
+    //const gridColor = 'rgba(234,116,116,0.4)'
     const cameraOffsetX = this._game.camera.offset.x
     const cameraOffsetY = this._game.camera.offset.y
 
@@ -185,7 +186,7 @@ export class GridLinesSystem extends AbstractGameSystem implements IGameSystem {
     gridCtx.fillText(`${gridDimensions.width}/${gridDimensions.height}`, 0, -40)
 
     // draw lines
-    gridCtx.strokeStyle = gridColor
+    gridCtx.strokeStyle = this._gridColor
     gridCtx.lineWidth = 1
 
     // vertical lines

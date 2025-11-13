@@ -13,8 +13,8 @@ import { ContainerComponent } from './ContainerComponent.ts'
 import { TileMapComponent } from './TileMapComponent.ts'
 import { TextComponent } from '../../../lib/components/TextComponent.ts'
 
-const ROWS = 30
-const COLUMNS = 30
+const ROWS = 50
+const COLUMNS = 50
 const TILE_SIZE = 64
 
 const LAYER_TILES = 0
@@ -151,20 +151,20 @@ const containerWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const worldMap = new TileMap(worldConfig)
 
   // Init layers
-  worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
+  //worldMap.addLayer(LAYER_TILES, { name: 'Tiles', type: 'TILE', data: [] })
   //worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILE', data: [] })
   //worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILE', data: [] })
   worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECT', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILE', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'OBJECT', data: [] })
   //worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [] })
 
   worldMap.addObjectAtGridPos(
     LAYER_LABELS,
-    -2,
+    0,
     -2,
     new IsoTextComponent({
-      text: '👉 Kontainers',
-      font: '48px Tektur',
+      text: 'Kontainer',
+      font: '48px BungeeSpice',
       orientation: 'horizontal',
       skewOrientation: 'flat',
     }),
@@ -192,17 +192,43 @@ const containerWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   // )
 
   const areaDepth = 16
-  worldMap.addTile(
-    LAYER_BUILDINGS,
-    COLUMNS / 2 - 1,
-    ROWS / 2 - 1,
-    new IsoCubeComponent({
-      tileSize: worldMap.tileWidth,
-      width: worldMap.tileWidth * COLUMNS,
-      depth: areaDepth,
-      offset: { x: 0, y: worldMap.tileHeight / 2 + areaDepth },
-    }),
-  )
+  const areaWidth = 9
+  const areaSpacing = 1
+
+  for (let areaIdx = 0; areaIdx < 3; areaIdx++) {
+    // worldMap.addObjectAtGridPos(
+    //   LAYER_BUILDINGS,
+    //   areaIdx * (areaWidth + areaSpacing) * 2,
+    //   0, // areaIdx * (areaWidth + areaSpacing) * 2,
+    //   new IsoCubeComponent({
+    //     tileSize: worldMap.tileWidth,
+    //     width: worldMap.tileWidth * areaWidth * 2,
+    //     depth: areaDepth,
+    //     offset: { x: 0, y: worldMap.tileHeight / 2 + areaDepth },
+    //   }),
+    // )
+    // worldMap.addObjectAtGridPos(
+    //   LAYER_BUILDINGS,
+    //   areaIdx * (areaWidth + areaSpacing),
+    //   0, // areaIdx * (areaWidth + areaSpacing) * 2,
+    //   new TileComponent({
+    //     width: worldMap.tileWidth * areaWidth,
+    //     height: worldMap.tileHeight * areaWidth,
+    //     backgroundColor: 'rgba(161,184,179,0.63)',
+    //   }),
+    // )
+    // worldMap.addObjectAtGridPos(
+    //   LAYER_LABELS,
+    //   areaIdx * (areaWidth + areaSpacing) * 2,
+    //   0 - areaWidth, // areaIdx * (areaWidth + areaSpacing) * 2,
+    //   new IsoTextComponent({
+    //     text: 'Area ' + (areaIdx + 1),
+    //     font: '24px Tektur',
+    //     orientation: 'horizontal',
+    //     color: 'rgb(255, 255, 255)',
+    //   }),
+    // )
+  }
 
   // worldMap.addObjectAtGridPos(
   //   LAYER_LABELS,

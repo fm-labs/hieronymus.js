@@ -61,7 +61,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     gridCanvas.height = this._game.height
     this.gridCanvas = gridCanvas
     this.gridCtx = gridCanvas.getContext('2d')!
-    this._game.$container.appendChild(this.gridCanvas)
+    //this._game.$container.appendChild(this.gridCanvas)
 
     this._game.eventbus.on('resize', (event: any) => {
       console.log('resize grid', event)
@@ -236,9 +236,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
         //   strokeColor = 'rgba(91,255,2,0.85)'
         // }
 
-        // if (!shouldRender) {
-        //   continue
-        // }
+        if (!shouldRender) {
+          continue
+        }
 
         if (this.projection instanceof IsometricGridProjection) {
           drawIsoTile(
@@ -287,7 +287,8 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     // if (this._game.frameCount % 2 !== 0) {
     //   return
     // }
-
+    // deprecated: this draws ALL tiles every tick, which is inefficient
+    // use new GridLinesSystem instead
     this.draw(this.gridCtx)
   }
 }

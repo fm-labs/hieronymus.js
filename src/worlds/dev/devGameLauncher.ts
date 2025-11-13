@@ -7,6 +7,7 @@ import { InfoSystem } from '../../../lib'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import devWorldBuilder from './dev.world.ts'
 import { MechDemoSystem } from '../../../lib/systems/MechDemoSystem.ts'
+import { GridLinesSystem } from '../../../lib/systems/GridLinesSystem.ts'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
   // Init gamec
@@ -21,6 +22,7 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
 
   const tileMap = await devWorldBuilder(game)
   game.addSystem(new GridSystem(game, tileMap))
+  game.addSystem(new GridLinesSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
   game.addSystem(new TileMapEditorSystem(game, tileMap))
   game.addSystem(new MechDemoSystem(game, tileMap))

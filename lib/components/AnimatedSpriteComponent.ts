@@ -41,8 +41,14 @@ export class AnimatedSpriteComponent extends AbstractGameComponent implements IG
     super({ ...AnimatedSpriteComponent.defaultProperties, ...properties })
     this.name = properties.name || 'AnimatedSpriteEntity'
 
-    const tilesheetName = this.properties.tilesheetName
-    this.applyTilesheet(tilesheetName)
+    if (properties.tilesheetName) {
+      this.applyTilesheet(properties.tilesheetName)
+    }
+  }
+
+  setElevation(elevation: number): this {
+    this.properties.elevation = elevation
+    return this
   }
 
   protected applyTilesheet(tilesheetName: string | undefined): void {
