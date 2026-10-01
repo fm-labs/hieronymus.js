@@ -10,7 +10,7 @@ import {
 import { ContainerComponent } from './ContainerComponent.ts'
 
 const buildContainerIframeUrl = (hostId: string, containerId: string): string => {
-  return `http://localhost:1420/containers/${hostId}/container/${containerId}`
+  return `http://localhost:3080/containers/${hostId}/container/${containerId}`
 }
 
 export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
@@ -264,19 +264,19 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
     for (let h = 0; h < containerHosts.length; h++) {
       const host = containerHosts[h]
       const hostLayerIdx = 10 + h * 4
-      this._hostLayerMap.set(host.id, hostLayerIdx)
+      this._hostLayerMap.set(host.name, hostLayerIdx)
       this._tileMap.addLayer(hostLayerIdx, {
-        name: `Host_Underground_${host.id}`,
+        name: `Host_Underground_${host.name}`,
         type: 'TILE',
         data: [],
       })
       this._tileMap.addLayer(hostLayerIdx + 1, {
-        name: `Host_Tiles_${host.id}`,
+        name: `Host_Tiles_${host.name}`,
         type: 'TILE',
         data: [],
       })
       this._tileMap.addLayer(hostLayerIdx + 2, {
-        name: `Host_Objects_${host.id}`,
+        name: `Host_Objects_${host.name}`,
         type: 'OBJECT',
         data: [],
       })
@@ -289,17 +289,17 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
   private updateHosts = async () => {
     for (let h = 0; h < this._hostsInventory.length; h++) {
       const host = this._hostsInventory[h]
-      console.log('Updating host:', host.id)
+      console.log('Updating host:', host.name)
       let hostContainers: any[]
       try {
-        hostContainers = await this._api.getContainerHostContainers(host.id)
+        hostContainers = (await this._api.getContainerHostContainers(host.name)) || []
       } catch (e) {
         hostContainers = []
-        console.error('Failed to fetch containers for host', host.id, e)
+        console.error('Failed to fetch containers for host', host.name, e)
       }
-      this._containerInventoryMap.set(host.id, hostContainers)
+      this._containerInventoryMap.set(host.name, hostContainers)
 
-      const layerIdx = this._hostLayerMap.get(host.id)
+      const layerIdx = this._hostLayerMap.get(host.name)
       await this.renderContainerHostWorld({
         index: h,
         layerIdx: layerIdx!,
@@ -329,7 +329,7 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
 
     // console.log(
     //   'Render Container Host Layer:',
-    //   host.id,
+    //   host.name,
     //   idx,
     //   undergroundLayerIdx,
     //   containerInventory.length,
@@ -368,68 +368,70 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
     colNr++
 
     //console.log(containerInventory)
-    containerInventory.forEach((container: any) => {
-      let tileColor = 'rgb(219,136,237)'
-      const status = container?.State?.Status?.toLowerCase() || 'unknown'
-      if (status === 'running') {
-        tileColor = 'rgb(136,237,149)'
-      } else if (status === 'exited') {
-        tileColor = 'rgb(237,136,136)'
-      }
+    if (containerInventory.length > 0) {
+      containerInventory.forEach((container: any) => {
+        let tileColor = 'rgb(219,136,237)'
+        const status = container?.State?.Status?.toLowerCase() || 'unknown'
+        if (status === 'running') {
+          tileColor = 'rgb(136,237,149)'
+        } else if (status === 'exited') {
+          tileColor = 'rgb(237,136,136)'
+        }
 
-      this._tileMap.createTile(undergroundLayerIdx, colNr, rowNr, { backgroundColor: tileColor })
-      //console.log('Adding container tile at', idx, colNr, rowNr, 'Status:', status)
-      this._tileMap.addTile(
-        buildingLayerIdx,
-        colNr,
-        rowNr,
-        new ContainerComponent({
-          tileSize: this._tileMap.tileWidth,
-          width: this._tileMap.tileWidth / 2,
-          depth: 32,
-          //text: 'M4',
-          animated: container?.State?.Status?.toLowerCase() === 'running',
-          container: container,
-          hostId: host.id,
-        }),
-      )
+        this._tileMap.createTile(undergroundLayerIdx, colNr, rowNr, { backgroundColor: tileColor })
+        //console.log('Adding container tile at', idx, colNr, rowNr, 'Status:', status)
+        this._tileMap.addTile(
+          buildingLayerIdx,
+          colNr,
+          rowNr,
+          new ContainerComponent({
+            tileSize: this._tileMap.tileWidth,
+            width: this._tileMap.tileWidth / 2,
+            depth: 32,
+            //text: 'M4',
+            animated: container?.State?.Status?.toLowerCase() === 'running',
+            container: container,
+            hostId: host.name,
+          }),
+        )
 
-      this._tileMap.createTile(undergroundLayerIdx, colNr, rowNr, { backgroundColor: tileColor })
-      //console.log('Adding container tile at', idx, colNr, rowNr, 'Status:', status)
-      this._tileMap.addTile(
-        buildingLayerIdx,
-        colNr,
-        rowNr + 1,
-        new IsoCubeComponent({
-          tileSize: this._tileMap.tileWidth,
-          width: this._tileMap.tileWidth / 2,
-          depth: 8,
-        }),
-      )
-      this._tileMap.addTile(
-        buildingLayerIdx,
-        colNr,
-        rowNr - 1,
-        new IsoCylinderComponent({
-          tileSize: this._tileMap.tileWidth,
-          depth: 8,
-          radius: this._tileMap.tileWidth / 4,
-        }),
-      )
+        this._tileMap.createTile(undergroundLayerIdx, colNr, rowNr, { backgroundColor: tileColor })
+        //console.log('Adding container tile at', idx, colNr, rowNr, 'Status:', status)
+        this._tileMap.addTile(
+          buildingLayerIdx,
+          colNr,
+          rowNr + 1,
+          new IsoCubeComponent({
+            tileSize: this._tileMap.tileWidth,
+            width: this._tileMap.tileWidth / 2,
+            depth: 8,
+          }),
+        )
+        this._tileMap.addTile(
+          buildingLayerIdx,
+          colNr,
+          rowNr - 1,
+          new IsoCylinderComponent({
+            tileSize: this._tileMap.tileWidth,
+            depth: 8,
+            radius: this._tileMap.tileWidth / 4,
+          }),
+        )
 
-      colNr++
-      // if (colNr >= 6) {
-      //   colNr = 1
-      //   rowNr++
-      // }
-    })
+        colNr++
+        // if (colNr >= 6) {
+        //   colNr = 1
+        //   rowNr++
+        // }
+      })
+    }
 
     this._tileMap.addObjectAtGridPos(
       objectLayerIdx,
       0, // col
       rowNrStart,
       new IsoTextComponent({
-        text: `${host.id}`,
+        text: `${host.name}`,
         font: '24px Tektur',
         orientation: 'horizontal',
         skewOrientation: 'flat',
@@ -512,10 +514,15 @@ export class ContainerSystem extends AbstractGameSystem implements IGameSystem {
       const host = this._hostsInventory[i]
       rows.push(
         `<tr>
-          <td style="text-decoration: underline">${host.id} 🐳</td>
+          <td style="text-decoration: underline">${host.name} 🐳</td>
         </tr>`,
       )
-      const _containers = this._containerInventoryMap.get(host.id) || []
+      const _containers = this._containerInventoryMap.get(host.name) || []
+      console.log('Containers for host', host.name, _containers)
+      if (!Array.isArray(_containers)) {
+        continue
+      }
+
       _containers.forEach((container: any) => {
         const status = container?.State?.Status || 'unknown'
         rows.push(

@@ -1,4 +1,4 @@
-import { Game } from '../../../lib'
+import { Game, GamepadSystem, HeroSystem } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'
 import { InputSystem } from '../../../lib'
@@ -17,7 +17,7 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new InfoSystem(game))
   game.addSystem(new InputSystem(game))
   game.addSystem(new CameraSystem(game))
-  //game.addSystem(new GamepadInputSystem())
+  game.addSystem(new GamepadSystem(game))
   //game.addSystem(new HeroSystem(game))
 
   const tileMap = await devWorldBuilder(game)

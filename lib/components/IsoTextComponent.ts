@@ -8,6 +8,7 @@ export interface IsoTextComponentProps extends GameComponentProperties {
   direction?: CanvasDirection
   orientation?: 'vertical' | 'horizontal'
   skewOrientation?: 'upright' | 'flat'
+  offset?: { x: number; y: number }
   //angle: number
 }
 
@@ -21,6 +22,7 @@ export class IsoTextComponent extends AbstractGameComponent implements IGameComp
     direction: 'ltr',
     orientation: 'vertical', // vertical | horizontal
     skewOrientation: 'flat', // upright | flat
+    offset: { x: 0, y: 0 },
   }
 
   public readonly componentType: string = 'Text'
@@ -63,6 +65,8 @@ export class IsoTextComponent extends AbstractGameComponent implements IGameComp
     ctx.transform(1, 0, skewAngle, 1, 0, 0)
     //ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.fillText(text, 0, 0)
+    // get text width
+    //const textMetrics = ctx.measureText(text)
     //ctx.restore()
 
     //ctx.setTransform(1, 0.8, 0, 1, 0, 0)

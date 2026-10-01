@@ -17,7 +17,7 @@ const BLACK_NUMBERS = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 3
 const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   const ROWS = 7
   const COLUMNS = 20
-  const TILE_SIZE = 92
+  const TILE_SIZE = 128
 
   const LAYER_TILES = 0
   const LAYER_UNDERGROUND = 1
@@ -117,9 +117,10 @@ const rouletteWorldBuilder = async (game: IGame): Promise<ITileMap> => {
       y + 1,
       new IsoTextComponent({
         text: number.toString(),
-        font: '32px BungeeSpice',
+        font: '32px Arial',
         orientation: 'vertical',
         skewOrientation: 'flat',
+        offset: { x: 20, y: 0 },
       }),
     )
 

@@ -10,7 +10,7 @@ import { ContainerSystem } from './ContainerSystem.ts'
 import { MechDemoSystem } from '../../../lib/systems/MechDemoSystem.ts'
 import { WebUiSystem2 } from '../../../lib/systems/WebUiSystem2.ts'
 
-const API_BASE_URL = 'http://127.0.0.1:13080/'
+const API_BASE_URL = 'http://127.0.0.1:3080/'
 const API_KEY_LOCAL_STORAGE_KEY = 'container_api_key'
 const API_DEFAULT_TTL_SECONDS = 30
 
