@@ -11,7 +11,6 @@ export * from './utils/mathutil'
 
 export * from './constants'
 
-export * from './draw2d/draw2d'
 export * from './draw2d/drawiso'
 
 export * from './components/AbstractGameComponent.ts'

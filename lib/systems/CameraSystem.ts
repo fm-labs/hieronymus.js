@@ -5,6 +5,13 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
 
   constructor(game: IGame) {
     super(game)
+
+    // bind once, so the same references can be removed in stop()
+    this.handleKeyboardKeyDownEvent = this.handleKeyboardKeyDownEvent.bind(this)
+    this.handleWheelEvent = this.handleWheelEvent.bind(this)
+    this.handleZoomEvent = this.handleZoomEvent.bind(this)
+    this.handleCameraResetEvent = this.handleCameraResetEvent.bind(this)
+    this.handleCameraCenterEvent = this.handleCameraCenterEvent.bind(this)
   }
 
   public onLoad() {
@@ -17,12 +24,12 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
 
   public start() {
     console.log('CameraSystem.start')
-    this._game.eventbus.on('keyboard.keydown', this.handleKeyboardKeyDownEvent.bind(this))
-    this._game.eventbus.on('wheel', this.handleWheelEvent.bind(this))
-    this._game.eventbus.on('zoom', this.handleZoomEvent.bind(this))
+    this._game.eventbus.on('keyboard.keydown', this.handleKeyboardKeyDownEvent)
+    this._game.eventbus.on('wheel', this.handleWheelEvent)
+    this._game.eventbus.on('zoom', this.handleZoomEvent)
 
-    this._game.eventbus.on('camera.reset', this.handleCameraResetEvent.bind(this))
-    this._game.eventbus.on('camera.center', this.handleCameraCenterEvent.bind(this))
+    this._game.eventbus.on('camera.reset', this.handleCameraResetEvent)
+    this._game.eventbus.on('camera.center', this.handleCameraCenterEvent)
 
     this._game.camera.offset.x = -this._game.width / 2
     this._game.camera.offset.y = -this._game.height * 0.05 // center vertically

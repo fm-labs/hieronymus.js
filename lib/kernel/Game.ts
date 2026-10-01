@@ -140,6 +140,7 @@ export class Game implements IGame {
   public frameCount = 0
   public fps = 0
   public deltaTime = 0
+  private fpsWindowStart = 0
 
   public async tick(currentTime: number) {
     if (currentTime <= 1) {
@@ -153,19 +154,19 @@ export class Game implements IGame {
 
     if (!this.gameRunning) return
 
-    // Calculate the difference in seconds
-    this.deltaTime = currentTime - this.lastFrameTime
-    //lastFrameTime = currentTime;
+    // Time since the previous frame in milliseconds (0 on the first frame)
+    this.deltaTime = this.lastFrameTime ? currentTime - this.lastFrameTime : 0
+    this.lastFrameTime = currentTime
 
     // Increment the frame count
     this.frameCount++
 
     // Update FPS every second
-    if (this.deltaTime >= 1000) {
+    if (!this.fpsWindowStart) this.fpsWindowStart = currentTime
+    if (currentTime - this.fpsWindowStart >= 1000) {
       this.fps = this.frameCount
       this.frameCount = 0
-      this.lastFrameTime = currentTime
-      //console.log('FPS', this.fps)
+      this.fpsWindowStart = currentTime
     }
 
     // Call tick on all systems synchronously

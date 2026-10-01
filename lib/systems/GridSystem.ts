@@ -26,6 +26,9 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
   constructor(game: IGame, tileMap: ITileMap) {
     super(game)
 
+    this.handleMouseMove = this.handleMouseMove.bind(this)
+    this.handleMouseClick = this.handleMouseClick.bind(this)
+
     this.tsize = tileMap.tileWidth
     this.cols = tileMap.columns
     this.rows = tileMap.rows
@@ -84,9 +87,8 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
     console.log('GridSystem.start')
 
     // Register DOM events
-    this.handleMouseMove = this.handleMouseMove.bind(this)
-    this._game.$container.addEventListener('mousemove', this.handleMouseMove.bind(this))
-    this._game.$container.addEventListener('mousedown', this.handleMouseClick.bind(this))
+    this._game.$container.addEventListener('mousemove', this.handleMouseMove)
+    this._game.$container.addEventListener('mousedown', this.handleMouseClick)
   }
 
   public stop() {
@@ -123,7 +125,7 @@ export class GridSystem extends AbstractGameSystem implements IGameSystem {
         this._activeGridPos = pos
         //this._dirty = true
       }
-    } else if (this._activeCellIdx) {
+    } else if (this._activeCellIdx !== undefined) {
       this._activeCellIdx = undefined
       this._activeGridPos = undefined
       //this._dirty = true

@@ -7,6 +7,10 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
 
   constructor(game: IGame) {
     super(game)
+
+    // bind once, so the same references can be removed in stop()
+    this.handleGamepadConnected = this.handleGamepadConnected.bind(this)
+    this.handleGamepadDisconnected = this.handleGamepadDisconnected.bind(this)
   }
 
   public onLoad() {
@@ -24,13 +28,16 @@ export class GamepadSystem extends AbstractGameSystem implements IGameSystem {
 
     // Check for gamepad support
     if ('GamepadEvent' in window) {
-      window.addEventListener('gamepadconnected', this.handleGamepadConnected.bind(this))
-      window.addEventListener('gamepaddisconnected', this.handleGamepadDisconnected.bind(this))
+      window.addEventListener('gamepadconnected', this.handleGamepadConnected)
+      window.addEventListener('gamepaddisconnected', this.handleGamepadDisconnected)
     }
   }
 
   public stop() {
     console.log('GamepadInputSystem.stop')
+    window.removeEventListener('gamepadconnected', this.handleGamepadConnected)
+    window.removeEventListener('gamepaddisconnected', this.handleGamepadDisconnected)
+    this.gamepads = []
   }
 
   public async tick(delta: number) {

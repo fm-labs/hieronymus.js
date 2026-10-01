@@ -114,7 +114,7 @@ export class AwsItemComponent extends AbstractGameComponent implements IGameComp
   }
 
   update(deltaTime: number): void {
-    this._progress += deltaTime * 0.00001
+    this._progress += deltaTime / 3000 // one bob cycle every 3 seconds
     if (this._progress > 1) this._progress = 0
 
     // smooth up and down

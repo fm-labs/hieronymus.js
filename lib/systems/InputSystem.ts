@@ -5,6 +5,12 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
 
   constructor(game: IGame) {
     super(game)
+
+    // bind once, so the same references can be removed in stop()
+    this.handleKeyboardEvent = this.handleKeyboardEvent.bind(this)
+    this.handleMouseEvent = this.handleMouseEvent.bind(this)
+    this.handleWheelEvent = this.handleWheelEvent.bind(this)
+    this.handleWindowResizeEvent = this.handleWindowResizeEvent.bind(this)
   }
 
   public onLoad() {
@@ -17,17 +23,17 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
 
   public start() {
     console.log('InputSystem.start')
-    window.addEventListener('keydown', this.handleKeyboardEvent.bind(this))
-    window.addEventListener('keyup', this.handleKeyboardEvent.bind(this))
-    window.addEventListener('mouseup', this.handleMouseEvent.bind(this))
-    window.addEventListener('mousedown', this.handleMouseEvent.bind(this))
-    window.addEventListener('dblclick', this.handleMouseEvent.bind(this))
+    window.addEventListener('keydown', this.handleKeyboardEvent)
+    window.addEventListener('keyup', this.handleKeyboardEvent)
+    window.addEventListener('mouseup', this.handleMouseEvent)
+    window.addEventListener('mousedown', this.handleMouseEvent)
+    window.addEventListener('dblclick', this.handleMouseEvent)
 
     // The `{ passive: false }` option is important to allow `preventDefault` to work.
-    window.addEventListener('wheel', this.handleWheelEvent.bind(this), { passive: false })
+    window.addEventListener('wheel', this.handleWheelEvent, { passive: false })
 
     // handle window resize events
-    window.addEventListener('resize', this.handleWindowResizeEvent.bind(this))
+    window.addEventListener('resize', this.handleWindowResizeEvent)
     window.dispatchEvent(new Event('resize'))
 
     // @todo TOUCH HANDLER

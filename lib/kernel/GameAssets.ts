@@ -36,7 +36,7 @@ class GameAssets {
   ): Promise<void> {
     console.log(`Load spritesheet for ${name}`, imageUrl, atlasUrl)
     const imageName = name
-    const image = GameAssets.loadImage(imageName, imageUrl)
+    const image = await GameAssets.loadImage(imageName, imageUrl)
     if (!image) {
       throw new Error(`Failed to load image from ${imageUrl}`)
     }

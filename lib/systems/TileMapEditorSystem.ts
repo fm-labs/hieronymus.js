@@ -309,8 +309,8 @@ export class TileMapEditorSystem extends AbstractGameSystem implements IGameSyst
     const buttonCamCenter = document.createElement('button')
     buttonCamCenter.textContent = 'Center camera'
     buttonCamCenter.onclick = () => {
-      console.log('reset camera')
-      this._game.eventbus.emit('camera.reset', {})
+      console.log('center camera')
+      this._game.eventbus.emit('camera.center', {})
     }
     this.controlsDiv.appendChild(buttonCamCenter)
 

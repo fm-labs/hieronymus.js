@@ -338,20 +338,16 @@ interface IGameResources {
 
 /** INPUT TYPES **/
 
-type GamepadInputEvent = {
-  name: string
-}
-
-type GamepadStickChangeEvent = GamepadInputEvent & {
-  name: 'gamepad.stick_change'
+// payload of the 'gamepad.stickChange' event
+type GamepadStickChangeEvent = {
   stickLeft: boolean
   stickRight: boolean
   stickUp: boolean
   stickDown: boolean
 }
 
-type GamepadButtonChangeEvent = GamepadInputEvent & {
-  name: 'gamepad.button_change'
+// payload of the 'gamepad.buttonPress' event
+type GamepadButtonChangeEvent = {
   button: number
   state: ButtonState
 }

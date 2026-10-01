@@ -8,7 +8,7 @@ export class EventBus {
     if (!this.listeners[event]) {
       this.listeners[event] = []
     }
-    console.log('EventBus.on', event, listener)
+    //console.log('EventBus.on', event, listener)
     this.listeners[event].push(listener)
   }
 

@@ -234,10 +234,11 @@ export class TileMap implements ITileMap {
     return this.layers[layerId].data.reduce(
       (result: number[], componentId: number, idx: number) => {
         const component = this.components.get(componentId)
-        if (!component || !component.properties) return result
+        if (!component) return result
 
-        const objX = component.properties.x!
-        const objY = component.properties.y!
+        // the position is set via setPosition() when the object is placed
+        const objX = component.x
+        const objY = component.y
         // if (component && component.properties) {
         //   const objX = component.properties.x!
         //   const objY = component.properties.y!

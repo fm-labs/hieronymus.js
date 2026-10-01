@@ -51,7 +51,7 @@ export class HeroSystem extends AbstractGameSystem implements IGameSystem {
     this.handleGamepadStickChange = this.handleGamepadStickChange.bind(this)
     this.handleGamepadButtonChangeEvent = this.handleGamepadButtonChangeEvent.bind(this)
 
-    this._game.eventbus.on('keyboard.keyDown', this.handleKeyboardDownEvent)
+    this._game.eventbus.on('keyboard.keydown', this.handleKeyboardDownEvent)
     this._game.eventbus.on('gamepad.stickChange', this.handleGamepadStickChange)
     this._game.eventbus.on('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
 
@@ -64,9 +64,9 @@ export class HeroSystem extends AbstractGameSystem implements IGameSystem {
 
   public onUnload() {
     console.log('HeroSystem.onUnload')
-    //this._game.eventbus.off('keyboard.keyDown', this.handleKeyboardDownEvent)
-    //this._game.eventbus.off('gamepad.stickChange', this.handleGamepadStickChange)
-    //this._game.eventbus.off('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
+    this._game.eventbus.off('keyboard.keydown', this.handleKeyboardDownEvent)
+    this._game.eventbus.off('gamepad.stickChange', this.handleGamepadStickChange)
+    this._game.eventbus.off('gamepad.buttonPress', this.handleGamepadButtonChangeEvent)
   }
 
   private handleGamepadStickChange(e: GamepadStickChangeEvent) {
@@ -88,7 +88,7 @@ export class HeroSystem extends AbstractGameSystem implements IGameSystem {
   private handleKeyboardDownEvent(e: KeyboardEvent) {
     console.log('[hero]', e.key, e.code, e.altKey, e.ctrlKey, e.shiftKey)
 
-    switch (e.key) {
+    switch (e.code) {
       case 'KeyA':
       case 'ArrowLeft':
         this.move('left')

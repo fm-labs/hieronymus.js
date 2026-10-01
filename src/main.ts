@@ -1,22 +1,21 @@
-import { devGameLauncher } from './worlds/dev/devGameLauncher.ts'
-import { awsGameLauncher } from './worlds/aws/awsGameLauncher.ts'
 import { Game } from '../lib'
-import { rouletteGameLauncher } from './worlds/roulette/rouletteGameLauncher.ts'
-import { viennaGameLauncher } from './worlds/vienna/viennaGameLauncher.ts'
-import { awsgraphGameLauncher } from './worlds/awsgraph/awsgraphGameLauncher.ts'
-import { containerGameLauncher } from './worlds/container/containerGameLauncher.ts'
-import { casinoGameLauncher } from './worlds/casino/casinoGameLauncher.ts'
-import { chessGameLauncher } from './worlds/chess/chessGameLauncher.ts'
 
-const gameLaunchers: Record<string, (app: HTMLDivElement) => Promise<Game>> = {
-  dev: devGameLauncher,
-  aws: awsGameLauncher,
-  awsgraph: awsgraphGameLauncher,
-  roulette: rouletteGameLauncher,
-  vienna: viennaGameLauncher,
-  container: containerGameLauncher,
-  casino: casinoGameLauncher,
-  chess: chessGameLauncher,
+type GameLauncher = (app: HTMLDivElement) => Promise<Game>
+
+// Launchers are loaded lazily, so a world with missing local data (e.g. gitignored json files)
+// only fails when it is selected, instead of breaking the whole app.
+const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
+  dev: async () => (await import('./worlds/dev/devGameLauncher.ts')).devGameLauncher,
+  aws: async () => (await import('./worlds/aws/awsGameLauncher.ts')).awsGameLauncher,
+  awsgraph: async () =>
+    (await import('./worlds/awsgraph/awsgraphGameLauncher.ts')).awsgraphGameLauncher,
+  roulette: async () =>
+    (await import('./worlds/roulette/rouletteGameLauncher.ts')).rouletteGameLauncher,
+  vienna: async () => (await import('./worlds/vienna/viennaGameLauncher.ts')).viennaGameLauncher,
+  container: async () =>
+    (await import('./worlds/container/containerGameLauncher.ts')).containerGameLauncher,
+  casino: async () => (await import('./worlds/casino/casinoGameLauncher.ts')).casinoGameLauncher,
+  chess: async () => (await import('./worlds/chess/chessGameLauncher.ts')).chessGameLauncher,
 }
 
 // read the 'world' query parameter
@@ -46,8 +45,6 @@ const launcherItems = Object.keys(gameLaunchers).map((launcher, index) => {
 
 $launcher.innerHTML =
   `<div>World: ${world}</div>
-  <div>Press 'F10' to toggle debug mode</div>
-  <div>Press 'F11' to toggle fullscreen mode</div>
   <ul>` +
   launcherItems.join('') +
   `</ul>`
@@ -56,8 +53,9 @@ $launcher.innerHTML =
 // launch the game based on the 'world' query parameter
 try {
   if (!world) throw new Error('No world parameter')
-  const launcher = gameLaunchers[world]
-  if (!launcher) throw new Error(`World '${world}' not found`)
+  const loadLauncher = gameLaunchers[world]
+  if (!loadLauncher) throw new Error(`World '${world}' not found`)
+  const launcher = await loadLauncher()
   const game: IGame = await launcher(app)
   await game.run()
 } catch (e: any) {
