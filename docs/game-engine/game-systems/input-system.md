@@ -14,17 +14,17 @@ Mouse movement over the grid is handled by the [GridSystem](grid-system.md).
 
 ## Events
 
-| Captured on `window` | Condition                                      | Internal event     | Payload           |
-|----------------------|------------------------------------------------|--------------------|-------------------|
-| `keydown`            |                                                | `keyboard.keydown` | `KeyboardEvent`   |
-| `keyup`              |                                                | `keyboard.keyup`   | `KeyboardEvent`   |
-| `mousedown`          |                                                | `mouse.mousedown`  | `MouseEvent`      |
-| `mouseup`            |                                                | `mouse.mouseup`    | `MouseEvent`      |
-| `dblclick`           |                                                | `mouse.dblclick`   | `MouseEvent`      |
-| `wheel`              | `deltaX == 0` and fractional `deltaY` (trackpad pinch) | `zoom`     | `WheelEvent`      |
-| `wheel`              | ctrl / cmd pressed and `deltaY != 0`           | `zoom`             | `WheelEvent`      |
-| `wheel`              | otherwise                                      | `wheel`            | `WheelEvent`      |
-| `resize`             |                                                | `resize`           | `{ width, height }` (window inner size) |
+| Captured on `window` | Condition                                              | Internal event     | Payload                                 |
+| -------------------- | ------------------------------------------------------ | ------------------ | --------------------------------------- |
+| `keydown`            |                                                        | `keyboard.keydown` | `KeyboardEvent`                         |
+| `keyup`              |                                                        | `keyboard.keyup`   | `KeyboardEvent`                         |
+| `mousedown`          |                                                        | `mouse.mousedown`  | `MouseEvent`                            |
+| `mouseup`            |                                                        | `mouse.mouseup`    | `MouseEvent`                            |
+| `dblclick`           |                                                        | `mouse.dblclick`   | `MouseEvent`                            |
+| `wheel`              | `deltaX == 0` and fractional `deltaY` (trackpad pinch) | `zoom`             | `WheelEvent`                            |
+| `wheel`              | ctrl / cmd pressed and `deltaY != 0`                   | `zoom`             | `WheelEvent`                            |
+| `wheel`              | otherwise                                              | `wheel`            | `WheelEvent`                            |
+| `resize`             |                                                        | `resize`           | `{ width, height }` (window inner size) |
 
 Listen to key events with the lowercase DOM event name and compare `e.code`
 (layout-independent, e.g. `KeyW`, `ArrowUp`):

@@ -13,7 +13,15 @@ Systems never call each other directly. They communicate through the game's even
 ## Quick Start
 
 ```typescript
-import { Game, TileMap, InputSystem, CameraSystem, GridSystem, TileMapSystem, IsoCubeComponent } from 'world'
+import {
+  Game,
+  TileMap,
+  InputSystem,
+  CameraSystem,
+  GridSystem,
+  TileMapSystem,
+  IsoCubeComponent,
+} from 'world'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -34,10 +42,7 @@ const tileMap = new TileMap({ columns: 30, rows: 30, tileSize: 64, projection: '
 tileMap.addLayer(0, { name: 'Ground', type: 'TILE', data: [] })
 tileMap.addLayer(1, { name: 'Objects', type: 'OBJECT', data: [] })
 
-tileMap.addObjectAtGridPos(
-  1, 5, 5,
-  new IsoCubeComponent({ tileSize: 64, width: 64, depth: 32 }),
-)
+tileMap.addObjectAtGridPos(1, 5, 5, new IsoCubeComponent({ tileSize: 64, width: 64, depth: 32 }))
 
 // 4. Add systems
 game.addSystem(new InputSystem(game))
@@ -52,8 +57,8 @@ await game.run()
 `src/worlds/dev/` is a complete working example (`?world=dev` in the demo app).
 
 !!! note
-    The order in which systems are added matters: each drawing system appends its canvas to the
-    container, so systems added later are drawn on top.
+The order in which systems are added matters: each drawing system appends its canvas to the
+container, so systems added later are drawn on top.
 
 ## Game
 
@@ -65,13 +70,13 @@ If no `resources` are given, a `GameResourcesManager` is created (see [Game Asse
 
 ### GameConfig
 
-| Property     | Type      | Description                                                       |
-|--------------|-----------|-------------------------------------------------------------------|
-| `id`         | `string`  | Required. Identifier of the game.                                 |
-| `name`       | `string`  | Display name.                                                     |
-| `fullscreen` | `boolean` | Makes the container fill the viewport (`100vw` × `100vh`).        |
-| `width`      | `number`  | Currently unused, the size is taken from the container.           |
-| `height`     | `number`  | Currently unused, the size is taken from the container.           |
+| Property     | Type      | Description                                                |
+| ------------ | --------- | ---------------------------------------------------------- |
+| `id`         | `string`  | Required. Identifier of the game.                          |
+| `name`       | `string`  | Display name.                                              |
+| `fullscreen` | `boolean` | Makes the container fill the viewport (`100vw` × `100vh`). |
+| `width`      | `number`  | Currently unused, the size is taken from the container.    |
+| `height`     | `number`  | Currently unused, the size is taken from the container.    |
 
 ### IGame
 
@@ -83,8 +88,8 @@ interface IGame {
   eventbus: IEventBus
 
   // camera & dimensions
-  camera: Camera2D      // { offset: { x, y }, zoom }
-  width: number         // updated on the 'resize' event
+  camera: Camera2D // { offset: { x, y }, zoom }
+  width: number // updated on the 'resize' event
   height: number
 
   // state
@@ -99,10 +104,10 @@ interface IGame {
   tick(currentTime: number): void | Promise<void>
 
   // timing
-  fps: number            // frames counted during the last second
-  frameCount: number     // frames since the last fps update (resets every second)
-  lastFrameTime: number  // requestAnimationFrame timestamp of the previous frame
-  deltaTime: number      // milliseconds since the previous frame
+  fps: number // frames counted during the last second
+  frameCount: number // frames since the last fps update (resets every second)
+  lastFrameTime: number // requestAnimationFrame timestamp of the previous frame
+  deltaTime: number // milliseconds since the previous frame
 }
 ```
 
@@ -127,10 +132,10 @@ A system is any object implementing `IGameSystem`. All hooks are optional:
 ```typescript
 interface IGameSystem {
   name: string
-  onLoad?: () => void       // called by game.addSystem()
-  onUnload?: () => void     // currently never called by the game
-  start?: () => void        // called by game.run() and after hot reload
-  stop?: () => void         // called before hot reload
+  onLoad?: () => void // called by game.addSystem()
+  onUnload?: () => void // currently never called by the game
+  start?: () => void // called by game.run() and after hot reload
+  stop?: () => void // called before hot reload
   tick?: (deltaTime: number) => Promise<void>
   draw?: (ctx: CanvasRenderingContext2D) => void // not called by the game, see below
 }

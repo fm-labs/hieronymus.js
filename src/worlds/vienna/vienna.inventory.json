@@ -1,8 +1,5 @@
 {
-  "grid_size": [
-    10,
-    10
-  ],
+  "grid_size": [10, 10],
   "axis_orientation": {
     "x": "west_to_east",
     "y": "north_to_south"

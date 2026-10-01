@@ -18,10 +18,12 @@ On every tick:
    for components on OBJECT layers.
 2. **Draw** – the canvas is reset, translated by `-camera.offset` and scaled by `camera.zoom`.
    Then the layers are drawn in layer id order:
-    - **TILE layers** are drawn column by column, then row by row.
-    - **OBJECT layers** are drawn in the order of their `data` list.
+
+   - **TILE layers** are drawn column by column, then row by row.
+   - **OBJECT layers** are drawn in the order of their `data` list.
 
    Every `component.draw(ctx)` call is wrapped in `ctx.save()` / `ctx.restore()`.
+
 3. Emits `system.draw` with `{ system: 'TileMapSystem', context, drawCounter }`
    (number of drawn components), which the InfoSystem shows.
 
@@ -44,10 +46,10 @@ See [Game World](../game-world.md#layers) for the layer API and
 
 ## Events
 
-| Listens to | Action                         |
-|------------|--------------------------------|
-| `resize`   | Resizes the canvas.            |
+| Listens to | Action              |
+| ---------- | ------------------- |
+| `resize`   | Resizes the canvas. |
 
-| Emits         | Payload                                 |
-|---------------|-----------------------------------------|
-| `system.draw` | `{ system, context, drawCounter }`      |
+| Emits         | Payload                            |
+| ------------- | ---------------------------------- |
+| `system.draw` | `{ system, context, drawCounter }` |

@@ -1,156 +1,155 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flying Dot on Canvas</title>
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flying Dot on Canvas</title>
+    <style>
       canvas {
-          display: block;
-          margin: auto;
-          background-color: #f0f0f0;
+        display: block;
+        margin: auto;
+        background-color: #f0f0f0;
       }
-  </style>
-</head>
-<body style="width: 100vw; height: 100vh; margin: 0; padding: 0;">
-<canvas id="myCanvas" width="1000" height="500"></canvas>
-<script>
-  const DEFAULT_VX = 0.2;
-  const DEFAULT_VY = -0.01;
+    </style>
+  </head>
+  <body style="width: 100vw; height: 100vh; margin: 0; padding: 0">
+    <canvas id="myCanvas" width="1000" height="500"></canvas>
+    <script>
+      const DEFAULT_VX = 0.2
+      const DEFAULT_VY = -0.01
 
-  // Get the canvas and its context
-  const canvas = document.getElementById('myCanvas');
-  //canvas.width = document.body.getBoundingClientRect().width;
-  //canvas.height = document.body.getBoundingClientRect().height;
-  console.log("canvas.width: ", canvas.width, "canvas.height: ", canvas.height);
-  const ctx = canvas.getContext('2d');
+      // Get the canvas and its context
+      const canvas = document.getElementById('myCanvas')
+      //canvas.width = document.body.getBoundingClientRect().width;
+      //canvas.height = document.body.getBoundingClientRect().height;
+      console.log('canvas.width: ', canvas.width, 'canvas.height: ', canvas.height)
+      const ctx = canvas.getContext('2d')
 
-  // Initial properties of the dot
-  const radius = 10; // Radius of the dot
-  let x = 0; // Starting x position
-  let y = 0; // Starting y position
-  let vx = 0; // Horizontal velocity
-  let vy = 0; // Vertical velocity
+      // Initial properties of the dot
+      const radius = 10 // Radius of the dot
+      let x = 0 // Starting x position
+      let y = 0 // Starting y position
+      let vx = 0 // Horizontal velocity
+      let vy = 0 // Vertical velocity
 
-  // Acceleration values
-  let ax = 0; // Horizontal acceleration
-  let ay = 0; // Vertical acceleration
+      // Acceleration values
+      let ax = 0 // Horizontal acceleration
+      let ay = 0 // Vertical acceleration
 
-  // Gamble values
-  let crashed = false;
-  let crashAt = 0;
-  let startIdx = 0;
-  let crashVal = 0;
+      // Gamble values
+      let crashed = false
+      let crashAt = 0
+      let startIdx = 0
+      let crashVal = 0
 
-  function reset() {
-    x = 2 * radius;
-    y = canvas.height - 2 * radius;
-    vx = DEFAULT_VX;
-    vy = DEFAULT_VY;
-    ax = 0.001;
-    ay = 0;
+      function reset() {
+        x = 2 * radius
+        y = canvas.height - 2 * radius
+        vx = DEFAULT_VX
+        vy = DEFAULT_VY
+        ax = 0.001
+        ay = 0
 
-    crashed = false;
-    crashAt = 0;
-    startIdx = 0;
-  }
+        crashed = false
+        crashAt = 0
+        startIdx = 0
+      }
 
-  function start() {
-    const randomCrashVal = Math.random();
-    if (randomCrashVal > 0.9) {
-      console.log("instantly crashed: ", randomCrashVal);
-      crashed = true;
-      crashAt = 0;
-    } else {
-      crashAt = performance.now().valueOf() + Math.floor(randomCrashVal * 30000);
-      console.log("crashAt: ", crashAt);
-    }
-    crashVal = randomCrashVal;
-  }
+      function start() {
+        const randomCrashVal = Math.random()
+        if (randomCrashVal > 0.9) {
+          console.log('instantly crashed: ', randomCrashVal)
+          crashed = true
+          crashAt = 0
+        } else {
+          crashAt = performance.now().valueOf() + Math.floor(randomCrashVal * 30000)
+          console.log('crashAt: ', crashAt)
+        }
+        crashVal = randomCrashVal
+      }
 
-  // Animation loop
-  function animate() {
-    //console.log("index: ", frameId);
-    if (startIdx === 0) {
-      startIdx = performance.now();
-      console.log("startIdx: ", startIdx);
-      start();
-    }
+      // Animation loop
+      function animate() {
+        //console.log("index: ", frameId);
+        if (startIdx === 0) {
+          startIdx = performance.now()
+          console.log('startIdx: ', startIdx)
+          start()
+        }
 
-    const now = performance.now();
-    if (startIdx > 0 && crashAt <= now) {
-      console.log("crashed at: ", now);
-      crashed = true;
-    }
+        const now = performance.now()
+        if (startIdx > 0 && crashAt <= now) {
+          console.log('crashed at: ', now)
+          crashed = true
+        }
 
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    renderInfo();
+        renderInfo()
 
-    if (crashed) {
-      // Draw the dot
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'red';
-      ctx.fill();
-      ctx.closePath();
+        if (crashed) {
+          // Draw the dot
+          ctx.beginPath()
+          ctx.arc(x, y, radius, 0, Math.PI * 2)
+          ctx.fillStyle = 'red'
+          ctx.fill()
+          ctx.closePath()
 
-      setTimeout(() => {
-        reset();
-        animate();
-      }, 5000);
-      return;
-    }
+          setTimeout(() => {
+            reset()
+            animate()
+          }, 5000)
+          return
+        }
 
+        // Draw the dot
+        ctx.beginPath()
+        ctx.arc(x, y, radius, 0, Math.PI * 2)
+        ctx.fillStyle = 'blue'
+        ctx.fill()
+        ctx.closePath()
 
-    // Draw the dot
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = 'blue';
-    ctx.fill();
-    ctx.closePath();
+        // Update position
+        x += vx
+        y += vy
 
-    // Update position
-    x += vx;
-    y += vy;
+        // Update velocity with acceleration
+        vx += ax
+        vy -= ay
 
-    // Update velocity with acceleration
-    vx += ax;
-    vy -= ay;
+        // Reverse direction if the dot hits the canvas edges
+        if (x + radius > canvas.width || x - radius < 0) {
+          //vx = -vx;
+          reset()
+        }
+        if (y + radius > canvas.height || y - radius < 0) {
+          // vy = -vy;
+          reset()
+        }
 
-    // Reverse direction if the dot hits the canvas edges
-    if (x + radius > canvas.width || x - radius < 0) {
-      //vx = -vx;
-      reset()
-    }
-    if (y + radius > canvas.height || y - radius < 0) {
-      // vy = -vy;
-      reset()
-    }
+        // Request the next animation frame
+        const frameId = requestAnimationFrame(animate)
+      }
 
-    // Request the next animation frame
-    const frameId = requestAnimationFrame(animate);
-  }
+      function renderInfo() {
+        ctx.fillStyle = 'limegreen'
+        ctx.font = '20px Arial'
+        ctx.fillText('x: ' + x.toFixed(4), 10, 30)
+        ctx.fillText('y: ' + y.toFixed(4), 10, 60)
+        ctx.fillText('vx: ' + vx.toFixed(4), 10, 90)
+        ctx.fillText('vy: ' + vy.toFixed(4), 10, 120)
+        ctx.fillText('ax: ' + ax.toFixed(4), 10, 150)
+        ctx.fillText('ay: ' + ay.toFixed(4), 10, 180)
+        ctx.fillText('crashVal: ' + crashVal, 10, 270)
+        ctx.fillText('crashed: ' + crashed, 10, 210)
+        ctx.fillText('crashAt: ' + crashAt, 10, 240)
+        ctx.fillText('now: ' + performance.now(), 10, 300)
+      }
 
-  function renderInfo() {
-    ctx.fillStyle = 'limegreen';
-    ctx.font = '20px Arial';
-    ctx.fillText('x: ' + x.toFixed(4), 10, 30);
-    ctx.fillText('y: ' + y.toFixed(4), 10, 60);
-    ctx.fillText('vx: ' + vx.toFixed(4), 10, 90);
-    ctx.fillText('vy: ' + vy.toFixed(4), 10, 120);
-    ctx.fillText('ax: ' + ax.toFixed(4), 10, 150);
-    ctx.fillText('ay: ' + ay.toFixed(4), 10, 180);
-    ctx.fillText('crashVal: ' + crashVal, 10, 270);
-    ctx.fillText('crashed: ' + crashed, 10, 210);
-    ctx.fillText('crashAt: ' + crashAt, 10, 240);
-    ctx.fillText('now: ' + performance.now(), 10, 300);
-  }
-
-  // Start the animation
-  //start();
-  animate();
-</script>
-</body>
+      // Start the animation
+      //start();
+      animate()
+    </script>
+  </body>
 </html>

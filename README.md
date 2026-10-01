@@ -18,22 +18,22 @@ Without a `?world=` parameter a launcher with all available worlds is shown.
 
 Some worlds need data that is not in the repository:
 
-| World       | Requires                                                   |
-|-------------|------------------------------------------------------------|
-| `aws`, `awsgraph` | the sibling repository `../cloudia-common`           |
-| `casino`    | `src/worlds/casino/gameidx-web.json` (gitignored)          |
-| `container` | `src/worlds/container/container.json` (gitignored)         |
+| World             | Requires                                           |
+| ----------------- | -------------------------------------------------- |
+| `aws`, `awsgraph` | the sibling repository `../cloudia-common`         |
+| `casino`          | `src/worlds/casino/gameidx-web.json` (gitignored)  |
+| `container`       | `src/worlds/container/container.json` (gitignored) |
 
 Launchers are loaded lazily, so a missing file only breaks the world that needs it.
 
 ## Scripts
 
-| Command        | Description                               |
-|----------------|-------------------------------------------|
-| `yarn dev`     | Start the Vite dev server                 |
-| `yarn build`   | Type-check `lib/` and build the library   |
-| `yarn test`    | Run the unit tests (vitest)               |
-| `yarn lint`    | Lint the project                          |
+| Command      | Description                             |
+| ------------ | --------------------------------------- |
+| `yarn dev`   | Start the Vite dev server               |
+| `yarn build` | Type-check `lib/` and build the library |
+| `yarn test`  | Run the unit tests (vitest)             |
+| `yarn lint`  | Lint the project                        |
 
 ## Documentation
 

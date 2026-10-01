@@ -8,8 +8,8 @@ Components are stored in the tile map's `ComponentManager` and referenced by id 
 
 ```typescript
 interface IGameComponent {
-  componentType: string                // e.g. 'Sprite', used for save/restore
-  x: number                            // world position (set by the tile map when placed)
+  componentType: string // e.g. 'Sprite', used for save/restore
+  x: number // world position (set by the tile map when placed)
   y: number
   properties?: GameComponentProperties // { name?, ttl?, [key: string]: any }
   update?: (deltaTime: number) => void | boolean | null
@@ -54,18 +54,18 @@ To make a custom component restorable from a dump, it must also be added to
 
 ## Built-in components
 
-| Component                  | `componentType` | Key properties                                                                 |
-|----------------------------|-----------------|--------------------------------------------------------------------------------|
-| `TileComponent`            | `Tile`          | `width`, `height`, `color`, `backgroundColor`, `borderColor`, `text`           |
-| `SpriteComponent`          | `Sprite`        | `tileSize`, `spriteId` (global sprite id, see [Game Assets](game-assets.md))   |
-| `AnimatedSpriteComponent`  |                 | `tileSize`, `tilesheetName`, `startIdx`, `endIdx`, `speed`, `loop`, `autoPlay`, `ttl`, `elevation` |
-| `IsoCubeComponent`         | `IsoCube`       | `tileSize`, `width`, `depth`, `elevation`, `text`, `offset`, `lineDash`        |
-| `IsoCylinderComponent`     | `IsoCylinder`   | `tileSize`, `radius`, `depth`                                                  |
-| `IsoHexagonComponent`      | `IsoHexagon`    | `tileSize`, `sideLength`, `depth`                                              |
-| `IsoTextComponent`         | `Text`          | `text`, `font`, `color`, `orientation`, `skewOrientation`, `offset`            |
-| `IsoImageComponent`        |                 | `tileSize`, `imageName`, `scale`, `orientation` (`floor`, `left-wall`, `right-wall`) |
-| `IsoCharacterComponent`    |                 | Animated character. `tilesheetName` is a base name; the tilesheet `<name>-<direction>` (`up`/`down`/`left`/`right`) is used for the current movement direction. |
-| `TextComponent`, `LineComponent`, `GenericComponent`, `MovingTileComponent` | | Experimental / used by individual worlds. |
+| Component                                                                   | `componentType` | Key properties                                                                                                                                                  |
+| --------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TileComponent`                                                             | `Tile`          | `width`, `height`, `color`, `backgroundColor`, `borderColor`, `text`                                                                                            |
+| `SpriteComponent`                                                           | `Sprite`        | `tileSize`, `spriteId` (global sprite id, see [Game Assets](game-assets.md))                                                                                    |
+| `AnimatedSpriteComponent`                                                   |                 | `tileSize`, `tilesheetName`, `startIdx`, `endIdx`, `speed`, `loop`, `autoPlay`, `ttl`, `elevation`                                                              |
+| `IsoCubeComponent`                                                          | `IsoCube`       | `tileSize`, `width`, `depth`, `elevation`, `text`, `offset`, `lineDash`                                                                                         |
+| `IsoCylinderComponent`                                                      | `IsoCylinder`   | `tileSize`, `radius`, `depth`                                                                                                                                   |
+| `IsoHexagonComponent`                                                       | `IsoHexagon`    | `tileSize`, `sideLength`, `depth`                                                                                                                               |
+| `IsoTextComponent`                                                          | `Text`          | `text`, `font`, `color`, `orientation`, `skewOrientation`, `offset`                                                                                             |
+| `IsoImageComponent`                                                         |                 | `tileSize`, `imageName`, `scale`, `orientation` (`floor`, `left-wall`, `right-wall`)                                                                            |
+| `IsoCharacterComponent`                                                     |                 | Animated character. `tilesheetName` is a base name; the tilesheet `<name>-<direction>` (`up`/`down`/`left`/`right`) is used for the current movement direction. |
+| `TextComponent`, `LineComponent`, `GenericComponent`, `MovingTileComponent` |                 | Experimental / used by individual worlds.                                                                                                                       |
 
 Components exported from the library entry point: `AbstractGameComponent`, `AnimatedSpriteComponent`,
 `GenericComponent`, `IsoCubeComponent`, `IsoCylinderComponent`, `IsoHexagonComponent`, `SpriteComponent`,

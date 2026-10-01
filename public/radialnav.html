@@ -1,208 +1,277 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pure-CSS Radial Navigation</title>
-  <style>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pure-CSS Radial Navigation</title>
+    <style>
       :root {
-          --bg: #0b1020;
-          --fg: #eaf0ff;
-          --muted: #93a1c6;
-          --accent: #6ea8fe;
-          --ring: rgba(110,168,254,.25);
+        --bg: #0b1020;
+        --fg: #eaf0ff;
+        --muted: #93a1c6;
+        --accent: #6ea8fe;
+        --ring: rgba(110, 168, 254, 0.25);
       }
 
       /* Layout */
       body {
-          margin: 0;
-          min-height: 100svh;
-          display: grid;
-          place-items: center;
-          //background: radial-gradient(1000px 600px at 50% -20%, #18203a 0, #0b1020 60%);
-          color: var(--fg);
-          font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        margin: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        //background: radial-gradient(1000px 600px at 50% -20%, #18203a 0, #0b1020 60%);
+        color: var(--fg);
+        font:
+          16px/1.4 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Ubuntu,
+          Cantarell,
+          Noto Sans,
+          'Helvetica Neue',
+          Arial,
+          'Apple Color Emoji',
+          'Segoe UI Emoji';
       }
 
       .radial {
-          /* Tweak these three for quick customization */
-          --count: 6;                 /* total items */
-          --radius: 6rem;             /* circle radius */
-          --item-size: 3.25rem;       /* item button size */
+        /* Tweak these three for quick customization */
+        --count: 6; /* total items */
+        --radius: 6rem; /* circle radius */
+        --item-size: 3.25rem; /* item button size */
 
-          position: relative;
-          width: clamp(14rem, 42vw, 22rem);
-          aspect-ratio: 1;
-          display: grid;
-          place-items: center;
-          isolation: isolate;
+        position: relative;
+        width: clamp(14rem, 42vw, 22rem);
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        isolation: isolate;
       }
 
       /* Hidden toggle control (for pure CSS open/close) */
       .radial__toggle {
-          position: absolute;
-          inline-size: 1px;
-          block-size: 1px;
-          overflow: hidden;
-          clip-path: inset(50%);
-          clip: rect(0 0 0 0);
-          white-space: nowrap;
-          border: 0;
-          padding: 0;
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+        padding: 0;
       }
 
       /* Center button */
       .radial__center {
-          --shadow: 0 10px 30px rgba(0,0,0,.35), 0 0 0 0 var(--ring);
-          display: grid;
-          place-items: center;
-          inline-size: clamp(3.5rem, 10vw, 4.25rem);
-          block-size: clamp(3.5rem, 10vw, 4.25rem);
-          border-radius: 999px;
-          background: linear-gradient(180deg, #16243f, #0f1a31);
-          border: 1px solid #243359;
-          color: var(--fg);
-          cursor: pointer;
-          user-select: none;
-          box-shadow: var(--shadow);
-          transition: box-shadow .35s ease, transform .25s ease, background .25s ease;
-          outline: none;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 0 var(--ring);
+        display: grid;
+        place-items: center;
+        inline-size: clamp(3.5rem, 10vw, 4.25rem);
+        block-size: clamp(3.5rem, 10vw, 4.25rem);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #16243f, #0f1a31);
+        border: 1px solid #243359;
+        color: var(--fg);
+        cursor: pointer;
+        user-select: none;
+        box-shadow: var(--shadow);
+        transition:
+          box-shadow 0.35s ease,
+          transform 0.25s ease,
+          background 0.25s ease;
+        outline: none;
       }
-      .radial__center:hover { transform: translateY(-1px); }
-      .radial__center:active { transform: translateY(0); }
-      .radial__center:focus-visible { box-shadow: 0 0 0 3px var(--ring), 0 10px 30px rgba(0,0,0,.35); }
+      .radial__center:hover {
+        transform: translateY(-1px);
+      }
+      .radial__center:active {
+        transform: translateY(0);
+      }
+      .radial__center:focus-visible {
+        box-shadow:
+          0 0 0 3px var(--ring),
+          0 10px 30px rgba(0, 0, 0, 0.35);
+      }
 
       /* subtle ring */
       .radial::after {
-          content: "";
-          position: absolute;
-          inset: 12%;
-          border-radius: 50%;
-          border: 1px dashed rgba(147,161,198,.25);
-          pointer-events: none;
-          transform: scale(0.85);
-          opacity: 0;
-          transition: opacity .4s ease, transform .5s cubic-bezier(.25,.9,.25,1);
+        content: '';
+        position: absolute;
+        inset: 12%;
+        border-radius: 50%;
+        border: 1px dashed rgba(147, 161, 198, 0.25);
+        pointer-events: none;
+        transform: scale(0.85);
+        opacity: 0;
+        transition:
+          opacity 0.4s ease,
+          transform 0.5s cubic-bezier(0.25, 0.9, 0.25, 1);
       }
 
       /* Items container */
       .radial__items {
-          position: absolute;
-          inset: 0;
-          display: grid;
-          place-items: center;
-          /* closed by default */
-          --spread: 0rem;
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        /* closed by default */
+        --spread: 0rem;
       }
 
       /* Individual item */
       .radial__item {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          inline-size: var(--item-size);
-          block-size: var(--item-size);
-          margin: calc(-1 * var(--item-size) / 2);
-          display: grid;
-          place-items: center;
-          border-radius: 999px;
-          background: linear-gradient(180deg, #213458, #192947);
-          border: 1px solid #2a416e;
-          color: var(--fg);
-          text-decoration: none;
-          font-size: 1rem;
-          line-height: 1;
-          opacity: 0;
-          transform:
-                  rotate(var(--theta))
-                  translate(var(--spread))
-                  rotate(calc(-1 * var(--theta)));
-          transform-origin: 0 0;
-          transition:
-                  transform .55s cubic-bezier(.25,.9,.25,1),
-                  opacity .25s ease;
-          box-shadow: 0 6px 20px rgba(0,0,0,.25);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        inline-size: var(--item-size);
+        block-size: var(--item-size);
+        margin: calc(-1 * var(--item-size) / 2);
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #213458, #192947);
+        border: 1px solid #2a416e;
+        color: var(--fg);
+        text-decoration: none;
+        font-size: 1rem;
+        line-height: 1;
+        opacity: 0;
+        transform: rotate(var(--theta)) translate(var(--spread)) rotate(calc(-1 * var(--theta)));
+        transform-origin: 0 0;
+        transition:
+          transform 0.55s cubic-bezier(0.25, 0.9, 0.25, 1),
+          opacity 0.25s ease;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
       }
 
-      .radial__item:hover { filter: brightness(1.15); }
+      .radial__item:hover {
+        filter: brightness(1.15);
+      }
       .radial__item:focus-visible {
-          outline: none;
-          box-shadow: 0 0 0 3px var(--ring), 0 6px 20px rgba(0,0,0,.25);
+        outline: none;
+        box-shadow:
+          0 0 0 3px var(--ring),
+          0 6px 20px rgba(0, 0, 0, 0.25);
       }
 
       /* Icons-only style */
       .radial__item > span {
-          font-size: 1.15rem;
-          translate: 0 .5px; /* nudge emojis/SVG a hair */
+        font-size: 1.15rem;
+        translate: 0 0.5px; /* nudge emojis/SVG a hair */
       }
 
       /* OPEN STATE — driven purely via :checked */
-      .radial__toggle:checked ~ .radial__items { --spread: var(--radius); }
-      .radial__toggle:checked ~ .radial__items .radial__item { opacity: 1; }
-      .radial__toggle:checked ~ .radial__center {
-          background: linear-gradient(180deg, #23385f, #162a4d);
-          box-shadow: 0 0 0 6px var(--ring), 0 10px 30px rgba(0,0,0,.35);
+      .radial__toggle:checked ~ .radial__items {
+        --spread: var(--radius);
       }
       .radial__toggle:checked ~ .radial__items .radial__item {
-          /* fun little cascade: stagger open using index */
-          transition-delay: calc(var(--i) * 30ms);
+        opacity: 1;
+      }
+      .radial__toggle:checked ~ .radial__center {
+        background: linear-gradient(180deg, #23385f, #162a4d);
+        box-shadow:
+          0 0 0 6px var(--ring),
+          0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      .radial__toggle:checked ~ .radial__items .radial__item {
+        /* fun little cascade: stagger open using index */
+        transition-delay: calc(var(--i) * 30ms);
       }
       .radial__toggle:checked ~ .radial::after,
-      .radial__toggle:checked + .radial::after { /* some browsers need both selectors */
-          opacity: 1;
-          transform: none;
+      .radial__toggle:checked + .radial::after {
+        /* some browsers need both selectors */
+        opacity: 1;
+        transform: none;
       }
 
       /* Reduced motion: keep everything snappy */
       @media (prefers-reduced-motion: reduce) {
-          .radial__item,
-          .radial__center,
-          .radial::after { transition: none; }
+        .radial__item,
+        .radial__center,
+        .radial::after {
+          transition: none;
+        }
       }
-  </style>
-</head>
-<body>
+    </style>
+  </head>
+  <body>
+    <!-- Radial Nav -->
+    <section class="radial" aria-label="Radial navigation demo">
+      <!-- Toggle (pure CSS) -->
+      <input
+        class="radial__toggle"
+        type="checkbox"
+        id="nav-toggle"
+        aria-label="Toggle radial menu"
+        checked="checked"
+      />
+      <!-- Center button (label controls the checkbox) -->
+      <label class="radial__center" for="nav-toggle" aria-hidden="true">
+        <!-- You can swap this for an SVG icon -->
+        ☰
+      </label>
 
-<!-- Radial Nav -->
-<section class="radial" aria-label="Radial navigation demo">
-  <!-- Toggle (pure CSS) -->
-  <input class="radial__toggle" type="checkbox" id="nav-toggle" aria-label="Toggle radial menu" checked="checked" />
-  <!-- Center button (label controls the checkbox) -->
-  <label class="radial__center" for="nav-toggle" aria-hidden="true">
-    <!-- You can swap this for an SVG icon -->
-    ☰
-  </label>
-
-  <!-- Items container -->
-  <nav class="radial__items" role="navigation" aria-label="Circular menu">
-    <!--
+      <!-- Items container -->
+      <nav class="radial__items" role="navigation" aria-label="Circular menu">
+        <!--
       Set --count once on the wrapper (above).
       Each item sets its index --i (0..count-1).
       Angle per item is computed: --theta = --i * 1turn / --count
     -->
-    <a class="radial__item" style="--i:0; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Home">
-      <span>🏠</span>
-    </a>
-    <a class="radial__item" style="--i:1; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Search">
-      <span>🔎</span>
-    </a>
-    <a class="radial__item" style="--i:2; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Favorites">
-      <span>⭐</span>
-    </a>
-    <a class="radial__item" style="--i:3; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Messages">
-      <span>💬</span>
-    </a>
-    <a class="radial__item" style="--i:4; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Profile">
-      <span>👤</span>
-    </a>
-    <a class="radial__item" style="--i:5; --theta: calc(var(--i) * 1turn / var(--count));" href="#" aria-label="Settings">
-      <span>⚙️</span>
-    </a>
-  </nav>
-</section>
+        <a
+          class="radial__item"
+          style="--i: 0; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Home"
+        >
+          <span>🏠</span>
+        </a>
+        <a
+          class="radial__item"
+          style="--i: 1; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Search"
+        >
+          <span>🔎</span>
+        </a>
+        <a
+          class="radial__item"
+          style="--i: 2; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Favorites"
+        >
+          <span>⭐</span>
+        </a>
+        <a
+          class="radial__item"
+          style="--i: 3; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Messages"
+        >
+          <span>💬</span>
+        </a>
+        <a
+          class="radial__item"
+          style="--i: 4; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Profile"
+        >
+          <span>👤</span>
+        </a>
+        <a
+          class="radial__item"
+          style="--i: 5; --theta: calc(var(--i) * 1turn / var(--count))"
+          href="#"
+          aria-label="Settings"
+        >
+          <span>⚙️</span>
+        </a>
+      </nav>
+    </section>
 
-<script>
-  /* No JS required — left intentionally empty */
-</script>
-</body>
+    <script>
+      /* No JS required — left intentionally empty */
+    </script>
+  </body>
 </html>

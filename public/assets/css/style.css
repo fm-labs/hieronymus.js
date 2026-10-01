@@ -14,7 +14,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -46,7 +47,6 @@ a:hover {
   color: #fff;
   border-radius: 5px;
 }*/
-
 
 /*
 h1 {

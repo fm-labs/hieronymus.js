@@ -15,30 +15,30 @@ which shows an isometric map's top corner centered near the top of the screen.
 
 ## Controls
 
-| Input                                | Action                                         |
-|--------------------------------------|------------------------------------------------|
-| `W` / `A` / `S` / `D`                | Pan by 16 px                                   |
-| Mouse wheel / two-finger scroll      | Pan by the wheel delta (ignored while paused)  |
-| Pinch / ctrl + wheel / cmd + wheel   | Zoom by 0.1, between 0.5 and 10                |
+| Input                              | Action                                        |
+| ---------------------------------- | --------------------------------------------- |
+| `W` / `A` / `S` / `D`              | Pan by 16 px                                  |
+| Mouse wheel / two-finger scroll    | Pan by the wheel delta (ignored while paused) |
+| Pinch / ctrl + wheel / cmd + wheel | Zoom by 0.1, between 0.5 and 10               |
 
 !!! note
-    The HeroSystem also reacts to `WASD`, so with both systems added these keys move the camera and the hero.
+The HeroSystem also reacts to `WASD`, so with both systems added these keys move the camera and the hero.
 
 ## Events
 
-| Listens to          | Action                                          |
-|---------------------|-------------------------------------------------|
-| `keyboard.keydown`  | Pan with WASD                                   |
-| `wheel`             | Pan                                             |
-| `zoom`              | Zoom                                            |
-| `camera.reset`      | `offset = (0, 0)`, `zoom = 1`                   |
-| `camera.center`     | `offset = (0, 0)`, zoom unchanged               |
+| Listens to         | Action                            |
+| ------------------ | --------------------------------- |
+| `keyboard.keydown` | Pan with WASD                     |
+| `wheel`            | Pan                               |
+| `zoom`             | Zoom                              |
+| `camera.reset`     | `offset = (0, 0)`, `zoom = 1`     |
+| `camera.center`    | `offset = (0, 0)`, zoom unchanged |
 
 ## Methods
 
 ```typescript
-cameraSystem.moveTo(x, y)    // set the offset
-cameraSystem.centerTo(x, y)  // center the view on a world position
+cameraSystem.moveTo(x, y) // set the offset
+cameraSystem.centerTo(x, y) // center the view on a world position
 cameraSystem.setZoom(zoom)
-cameraSystem.resetCamera()   // offset (0, 0), zoom 1
+cameraSystem.resetCamera() // offset (0, 0), zoom 1
 ```

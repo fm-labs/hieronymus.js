@@ -1,18 +1,18 @@
 body {
-    /* background-color: #ffffff; */
+  /* background-color: #ffffff; */
 }
 
 .game-container {
-    /*border: 1px dashed rgba(255, 0, 0, 0.37);*/
+  /*border: 1px dashed rgba(255, 0, 0, 0.37);*/
 }
 
 .game-container canvas {
-    /* border: 1px dashed rgba(0, 128, 0, 0.36); */
-    margin: 0 !important;
-    padding: 0 !important;
-    position: absolute;
+  /* border: 1px dashed rgba(0, 128, 0, 0.36); */
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute;
 }
 
 #systemDiv > div {
-    text-align: right;
+  text-align: right;
 }

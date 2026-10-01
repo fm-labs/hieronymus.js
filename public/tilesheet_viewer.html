@@ -1,126 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Tilesheet Viewer</title>
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tilesheet Viewer</title>
+    <style>
       body {
-          background: #222;
-          color: #fff;
-          font-family: sans-serif;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 1em;
+        background: #222;
+        color: #fff;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1em;
       }
       canvas {
-          border: 1px solid #ccc;
-          image-rendering: pixelated;
+        border: 1px solid #ccc;
+        image-rendering: pixelated;
       }
 
       #info {
-          position: fixed;
-          top: 10px;
-          right: 10px;
+        position: fixed;
+        top: 10px;
+        right: 10px;
       }
-  </style>
-</head>
-<body>
-<h1>Tilesheet Viewer</h1>
-<canvas id="tilesheetCanvas"></canvas>
-<div id="info"></div>
-<div id="log"></div>
+    </style>
+  </head>
+  <body>
+    <h1>Tilesheet Viewer</h1>
+    <canvas id="tilesheetCanvas"></canvas>
+    <div id="info"></div>
+    <div id="log"></div>
 
-<script>
-  // Helper to parse query string
-  function getQueryParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      image_url: params.get('image_url'),
-      tile_size: parseInt(params.get('tile_size'), 10),
-      cols: parseInt(params.get('cols'), 10),
-      rows: parseInt(params.get('rows'), 10),
-    };
-  }
-
-  const { image_url, tile_size, cols, rows } = getQueryParams();
-
-  if (!image_url || !tile_size || !cols || !rows) {
-    document.body.innerHTML += '<p style="color:red;">Missing or invalid parameters in URL. Example usage: ?image_url=https://...&tile_size=32&cols=8&rows=4</p>';
-  } else {
-    const canvas = document.getElementById('tilesheetCanvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = cols * tile_size;
-      canvas.height = rows * tile_size;
-
-      // Draw image
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // Draw grid
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      for (let x = 0; x <= cols; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * tile_size, 0);
-        ctx.lineTo(x * tile_size, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= rows; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * tile_size);
-        ctx.lineTo(canvas.width, y * tile_size);
-        ctx.stroke();
-      }
-
-      // Draw each image tile separately
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const sx = col * tile_size;
-          const sy = row * tile_size;
-          ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-          ctx.strokeRect(sx, sy, tile_size, tile_size);
+    <script>
+      // Helper to parse query string
+      function getQueryParams() {
+        const params = new URLSearchParams(window.location.search)
+        return {
+          image_url: params.get('image_url'),
+          tile_size: parseInt(params.get('tile_size'), 10),
+          cols: parseInt(params.get('cols'), 10),
+          rows: parseInt(params.get('rows'), 10),
         }
       }
 
-      // Attach mouseover event to show tile info
-      canvas.addEventListener('mousemove', (event) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+      const { image_url, tile_size, cols, rows } = getQueryParams()
 
-        const colIndex = Math.floor(x / tile_size);
-        const rowIndex = Math.floor(y / tile_size);
+      if (!image_url || !tile_size || !cols || !rows) {
+        document.body.innerHTML +=
+          '<p style="color:red;">Missing or invalid parameters in URL. Example usage: ?image_url=https://...&tile_size=32&cols=8&rows=4</p>'
+      } else {
+        const canvas = document.getElementById('tilesheetCanvas')
+        const ctx = canvas.getContext('2d')
+        const img = new Image()
 
-        const colX = colIndex * tile_size;
-        const rowY = rowIndex * tile_size;
+        img.onload = () => {
+          canvas.width = cols * tile_size
+          canvas.height = rows * tile_size
 
-        if (colIndex < cols && rowIndex < rows) {
-          document.getElementById("info").innerHTML = `<div>Tile: (${colIndex}, ${rowIndex}) [${colX}, ${rowY}] | OnScreen Position: (${x.toFixed(2)}, ${y.toFixed(2)})</div>`;
-        } else {
-          document.getElementById("info").innerHTML = '';
+          // Draw image
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+          // Draw grid
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+          for (let x = 0; x <= cols; x++) {
+            ctx.beginPath()
+            ctx.moveTo(x * tile_size, 0)
+            ctx.lineTo(x * tile_size, canvas.height)
+            ctx.stroke()
+          }
+          for (let y = 0; y <= rows; y++) {
+            ctx.beginPath()
+            ctx.moveTo(0, y * tile_size)
+            ctx.lineTo(canvas.width, y * tile_size)
+            ctx.stroke()
+          }
+
+          // Draw each image tile separately
+          for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+              const sx = col * tile_size
+              const sy = row * tile_size
+              ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+              ctx.strokeRect(sx, sy, tile_size, tile_size)
+            }
+          }
+
+          // Attach mouseover event to show tile info
+          canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left
+            const y = event.clientY - rect.top
+
+            const colIndex = Math.floor(x / tile_size)
+            const rowIndex = Math.floor(y / tile_size)
+
+            const colX = colIndex * tile_size
+            const rowY = rowIndex * tile_size
+
+            if (colIndex < cols && rowIndex < rows) {
+              document.getElementById('info').innerHTML =
+                `<div>Tile: (${colIndex}, ${rowIndex}) [${colX}, ${rowY}] | OnScreen Position: (${x.toFixed(2)}, ${y.toFixed(2)})</div>`
+            } else {
+              document.getElementById('info').innerHTML = ''
+            }
+          })
         }
-      });
-    };
 
+        img.onerror = () => {
+          document.getElementById('log').innerHTML +=
+            '<div style="color:red;">Failed to load image.</div>'
+        }
 
-    img.onerror = () => {
-      document.getElementById("log").innerHTML += '<div style="color:red;">Failed to load image.</div>';
-    };
+        img.src = image_url
 
-    img.src = image_url;
+        // if (!img.complete) {
+        //   document.body.innerHTML += '<p>Loading image...</p>';
+        // }
 
-    // if (!img.complete) {
-    //   document.body.innerHTML += '<p>Loading image...</p>';
-    // }
-
-    // Log the image URL and tile size
-    document.getElementById("log").innerHTML += `<div>Image URL: <a href="${image_url}" target="_blank">${image_url}</a></div>`;
-    document.getElementById("log").innerHTML += `<div>Tile Size: ${tile_size}px</div>`;
-    document.getElementById("log").innerHTML += `<div>Columns: ${cols}, Rows: ${rows}</div>`;
-
-  }
-</script>
-</body>
+        // Log the image URL and tile size
+        document.getElementById('log').innerHTML +=
+          `<div>Image URL: <a href="${image_url}" target="_blank">${image_url}</a></div>`
+        document.getElementById('log').innerHTML += `<div>Tile Size: ${tile_size}px</div>`
+        document.getElementById('log').innerHTML += `<div>Columns: ${cols}, Rows: ${rows}</div>`
+      }
+    </script>
+  </body>
 </html>

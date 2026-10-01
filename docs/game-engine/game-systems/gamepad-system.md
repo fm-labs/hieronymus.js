@@ -13,12 +13,12 @@ Keyboard and mouse input is handled by the [InputSystem](input-system.md).
 
 ## Events
 
-| Source                    | Internal event         | Payload                                          |
-|---------------------------|------------------------|--------------------------------------------------|
-| `window` `gamepadconnected`    | `gamepad.connected`    | `Gamepad`                                   |
-| `window` `gamepaddisconnected` | `gamepad.disconnected` | `Gamepad`                                   |
-| polled, left stick        | `gamepad.stickChange`  | `{ stickLeft, stickRight, stickUp, stickDown }` (`GamepadStickChangeEvent`) |
-| polled, buttons           | `gamepad.buttonPress`  | `{ button, state: 'pressed' }` (`GamepadButtonChangeEvent`) |
+| Source                         | Internal event         | Payload                                                                     |
+| ------------------------------ | ---------------------- | --------------------------------------------------------------------------- |
+| `window` `gamepadconnected`    | `gamepad.connected`    | `Gamepad`                                                                   |
+| `window` `gamepaddisconnected` | `gamepad.disconnected` | `Gamepad`                                                                   |
+| polled, left stick             | `gamepad.stickChange`  | `{ stickLeft, stickRight, stickUp, stickDown }` (`GamepadStickChangeEvent`) |
+| polled, buttons                | `gamepad.buttonPress`  | `{ button, state: 'pressed' }` (`GamepadButtonChangeEvent`)                 |
 
 ### Polling behaviour
 

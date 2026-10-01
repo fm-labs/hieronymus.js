@@ -15,18 +15,18 @@ const tileMap = new TileMap({
 })
 ```
 
-| Property        | Description                                                        |
-|-----------------|--------------------------------------------------------------------|
-| `columns`, `rows` | Grid size in cells.                                              |
-| `tileWidth`     | `tileSize`                                                         |
-| `tileHeight`    | `tileSize / 2` (also for orthogonal maps, where it is unused by the projection) |
-| `projection`    | The grid projection, see below.                                    |
-| `layers`        | The layers, indexed by layer id.                                   |
-| `components`    | The `ComponentManager` holding all components of the map.          |
+| Property          | Description                                                                     |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `columns`, `rows` | Grid size in cells.                                                             |
+| `tileWidth`       | `tileSize`                                                                      |
+| `tileHeight`      | `tileSize / 2` (also for orthogonal maps, where it is unused by the projection) |
+| `projection`      | The grid projection, see below.                                                 |
+| `layers`          | The layers, indexed by layer id.                                                |
+| `components`      | The `ComponentManager` holding all components of the map.                       |
 
 !!! warning
-    `'dimetric'` is accepted by the `TileMapConfig` type and a `DimetricGridProjection` class exists,
-    but `TileMap` does not support it yet and throws `Unsupported projection type`.
+`'dimetric'` is accepted by the `TileMapConfig` type and a `DimetricGridProjection` class exists,
+but `TileMap` does not support it yet and throws `Unsupported projection type`.
 
 ## Layers
 
@@ -48,8 +48,8 @@ tileMap.addLayer(1, { name: 'Objects', type: 'OBJECT', data: [] })
 ```typescript
 tileMap.addTile(0, col, row, new SpriteComponent({ tileSize: 64, spriteId: 1 })) // returns the component id
 tileMap.assignTile(0, col, row, componentId) // put an existing component into a cell
-tileMap.getTile(0, col, row)                 // -> IGameComponent | undefined
-tileMap.resetTile(0, col, row)               // empty the cell
+tileMap.getTile(0, col, row) // -> IGameComponent | undefined
+tileMap.resetTile(0, col, row) // empty the cell
 ```
 
 `createTile(layerId, col, row, properties)` is deprecated; it creates a `TileComponent` from the given properties.
@@ -85,12 +85,12 @@ const dump = tileMap.dump() // { config, resources: null, layers, components }
 The TileMap editor's **Save** button downloads this dump as `save.json`.
 
 !!! warning "Restore is incomplete"
-    `new TileMap(dump.config, dump.layers, dump.components)` recreates the components via
-    `ComponentManager.restore()`, but the dump does not contain component positions (`x`, `y`),
-    so restored components are drawn at `(0, 0)` until they are placed again.
-    Only the types known to `ComponentManager.createComponent()` can be restored:
-    `Tile`, `Text` (IsoText), `Sprite`, `IsoCube`, `IsoHexagon`, `IsoCylinder`.
-    The editor's **Restore** button reads the file and emits `editor.restore`, but nothing handles it yet.
+`new TileMap(dump.config, dump.layers, dump.components)` recreates the components via
+`ComponentManager.restore()`, but the dump does not contain component positions (`x`, `y`),
+so restored components are drawn at `(0, 0)` until they are placed again.
+Only the types known to `ComponentManager.createComponent()` can be restored:
+`Tile`, `Text` (IsoText), `Sprite`, `IsoCube`, `IsoHexagon`, `IsoCylinder`.
+The editor's **Restore** button reads the file and emits `editor.restore`, but nothing handles it yet.
 
 ## Projections
 
@@ -104,10 +104,10 @@ interface IGrid2DProjection {
 }
 ```
 
-| Projection    | `mapGridToScreen(col, row)`                                         |
-|---------------|---------------------------------------------------------------------|
-| Orthogonal    | `x = col · tileSize`, `y = row · tileSize`                          |
-| Isometric     | `x = (col − row) · tileWidth/2`, `y = (col + row) · tileHeight/2` (2:1 diamonds) |
+| Projection | `mapGridToScreen(col, row)`                                                      |
+| ---------- | -------------------------------------------------------------------------------- |
+| Orthogonal | `x = col · tileSize`, `y = row · tileSize`                                       |
+| Isometric  | `x = (col − row) · tileWidth/2`, `y = (col + row) · tileHeight/2` (2:1 diamonds) |
 
 The same math is available as functions in `utils/gridutil`:
 `isometricGridToScreen`, `isometricScreenToGrid`, `orthogonalGridToScreen`, `orthogonalScreenToGrid`,
