@@ -1,4 +1,5 @@
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
+import type { IGame, IGameSystem, Screen2DPosition } from '../game.types'
+import { AbstractGameSystem } from './AbstractGameSystem'
 
 export class InfoSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'InfoSystem'

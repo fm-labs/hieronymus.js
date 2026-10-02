@@ -1,3 +1,4 @@
+import type { SpritesheetAtlas } from '../game.types'
 const loaderSuccessHandler = (res: Response) => {
   console.log(`Asset loaded from ${res.url}`)
   return res.json()

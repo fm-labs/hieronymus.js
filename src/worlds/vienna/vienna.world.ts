@@ -1,3 +1,4 @@
+import type { IGame, TileMapConfig, ITileMap } from '../../../lib/game.types'
 import { IsoCubeComponent, IsoCylinderComponent, SpriteComponent, TileMap } from '../../../lib'
 import { IsoTextComponent } from '../../../lib'
 import { TileComponent } from '../../../lib/components/TileComponent.ts'

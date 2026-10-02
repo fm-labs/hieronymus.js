@@ -1,5 +1,6 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import GameAssets from '../kernel/GameAssets.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import GameAssets from '../kernel/GameAssets'
 
 export interface SpriteComponentProps extends GameComponentProperties {
   tileSize: number

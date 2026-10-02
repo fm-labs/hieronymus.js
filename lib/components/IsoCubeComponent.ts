@@ -1,6 +1,7 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import { drawIsometricCube } from '../draw2d/drawiso.ts'
-import { drawElevation } from '../draw2d/drawelevation.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import { drawIsometricCube } from '../draw2d/drawiso'
+import { drawElevation } from '../draw2d/drawelevation'
 
 export interface IsoCubeComponentProps extends GameComponentProperties {
   tileSize: number

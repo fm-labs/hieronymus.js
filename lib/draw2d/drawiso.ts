@@ -1,7 +1,7 @@
-import { OrthogonalGridProjection } from '../map/OrthogonalGridProjection.ts'
-import { degreeToRadian } from '../utils/mathutil.ts'
-import { FILL_COLORS, STROKE_COLORS } from '../constants.ts'
-import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
+import { OrthogonalGridProjection } from '../map/OrthogonalGridProjection'
+import { degreeToRadian } from '../utils/mathutil'
+import { FILL_COLORS, STROKE_COLORS } from '../constants'
+import { IsometricGridProjection } from '../map/IsometricGridProjection'
 
 export function drawIsoTile(
   ctx: CanvasRenderingContext2D,

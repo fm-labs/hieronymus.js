@@ -1,4 +1,5 @@
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
+import type { IGame, IGameSystem, IGrid2DProjection, ITileMap } from '../game.types'
+import { AbstractGameSystem } from './AbstractGameSystem'
 
 /**
  * Renders grid lines for the tile map on its own canvas.

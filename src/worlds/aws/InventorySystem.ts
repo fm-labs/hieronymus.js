@@ -1,3 +1,4 @@
+import type { IGame, IGameSystem } from '../../../lib/game.types'
 import { AbstractGameSystem } from '../../../lib'
 import { AwsInventoryItemFull } from 'cloudia-common'
 

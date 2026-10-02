@@ -1,3 +1,4 @@
+import type { IGame } from '../lib/game.types'
 import { Game } from '../lib'
 
 type GameLauncher = (app: HTMLDivElement) => Promise<Game>

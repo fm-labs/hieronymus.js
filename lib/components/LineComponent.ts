@@ -1,4 +1,5 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
+import type { Screen2DPosition, GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
 
 export interface LineComponentProps extends GameComponentProperties {
   lineWidth: number

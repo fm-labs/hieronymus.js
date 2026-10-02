@@ -1,4 +1,5 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
 
 export interface MovingTileComponentProps extends GameComponentProperties {
   width: number

@@ -1,3 +1,4 @@
+import type { GameConfig } from '../../../lib/game.types'
 import { Game, GamepadSystem, HeroSystem, TileMapEditorSystem } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'

@@ -1,8 +1,18 @@
-import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
-import { ComponentManager } from '../kernel/ComponentManager.ts'
-import { getCellIndex } from '../utils/gridutil.ts'
-import { IsometricGridProjection } from './IsometricGridProjection.ts'
-import { OrthogonalGridProjection } from './OrthogonalGridProjection.ts'
+import type {
+  Grid2DPoint,
+  IGrid2DProjection,
+  TileMapConfig,
+  TileMapLayer,
+  TileMapLayerData,
+  TileMapDump,
+  ITileMap,
+  IGameComponent,
+} from '../game.types'
+import { TileComponent, TileComponentProps } from '../components/TileComponent'
+import { ComponentManager } from '../kernel/ComponentManager'
+import { getCellIndex } from '../utils/gridutil'
+import { IsometricGridProjection } from './IsometricGridProjection'
+import { OrthogonalGridProjection } from './OrthogonalGridProjection'
 
 export class TileMap implements ITileMap {
   // readonly assets: any[]

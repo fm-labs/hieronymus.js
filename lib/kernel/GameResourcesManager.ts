@@ -1,4 +1,5 @@
-import GameAssets from './GameAssets.ts'
+import type { IGameResources } from '../game.types'
+import GameAssets from './GameAssets'
 
 export class GameResourcesManager implements IGameResources {
   public loadImage(name: string, url: string): Promise<HTMLImageElement> {

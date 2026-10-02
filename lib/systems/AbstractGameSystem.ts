@@ -1,3 +1,4 @@
+import type { IGame } from '../game.types'
 export abstract class AbstractGameSystem {
   protected readonly _game: IGame
 

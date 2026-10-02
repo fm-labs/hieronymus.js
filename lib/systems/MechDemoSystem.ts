@@ -1,17 +1,23 @@
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import IsoCharacterComponent2 from '../components/IsoCharacterComponent2.ts'
+import type { IGame, IGameSystem, ITileMap } from '../game.types'
+import { AbstractGameSystem } from './AbstractGameSystem'
+import IsoCharacterComponent2 from '../components/IsoCharacterComponent2'
 
 export class MechDemoSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'MechDemoSystem'
 
   private readonly tileMap: ITileMap
+  private readonly layerId: number
   private _spawnTimer: any = undefined
   private _spawnTimer2: any = undefined
   //private _objects: number[] = []
 
-  constructor(game: IGame, tileMap: ITileMap) {
+  /**
+   * @param layerId - the OBJECT layer the mechs are spawned on
+   */
+  constructor(game: IGame, tileMap: ITileMap, layerId: number = 3) {
     super(game)
     this.tileMap = tileMap
+    this.layerId = layerId
   }
 
   public onLoad() {
@@ -75,7 +81,12 @@ export class MechDemoSystem extends AbstractGameSystem implements IGameSystem {
     const spawnPos = { col: randomCol, row: randomRow }
     //const spawnPos = { col: 5, row: 6 }
     const targetPos = { col: 12, row: 6 }
-    const character2Id = this.tileMap.addObjectAtGridPos(3, spawnPos.col, spawnPos.row, character2)
+    const character2Id = this.tileMap.addObjectAtGridPos(
+      this.layerId,
+      spawnPos.col,
+      spawnPos.row,
+      character2,
+    )
     //this._objects.push(character2Id)
     //
     // const randomTargetCol = Math.floor(Math.random() * this.tileMap.columns)

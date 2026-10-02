@@ -12,10 +12,10 @@ export default defineConfig({
   //     '~react-tabulator': path.resolve(__dirname, 'node_modules/react-tabulator'),
   //   },
   // },
-  plugins: [dts({ include: ['lib'] }), libInjectCss()],
+  plugins: [dts({ include: ['lib'], rollupTypes: true }), libInjectCss()],
   build: {
     minify: false,
-    copyPublicDir: true,
+    copyPublicDir: false, // public/ holds the demo app assets, they are not part of the library
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: resolve(`${__dirname}`, 'lib/index.ts'),

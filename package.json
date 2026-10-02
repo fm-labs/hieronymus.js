@@ -5,15 +5,15 @@
   "type": "module",
   "main": "dist/world-lib.umd.cjs",
   "module": "dist/world-lib.js",
-  "types": "dist/main.d.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/world-lib.js",
-      "require": "./dist/world-lib.umd.cjs",
-      "types": "./dist/main.d.ts"
+      "require": "./dist/world-lib.umd.cjs"
     }
   },
   "scripts": {
@@ -26,21 +26,19 @@
     "dev:watch": "tsc-watch --onSuccess \"yarn build\"",
     "test": "vitest --silent=false --reporter=verbose"
   },
-  "dependencies": {
-    "cloudia-common": "link:../cloudia-common",
-    "pug": "^3.0.2"
-  },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/pako": "^2.0.3",
     "@types/pug": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "cloudia-common": "link:../cloudia-common",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "pako": "^2.1.0",
     "prettier": "^3.1.1",
+    "pug": "^3.0.2",
     "sass": "^1.72.0",
     "tsc-watch": "^6.0.4",
     "typescript": "^5.2.2",

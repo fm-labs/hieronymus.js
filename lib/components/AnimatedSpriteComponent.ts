@@ -1,6 +1,7 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import GameAssets, { Sprite, Tilesheet } from '../kernel/GameAssets.ts'
-import { drawElevation } from '../draw2d/drawelevation.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import GameAssets, { Sprite, Tilesheet } from '../kernel/GameAssets'
+import { drawElevation } from '../draw2d/drawelevation'
 
 const DEFAULT_SPEED = 1
 

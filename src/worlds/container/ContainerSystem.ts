@@ -1,3 +1,4 @@
+import type { IGame, IGameSystem, ITileMap, IGameComponent } from '../../../lib/game.types'
 import {
   AbstractGameSystem,
   IsoHexagonComponent,

@@ -68,5 +68,5 @@ To make a custom component restorable from a dump, it must also be added to
 | `TextComponent`, `LineComponent`, `GenericComponent`, `MovingTileComponent` |                 | Experimental / used by individual worlds.                                                                                                                       |
 
 Components exported from the library entry point: `AbstractGameComponent`, `AnimatedSpriteComponent`,
-`GenericComponent`, `IsoCubeComponent`, `IsoCylinderComponent`, `IsoHexagonComponent`, `SpriteComponent`,
-`IsoTextComponent`. The others are imported from `lib/components/*` directly.
+`GenericComponent`, `IsoCubeComponent`, `IsoCylinderComponent`, `IsoHexagonComponent`, `IsoImageComponent`,
+`IsoTextComponent`, `SpriteComponent`, `TileComponent`. The others are imported from `lib/components/*` directly.

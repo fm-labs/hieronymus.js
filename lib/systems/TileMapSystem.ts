@@ -1,8 +1,7 @@
-import { getCellIndex } from '../utils/gridutil.ts'
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
-import { ComponentManager } from '../kernel/ComponentManager.ts'
-import IsoCharacterComponent from '../components/IsoCharacterComponent.ts'
+import type { IGame, IGameComponent, IGameSystem, ITileMap } from '../game.types'
+import { getCellIndex } from '../utils/gridutil'
+import { AbstractGameSystem } from './AbstractGameSystem'
+import { IsometricGridProjection } from '../map/IsometricGridProjection'
 
 export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'TileMapSystem'
@@ -17,6 +16,13 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
 
   private _drawCounter: number = 0
 
+  /**
+   * Cell indices in back-to-front (painter's) order.
+   * Cells are sorted by their screen y position, which is row by row for orthogonal maps
+   * and diagonal by diagonal (col + row) for isometric maps.
+   */
+  private readonly cellDrawOrder: number[]
+
   constructor(game: IGame, tileMap: ITileMap, canvas?: HTMLCanvasElement) {
     super(game)
 
@@ -25,7 +31,19 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     this.rows = tileMap.rows
     this.tsize = tileMap.tileWidth
     this.worldCanvas = canvas ? canvas : document.createElement('canvas')
+    this.cellDrawOrder = this.computeCellDrawOrder()
     console.log('TileMapSystem.constructor', this.cols, this.rows, this.tsize)
+  }
+
+  private computeCellDrawOrder(): number[] {
+    const cells: { idx: number; x: number; y: number }[] = []
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const { x, y } = this.tileMap.projection.mapGridToScreen(c, r)
+        cells.push({ idx: getCellIndex(c, r, this.cols), x, y })
+      }
+    }
+    return cells.sort((a, b) => a.y - b.y || a.x - b.x).map((cell) => cell.idx)
   }
 
   public onLoad() {
@@ -84,12 +102,18 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     //layerCanvasCtx.imageSmoothingQuality = 'high'
     layerCanvasCtx.translate(-this._game.camera.offset.x, -this._game.camera.offset.y)
     layerCanvasCtx.scale(this._game.camera.zoom, this._game.camera.zoom)
+    let depthSortedDrawn = false
     this.tileMap.layers.forEach((layer, layerIdx) => {
-      //console.log('layer', layerIdx, layer.type, layer.data.length)
-      if (layer.type === 'TILE') {
-        this.drawTiles(layerIdx, layerCanvasCtx)
+      if (layer.depthSort) {
+        // all depthSort layers are merged and drawn at the position of the first one
+        if (!depthSortedDrawn) {
+          this.drawComponents(this.collectDepthSortedComponents(), layerCanvasCtx)
+          depthSortedDrawn = true
+        }
+      } else if (layer.type === 'TILE') {
+        this.drawComponents(this.collectTiles(layerIdx), layerCanvasCtx)
       } else if (layer.type === 'OBJECT') {
-        this.drawObjects(layerIdx, layerCanvasCtx)
+        this.drawComponents(sortByDepth(this.collectObjects(layerIdx)), layerCanvasCtx)
       }
     })
 
@@ -111,45 +135,56 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
     })
   }
 
-  private drawTiles(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
-    for (let c = 0; c < this.cols; c++) {
-      for (let r = 0; r < this.rows; r++) {
-        const cellIdx = getCellIndex(c, r, this.cols)
-        const componentIdx = this.tileMap.layers[layerIdx]?.data[cellIdx]
-        if (!componentIdx) continue
+  /** Tiles of a TILE layer in painter's order. */
+  private collectTiles(layerIdx: number): IGameComponent[] {
+    const data = this.tileMap.layers[layerIdx]?.data || []
+    const components: IGameComponent[] = []
+    for (const cellIdx of this.cellDrawOrder) {
+      const componentId = data[cellIdx]
+      if (!componentId) continue
+      const component = this.tileMap.components.get(componentId)
+      if (component) components.push(component)
+    }
+    return components
+  }
 
-        const component = this.tileMap.getTile(layerIdx, c, r)
-        if (!component) continue
+  /** Components of an OBJECT layer in insertion order. */
+  private collectObjects(layerIdx: number): IGameComponent[] {
+    const data = this.tileMap.layers[layerIdx]?.data || []
+    const components: IGameComponent[] = []
+    for (const componentId of data) {
+      const component = this.tileMap.components.get(componentId)
+      if (component) components.push(component)
+    }
+    return components
+  }
 
-        //console.log('entity', componentIdx, component)
-        if (component.draw) {
-          layerCtx.save()
-          component.draw(layerCtx)
-          layerCtx.restore()
-          this._drawCounter++
-        }
-      }
+  /** Components of all depthSort layers, sorted back-to-front. */
+  private collectDepthSortedComponents(): IGameComponent[] {
+    const components: IGameComponent[] = []
+    this.tileMap.layers.forEach((layer, layerIdx) => {
+      if (!layer.depthSort) return
+      const layerComponents =
+        layer.type === 'TILE' ? this.collectTiles(layerIdx) : this.collectObjects(layerIdx)
+      components.push(...layerComponents)
+    })
+    return sortByDepth(components)
+  }
+
+  private drawComponents(components: IGameComponent[], ctx: CanvasRenderingContext2D) {
+    for (const component of components) {
+      if (!component.draw) continue
+      ctx.save()
+      component.draw(ctx)
+      ctx.restore()
+      this._drawCounter++
     }
   }
 
-  private drawObjects(layerIdx: number, layerCtx: CanvasRenderingContext2D) {
-    //console.log('TileMapSystem.drawObjects', layerIdx, this.tileMap.layers[layerIdx].data.length)
-    const objects = this.tileMap.layers[layerIdx].data || []
-    objects.forEach((componentId, idx) => {
-      const component = this.tileMap.components.get(componentId)
-      if (component && component.draw) {
-        //console.log('entity', componentId, component)
-        layerCtx.save()
-        component.draw(layerCtx)
-        layerCtx.restore()
-        this._drawCounter++
-      }
-    })
-  }
-
   private updateLayer(layerIdx: number, deltaTime: number) {
-    const layerData = this.tileMap.layers[layerIdx].data
-    layerData.forEach((componentId, idx) => {
+    // iterate over a copy, components may be removed during the update
+    const layerData = [...this.tileMap.layers[layerIdx].data]
+    layerData.forEach((componentId) => {
       const component = this.tileMap.components.get(componentId)
       if (component && component.update) {
         const updateResult = component.update(deltaTime)
@@ -161,4 +196,12 @@ export class TileMapSystem extends AbstractGameSystem implements IGameSystem {
       }
     })
   }
+}
+
+/**
+ * Sort components back-to-front by their screen y position (stable, so ties keep their order).
+ * For isometric maps y grows with col + row, for orthogonal maps with the row.
+ */
+function sortByDepth(components: IGameComponent[]): IGameComponent[] {
+  return components.sort((a, b) => a.y - b.y)
 }

@@ -1,3 +1,5 @@
+import type { Grid2DCell } from '../../game.types'
+import type { IMapSelection } from '../editor.types'
 export class CellSelection implements IMapSelection {
   private _cells: Grid2DCell[] = []
 

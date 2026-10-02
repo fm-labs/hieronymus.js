@@ -1,4 +1,5 @@
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
+import type { IGameSystem } from '../game.types'
+import { AbstractGameSystem } from './AbstractGameSystem'
 
 export class DevPanelSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'DevPanelSystem'

@@ -1,3 +1,4 @@
+import type { MoveDirection, Point2D } from '../game.types'
 export function calculateWaypoints(p1: Point2D, p2: Point2D): Point2D[] {
   const waypoints: Point2D[] = []
   waypoints.push(p1)

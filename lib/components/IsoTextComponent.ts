@@ -1,5 +1,6 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import { degreeToRadian } from '../utils/mathutil.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import { degreeToRadian } from '../utils/mathutil'
 
 export interface IsoTextComponentProps extends GameComponentProperties {
   text: string

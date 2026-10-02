@@ -1,5 +1,6 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import { FILL_COLORS, STROKE_COLORS } from '../constants.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import { FILL_COLORS, STROKE_COLORS } from '../constants'
 
 export interface IsoCylinderComponentProps extends GameComponentProperties {
   radius: number

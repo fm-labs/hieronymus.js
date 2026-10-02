@@ -1,4 +1,5 @@
-interface WorldBuilderProps {
+import type { Camera2D, Point2D } from './game.types'
+export interface WorldBuilderProps {
   name: string
   label?: string
   width: number
@@ -7,9 +8,9 @@ interface WorldBuilderProps {
   resources?: WorldResources
 }
 
-type WorldBuilder = (props: WorldBuilderProps) => World
+export type WorldBuilder = (props: WorldBuilderProps) => World
 
-type WorldInstanceType = World & {
+export type WorldInstanceType = World & {
   getCell: (x: number, y: number) => WorldCell | undefined
   setCell(cell: WorldCell): void
   setCells: (cells: WorldCell[]) => void
@@ -19,24 +20,24 @@ type WorldInstanceType = World & {
   stop(): void
 }
 
-interface WorldViewerProps {
+export interface WorldViewerProps {
   world: WorldInstanceType
   renderProps: WorldRenderProps
 }
 
-interface WorldEditorProps extends WorldViewerProps {
+export interface WorldEditorProps extends WorldViewerProps {
   editMode?: string
   onRenderPropsChange?: (props: WorldRenderProps) => void
   onWorldChange?: (world: World) => void
 }
 
-type World = WorldBuilderProps & {
+export type World = WorldBuilderProps & {
   cells: WorldCell[]
 }
 
-type WorldCellType = 'default' | string
+export type WorldCellType = 'default' | string
 
-type WorldCell = {
+export type WorldCell = {
   type?: WorldCellType
   x: number
   y: number
@@ -47,7 +48,7 @@ type WorldCell = {
   layers?: WorldCellLayer[]
 }
 
-type WorldCellLayer = {
+export type WorldCellLayer = {
   idx: number
   //label?: string
   fillColor?: string
@@ -56,23 +57,23 @@ type WorldCellLayer = {
   //properties?: any
 }
 
-type WorldCellSelection = Point2D[]
+export type WorldCellSelection = Point2D[]
 
 // type StandardCell = WorldCell & { type: "STANDARD" }
 // type VirtualCell = WorldCell & { type: "VIRTUAL" }
 
-interface WorldRendererProps extends WorldRenderProps {
+export interface WorldRendererProps extends WorldRenderProps {
   world: World
   resources: WorldResources
 }
 
-interface WorldResources {
+export interface WorldResources {
   backgroundImage?: string
   //spritesheets?: Spritesheet[]
   //images?: ImageSprite[]
 }
 
-interface WorldRenderProps {
+export interface WorldRenderProps {
   rendererName: string
   cellSize: number
   canvasWidth: number
@@ -82,7 +83,7 @@ interface WorldRenderProps {
   //spritesheets?: Spritesheet[]
 }
 
-type WorldConfig = {
+export type WorldConfig = {
   world: WorldBuilderProps
   render: WorldRenderProps
 }

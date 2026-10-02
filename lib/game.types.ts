@@ -1,6 +1,6 @@
 /** GAME ENGINE **/
 
-type GameConfig = {
+export type GameConfig = {
   id: string
   name?: string
   fullscreen?: boolean
@@ -8,7 +8,7 @@ type GameConfig = {
   height?: number
 }
 
-interface IGame {
+export interface IGame {
   $container: HTMLDivElement
   //$canvas: HTMLCanvasElement
 
@@ -48,7 +48,7 @@ interface IGame {
   deltaTime: number
 }
 
-interface IGameSystem {
+export interface IGameSystem {
   name: string
   onLoad?: () => void
   onUnload?: () => void
@@ -58,11 +58,11 @@ interface IGameSystem {
   draw?: (ctx: CanvasRenderingContext2D) => void
 }
 
-interface IScene {
+export interface IScene {
   name: string
 }
 
-interface ISceneManager {
+export interface ISceneManager {
   addScene(scene: IScene): void
   getScene(name: string): IScene | undefined
   removeScene(name: string): void
@@ -72,7 +72,7 @@ interface ISceneManager {
 
 /** EVENTS **/
 
-interface IEventBus {
+export interface IEventBus {
   on: (eventName: string, callback: (e: any) => void) => void
   off: (eventName: string, callback: (e: any) => void) => void
   emit: (eventName: string, e: any) => void
@@ -80,26 +80,26 @@ interface IEventBus {
 
 /** GRID **/
 
-type Grid2DPosition = {
+export type Grid2DPosition = {
   col: number
   row: number
 }
 
-type Grid2DCell = Grid2DPosition & {
+export type Grid2DCell = Grid2DPosition & {
   //col: number
   //row: number
   props?: any
 }
 
-type Screen2DPosition = {
+export type Screen2DPosition = {
   x: number
   y: number
 }
 
-type Grid2DPoint = [number, number]
-type Screen2DPoint = [number, number]
+export type Grid2DPoint = [number, number]
+export type Screen2DPoint = [number, number]
 
-interface IGrid2DProjection {
+export interface IGrid2DProjection {
   mapGridToScreen(col: number, row: number): { x: number; y: number }
   mapScreenToGrid(x: number, y: number): { col: number; row: number }
   getGridDimensions(): { width: number; height: number }
@@ -107,31 +107,38 @@ interface IGrid2DProjection {
 
 /** TILE MAP **/
 
-type TileMapConfig = {
+export type TileMapConfig = {
   columns: number
   rows: number
   tileSize: number
   projection: 'orthogonal' | 'isometric' | 'dimetric'
 }
 
-type TileMapLayer = {
+export type TileMapLayer = {
   name: string
   type: 'TILE' | 'OBJECT' //| 'BACKGROUND' | 'IMAGELAYER' | 'OVERLAY'
   data: TileMapLayerData[]
   locked?: boolean
   visible?: boolean
+  /**
+   * Depth-sort this layer together with all other `depthSort` layers.
+   * Use it for layers with things that stand up from the ground (buildings, characters),
+   * so that moving objects can pass in front of and behind them.
+   * The merged layers are drawn at the position of the first `depthSort` layer.
+   */
+  depthSort?: boolean
 }
 
-type TileMapLayerData = number
+export type TileMapLayerData = number
 
-type TileMapDump = {
+export type TileMapDump = {
   config: TileMapConfig
   resources: any
   layers: TileMapLayer[]
   components: { id: number; componentType: string; properties: GameComponentProperties }[]
 }
 
-interface ITileMap {
+export interface ITileMap {
   columns: number
   rows: number
   tileWidth: number
@@ -180,13 +187,13 @@ interface ITileMap {
   //restore(dump: TileMapDump): void
 }
 
-type GameComponentProperties = {
+export type GameComponentProperties = {
   name?: string
   ttl?: number // time to live in seconds
   [key: string]: any
 }
 
-interface IGameComponent {
+export interface IGameComponent {
   componentType: string
   x: number
   y: number
@@ -196,18 +203,18 @@ interface IGameComponent {
   setPosition: (x: number, y: number) => void
 }
 
-interface IComponentManager {
+export interface IComponentManager {
   add(component: IGameComponent, nextId?: number): number
   set(id: number, component: IGameComponent): void
   get(id: number): IGameComponent | undefined
 }
 
 /** SPRITESHEET ATLAS **/
-type SpritesheetAtlas = {
+export type SpritesheetAtlas = {
   sprites: SpritesheetAtlasItem[]
 }
 
-type SpritesheetAtlasItem = {
+export type SpritesheetAtlasItem = {
   id: number
   name: string
   x: number
@@ -321,7 +328,7 @@ type SpritesheetAtlasItem = {
 
 /** RESOURCE TYPES **/
 
-interface IGameResources {
+export interface IGameResources {
   loadFont(name: string, url: string): Promise<void>
   loadImage(name: string, url: string): Promise<HTMLImageElement>
   loadSpritesheet(name: string, imageUrl: string, atlasUrl: string, nextgid?: number): Promise<void>
@@ -339,7 +346,7 @@ interface IGameResources {
 /** INPUT TYPES **/
 
 // payload of the 'gamepad.stickChange' event
-type GamepadStickChangeEvent = {
+export type GamepadStickChangeEvent = {
   stickLeft: boolean
   stickRight: boolean
   stickUp: boolean
@@ -347,18 +354,18 @@ type GamepadStickChangeEvent = {
 }
 
 // payload of the 'gamepad.buttonPress' event
-type GamepadButtonChangeEvent = {
+export type GamepadButtonChangeEvent = {
   button: number
   state: ButtonState
 }
 
-type ButtonState = 'pressed' | 'released'
+export type ButtonState = 'pressed' | 'released'
 
-type MoveDirection = 'up' | 'down' | 'left' | 'right'
+export type MoveDirection = 'up' | 'down' | 'left' | 'right'
 
 /** CAMERA TYPES **/
 
-type Camera2D = {
+export type Camera2D = {
   offset: Point2D
   //width: number
   //height: number
@@ -367,7 +374,7 @@ type Camera2D = {
   //angle: number
 }
 
-type Point2D = {
+export type Point2D = {
   x: number
   y: number
 }

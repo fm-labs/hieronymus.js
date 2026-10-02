@@ -1,7 +1,9 @@
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { getGridPosFromIndex } from '../utils/gridutil.ts'
-import { SpriteComponent } from '../components/SpriteComponent.ts'
-import GameAssets from '../kernel/GameAssets.ts'
+import type { IGame, IGameSystem, TileMapLayer, ITileMap } from '../game.types'
+import type { IMapSelection } from '../editor/editor.types'
+import { AbstractGameSystem } from './AbstractGameSystem'
+import { getGridPosFromIndex } from '../utils/gridutil'
+import { SpriteComponent } from '../components/SpriteComponent'
+import GameAssets from '../kernel/GameAssets'
 
 export class TileMapEditorSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'TileMapEditorSystem'

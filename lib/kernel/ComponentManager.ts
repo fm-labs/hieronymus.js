@@ -1,12 +1,10 @@
-import { TileComponent, TileComponentProps } from '../components/TileComponent.ts'
-import { IsoTextComponent, IsoTextComponentProps } from '../components/IsoTextComponent.ts'
-import { IsoCubeComponent, IsoCubeComponentProps } from '../components/IsoCubeComponent.ts'
-import { SpriteComponent, SpriteComponentProps } from '../components/SpriteComponent.ts'
-import { IsoHexagonComponent, IsoHexagonComponentProps } from '../components/IsoHexagonComponent.ts'
-import {
-  IsoCylinderComponent,
-  IsoCylinderComponentProps,
-} from '../components/IsoCylinderComponent.ts'
+import type { IGameComponent, IComponentManager } from '../game.types'
+import { TileComponent, TileComponentProps } from '../components/TileComponent'
+import { IsoTextComponent, IsoTextComponentProps } from '../components/IsoTextComponent'
+import { IsoCubeComponent, IsoCubeComponentProps } from '../components/IsoCubeComponent'
+import { SpriteComponent, SpriteComponentProps } from '../components/SpriteComponent'
+import { IsoHexagonComponent, IsoHexagonComponentProps } from '../components/IsoHexagonComponent'
+import { IsoCylinderComponent, IsoCylinderComponentProps } from '../components/IsoCylinderComponent'
 
 export class ComponentManager implements IComponentManager {
   private readonly _components: Map<number, IGameComponent> = new Map()

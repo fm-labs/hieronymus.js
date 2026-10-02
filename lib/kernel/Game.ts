@@ -1,5 +1,6 @@
-import { EventBus } from './EventBus.ts'
-import { GameResourcesManager } from './GameResourcesManager.ts'
+import type { GameConfig, IGame, IGameSystem, IGameResources, Camera2D } from '../game.types'
+import { EventBus } from './EventBus'
+import { GameResourcesManager } from './GameResourcesManager'
 
 export class Game implements IGame {
   public readonly config: GameConfig

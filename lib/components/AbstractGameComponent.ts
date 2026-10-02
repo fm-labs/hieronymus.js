@@ -1,3 +1,4 @@
+import type { GameComponentProperties } from '../game.types'
 export abstract class AbstractGameComponent {
   declare static defaultProperties: GameComponentProperties
 

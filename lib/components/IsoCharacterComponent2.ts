@@ -1,5 +1,5 @@
-import { AnimatedSpriteComponent, AnimatedSpriteComponentProps } from './AnimatedSpriteComponent.ts'
-import { calculateIsoWaypoints, calculateWaypoints, getDirection } from '../utils/gridpathutil.ts'
+import { AnimatedSpriteComponent, AnimatedSpriteComponentProps } from './AnimatedSpriteComponent'
+import { calculateIsoWaypoints, calculateWaypoints, getDirection } from '../utils/gridpathutil'
 
 type MovementDirection = 'up' | 'down' | 'left' | 'right'
 

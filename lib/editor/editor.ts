@@ -1,4 +1,5 @@
-import { WORLD_EDITOR_CELL_TOGGLE_DEADALIVE, WorldEditorModeType } from './editorModes.ts'
+import type { WorldInstanceType, WorldCell, WorldCellLayer } from '../world.types'
+import { WORLD_EDITOR_CELL_TOGGLE_DEADALIVE, WorldEditorModeType } from './editorModes'
 
 export class WorldInstanceEditor {
   public world: WorldInstanceType

@@ -19,8 +19,12 @@ On every tick:
 2. **Draw** – the canvas is reset, translated by `-camera.offset` and scaled by `camera.zoom`.
    Then the layers are drawn in layer id order:
 
-   - **TILE layers** are drawn column by column, then row by row.
-   - **OBJECT layers** are drawn in the order of their `data` list.
+   - **TILE layers** are drawn back to front: diagonal by diagonal for isometric maps, row by row for
+     orthogonal maps. The cell order is computed once from the projection.
+   - **OBJECT layers** are sorted by the components' current `y` position.
+   - **`depthSort` layers** are merged and sorted together, and drawn at the position of the first one.
+
+   See [Draw order and depth sorting](../game-world.md#draw-order-and-depth-sorting).
 
    Every `component.draw(ctx)` call is wrapped in `ctx.save()` / `ctx.restore()`.
 

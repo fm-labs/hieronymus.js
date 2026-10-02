@@ -1,5 +1,6 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
-import { drawIsometricHexagon } from '../draw2d/drawiso.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
+import { drawIsometricHexagon } from '../draw2d/drawiso'
 
 export interface IsoHexagonComponentProps extends GameComponentProperties {
   sideLength: number

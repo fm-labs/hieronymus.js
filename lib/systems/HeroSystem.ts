@@ -1,6 +1,13 @@
-import { randomColor } from '../utils/colorutil.ts'
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import IsoCharacterComponent2 from '../components/IsoCharacterComponent2.ts'
+import type {
+  IGame,
+  IGameSystem,
+  GamepadStickChangeEvent,
+  GamepadButtonChangeEvent,
+  MoveDirection,
+} from '../game.types'
+import { randomColor } from '../utils/colorutil'
+import { AbstractGameSystem } from './AbstractGameSystem'
+import IsoCharacterComponent2 from '../components/IsoCharacterComponent2'
 
 export class HeroSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'HeroSystem'

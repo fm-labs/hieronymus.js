@@ -1,3 +1,4 @@
+import type { GameConfig } from '../../../lib/game.types'
 import { Game, GamepadSystem, HeroSystem } from '../../../lib'
 import { GridSystem } from '../../../lib'
 import { TileMapSystem } from '../../../lib'
@@ -25,7 +26,7 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new GridLinesSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
   game.addSystem(new TileMapEditorSystem(game, tileMap))
-  game.addSystem(new MechDemoSystem(game, tileMap))
+  game.addSystem(new MechDemoSystem(game, tileMap, 5)) // 5 = 'Objects' layer, depth-sorted with the buildings
 
   return game
 }

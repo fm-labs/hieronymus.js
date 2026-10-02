@@ -1,3 +1,4 @@
+import type { IGame, TileMapConfig, ITileMap } from '../../../lib/game.types'
 import { isometricGridToScreen, TileMap } from '../../../lib'
 import { SpriteComponent } from '../../../lib'
 import { IsoTextComponent } from '../../../lib'
@@ -63,8 +64,8 @@ const devWorldBuilder = async (game: IGame): Promise<ITileMap> => {
   worldMap.addLayer(LAYER_UNDERGROUND, { name: 'Underground', type: 'TILE', data: [] })
   worldMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILE', data: [] })
   worldMap.addLayer(LAYER_LABELS, { name: 'Labels', type: 'OBJECT', data: [] })
-  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILE', data: [] })
-  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [] })
+  worldMap.addLayer(LAYER_BUILDINGS, { name: 'Buildings', type: 'TILE', data: [], depthSort: true })
+  worldMap.addLayer(LAYER_OBJECTS, { name: 'Objects', type: 'OBJECT', data: [], depthSort: true })
 
   let rowNr = 0
 

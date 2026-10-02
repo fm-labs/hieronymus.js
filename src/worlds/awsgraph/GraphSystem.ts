@@ -1,3 +1,4 @@
+import type { IGame, IGameSystem } from '../../../lib/game.types'
 import { AbstractGameSystem } from '../../../lib'
 
 const awsAccountIds = new Set<string>([

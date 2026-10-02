@@ -1,7 +1,8 @@
-import { drawIsoTile } from '../draw2d/drawiso.ts'
-import { AbstractGameSystem } from './AbstractGameSystem.ts'
-import { getCellIndex } from '../utils/gridutil.ts'
-import { IsometricGridProjection } from '../map/IsometricGridProjection.ts'
+import type { IGame, IGameSystem, Grid2DPosition, IGrid2DProjection, ITileMap } from '../game.types'
+import { drawIsoTile } from '../draw2d/drawiso'
+import { AbstractGameSystem } from './AbstractGameSystem'
+import { getCellIndex } from '../utils/gridutil'
+import { IsometricGridProjection } from '../map/IsometricGridProjection'
 
 export class GridSystem extends AbstractGameSystem implements IGameSystem {
   public readonly name = 'GridSystem'

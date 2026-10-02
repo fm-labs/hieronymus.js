@@ -1,3 +1,4 @@
+import type { GameConfig } from '../../../lib/game.types'
 import { GameResourcesManager } from '../../../lib'
 import { Game } from '../../../lib'
 import { GridSystem } from '../../../lib'

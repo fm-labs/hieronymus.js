@@ -1,3 +1,4 @@
+import type { IGrid2DProjection } from '../game.types'
 export class DimetricGridProjection implements IGrid2DProjection {
   private readonly tileWidth: number
   private readonly tileHeight: number

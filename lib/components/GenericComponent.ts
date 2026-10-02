@@ -1,4 +1,5 @@
-import { AbstractGameComponent } from './AbstractGameComponent.ts'
+import type { GameComponentProperties, IGameComponent } from '../game.types'
+import { AbstractGameComponent } from './AbstractGameComponent'
 
 export class GenericComponent extends AbstractGameComponent implements IGameComponent {
   public readonly componentType: string = 'Generic'

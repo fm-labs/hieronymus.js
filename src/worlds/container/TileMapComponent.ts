@@ -1,3 +1,10 @@
+import type {
+  IGame,
+  TileMapConfig,
+  TileMapLayer,
+  GameComponentProperties,
+  IGameComponent,
+} from '../../../lib/game.types'
 import { AbstractGameComponent, Game, IsoCubeComponent, TileMap, TileMapSystem } from '../../../lib'
 
 export interface TileMapComponentProps extends GameComponentProperties {

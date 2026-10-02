@@ -34,10 +34,32 @@ Layers are added with an explicit numeric id. The id is also the draw order: lay
 
 ```typescript
 tileMap.addLayer(0, { name: 'Ground', type: 'TILE', data: [] })
-tileMap.addLayer(1, { name: 'Objects', type: 'OBJECT', data: [] })
+tileMap.addLayer(1, { name: 'Buildings', type: 'TILE', data: [], depthSort: true })
+tileMap.addLayer(2, { name: 'Characters', type: 'OBJECT', data: [], depthSort: true })
+tileMap.addLayer(3, { name: 'Labels', type: 'OBJECT', data: [] })
 ```
 
 `addLayer()` initializes `data`, so any value passed in is replaced.
+
+### Draw order and depth sorting
+
+Within a layer, components are drawn back to front (painter's algorithm), sorted by their screen `y` position.
+For isometric maps `y` grows with `col + row`, so cells are drawn diagonal by diagonal;
+for orthogonal maps they are drawn row by row. Objects are sorted by their **current** position every frame,
+so moving objects are ordered correctly.
+
+Layer order still wins over depth: a character on a later layer is always drawn over a building on an earlier one.
+To let things pass behind each other across layers, set `depthSort: true` on those layers:
+
+- All `depthSort` layers are merged and sorted together by `y`, and drawn at the position of the
+  **first** `depthSort` layer.
+- On equal `y`, components keep their layer order (and their order within the layer).
+- Only use it for things that stand up from the ground (buildings, trees, characters).
+  Flat layers (ground, roads) must not be depth-sorted, or ground tiles further down the screen
+  would be drawn over the feet of characters standing above them.
+
+The sort key is the component's anchor position (`x`, `y`) as set by the tile map / `setPosition()`,
+so components should be anchored consistently relative to their cell.
 
 ### TILE layer
 

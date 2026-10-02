@@ -1,3 +1,4 @@
+import type { GameComponentProperties, IGameComponent } from '../../../lib/game.types'
 import {
   AbstractGameComponent,
   IsoCubeComponent,

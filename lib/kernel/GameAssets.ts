@@ -1,4 +1,4 @@
-import { fetchSpritesheetAtlas } from '../utils/assetfetch.ts'
+import { fetchSpritesheetAtlas } from '../utils/assetfetch'
 
 export type Sprite = {
   imageName: string // sprite sheet image in image cache

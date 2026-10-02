@@ -26,6 +26,19 @@ Some worlds need data that is not in the repository:
 
 Launchers are loaded lazily, so a missing file only breaks the world that needs it.
 
+## Using the library
+
+`yarn build` writes the package to `dist/`: an ES module (`world-lib.js`), a UMD build (`world-lib.umd.cjs`)
+and a single bundled type declaration file (`index.d.ts`). The demo assets in `public/` are not included.
+
+```typescript
+import { Game, TileMap, TileMapSystem } from 'world'
+import type { IGame, ITileMap, TileMapConfig } from 'world'
+```
+
+All engine types (`IGame`, `IGameSystem`, `ITileMap`, `IGameComponent`, …) are regular exports.
+Inside this repository they are imported from `lib/game.types` (`import type { IGame } from '../game.types'`).
+
 ## Scripts
 
 | Command      | Description                             |

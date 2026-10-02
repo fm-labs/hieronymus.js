@@ -1,3 +1,5 @@
+import type { Camera2D } from '../game.types'
+import type { WorldCell } from '../world.types'
 // deprecated module
 
 const defaultCamera: Camera2D = {
