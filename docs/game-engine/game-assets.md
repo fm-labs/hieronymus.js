@@ -3,8 +3,8 @@
 Assets are loaded through `game.resources` (a `GameResourcesManager`) and cached in `GameAssets`.
 
 !!! note
-`GameAssets` is a **global static cache**, shared by all `Game` instances on the page.
-Components look up their images in `GameAssets` directly; `game.resources` only provides the loaders.
+    `GameAssets` is a **global static cache**, shared by all `Game` instances on the page.
+    Components look up their images in `GameAssets` directly; `game.resources` only provides the loaders.
 
 ## Loading
 

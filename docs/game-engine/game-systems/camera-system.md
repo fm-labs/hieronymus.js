@@ -22,7 +22,7 @@ which shows an isometric map's top corner centered near the top of the screen.
 | Pinch / ctrl + wheel / cmd + wheel | Zoom by 0.1, between 0.5 and 10               |
 
 !!! note
-The HeroSystem also reacts to `WASD`, so with both systems added these keys move the camera and the hero.
+    The HeroSystem also reacts to `WASD`, so with both systems added these keys move the camera and the hero.
 
 ## Events
 

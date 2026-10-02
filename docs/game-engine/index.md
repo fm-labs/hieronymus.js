@@ -57,8 +57,8 @@ await game.run()
 `src/worlds/dev/` is a complete working example (`?world=dev` in the demo app).
 
 !!! note
-The order in which systems are added matters: each drawing system appends its canvas to the
-container, so systems added later are drawn on top.
+    The order in which systems are added matters: each drawing system appends its canvas to the
+    container, so systems added later are drawn on top.
 
 ## Game
 

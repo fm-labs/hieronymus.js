@@ -25,8 +25,8 @@ const tileMap = new TileMap({
 | `components`      | The `ComponentManager` holding all components of the map.                       |
 
 !!! warning
-`'dimetric'` is accepted by the `TileMapConfig` type and a `DimetricGridProjection` class exists,
-but `TileMap` does not support it yet and throws `Unsupported projection type`.
+    `'dimetric'` is accepted by the `TileMapConfig` type and a `DimetricGridProjection` class exists,
+    but `TileMap` does not support it yet and throws `Unsupported projection type`.
 
 ## Layers
 
@@ -107,12 +107,12 @@ const dump = tileMap.dump() // { config, resources: null, layers, components }
 The TileMap editor's **Save** button downloads this dump as `save.json`.
 
 !!! warning "Restore is incomplete"
-`new TileMap(dump.config, dump.layers, dump.components)` recreates the components via
-`ComponentManager.restore()`, but the dump does not contain component positions (`x`, `y`),
-so restored components are drawn at `(0, 0)` until they are placed again.
-Only the types known to `ComponentManager.createComponent()` can be restored:
-`Tile`, `Text` (IsoText), `Sprite`, `IsoCube`, `IsoHexagon`, `IsoCylinder`.
-The editor's **Restore** button reads the file and emits `editor.restore`, but nothing handles it yet.
+    `new TileMap(dump.config, dump.layers, dump.components)` recreates the components via
+    `ComponentManager.restore()`, but the dump does not contain component positions (`x`, `y`),
+    so restored components are drawn at `(0, 0)` until they are placed again.
+    Only the types known to `ComponentManager.createComponent()` can be restored:
+    `Tile`, `Text` (IsoText), `Sprite`, `IsoCube`, `IsoHexagon`, `IsoCylinder`.
+    The editor's **Restore** button reads the file and emits `editor.restore`, but nothing handles it yet.
 
 ## Projections
 

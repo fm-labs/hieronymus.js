@@ -13,9 +13,9 @@ see [Camera](../game-world.md#camera)) and emits grid events.
 It also adds a small info box in the bottom left corner with the mouse, canvas and grid position.
 
 !!! note
-The GridSystem still computes a cell highlight (hovered cell, its row and column, selected cell) every tick,
-but its canvas is not attached to the container, so the highlight is not visible.
-Use the [GridLinesSystem](#gridlinessystem) to show the grid.
+    The GridSystem still computes a cell highlight (hovered cell, its row and column, selected cell) every tick,
+    but its canvas is not attached to the container, so the highlight is not visible.
+    Use the [GridLinesSystem](#gridlinessystem) to show the grid.
 
 ## Events
 

@@ -1,0 +1,3 @@
+# MkDocs (Python-Markdown) needs 4-space indentation for admonitions and nested lists,
+# which prettier rewrites
+docs/
