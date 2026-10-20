@@ -26,6 +26,7 @@ Read them in this order; each one adds a few ideas to the previous one.
 | `src/worlds/isovegas`       | `?world=isovegas`   | **Multi-cell landmarks**, a drawing kit with **day and night**, a shared scene clock, a sky, camera fit and fly-to.                                              |
 | `src/worlds/isoairport`     | `?world=isoairport` | **Geometry off the grid**: diagonal runways and taxiways drawn in grid space, planes on paths with a state machine, sliced buildings, a sky layer, a flight board. |
 | `src/worlds/isosoccer`      | `?world=isosoccer`  | **A game on the map**: ball physics with height, a team AI, keyboard control of one agent (arrow keys), goals sliced per cell, a TV camera that follows the ball. |
+| `src/worlds/isoaws`         | `?world=isoaws`     | **A city generated from data**: an AWS inventory becomes islands (regions), walled campuses (VPCs) and plots (subnets); one ground component with view culling, links drawn as arcs, an explorer tree, deep links (`?select=`). |
 
 ## Anatomy of a world
 
@@ -281,7 +282,8 @@ transparent); restore it in `stop()`.
 - **Picking:** screen → world → grid (see the table above), then look up what is on that cell. For multi-cell
   footprints, search the footprint rectangles. Picking works on the ground cell, so a click on the top of a
   tall building selects the cell behind it; a list of places to click is a friendly addition.
-- **URL parameters** are cheap and make demos and testing easier: `?seed=`, `?cols=` (isoislands), `?hour=22` (isovegas).
+- **URL parameters** are cheap and make demos and testing easier: `?seed=`, `?cols=` (isoislands), `?hour=22` (isovegas),
+  `?account=`, `?select=` (isoaws).
 
 ## Testing and checking
 
