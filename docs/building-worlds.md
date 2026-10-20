@@ -24,6 +24,7 @@ Read them in this order; each one adds a few ideas to the previous one.
 | `src/worlds/isocity`        | `?world=isocity`    | The sim-city pattern: an ASCII map, custom building/road/vehicle components, **traffic rules**, depth-sorted layers, a HUD.                                    |
 | `src/worlds/isocasino`      | `?world=isocasino`  | A floor manager: rooms, objects with stats, **pedestrians** reusing the traffic rules, **click to select** with an info panel.                                  |
 | `src/worlds/isovegas`       | `?world=isovegas`   | **Multi-cell landmarks**, a drawing kit with **day and night**, a shared scene clock, a sky, camera fit and fly-to.                                              |
+| `src/worlds/isoairport`     | `?world=isoairport` | **Geometry off the grid**: diagonal runways and taxiways drawn in grid space, planes on paths with a state machine, sliced buildings, a sky layer, a flight board. |
 
 ## Anatomy of a world
 
