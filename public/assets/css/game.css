@@ -1,5 +1,8 @@
+html,
 body {
   /* background-color: #ffffff; */
+  /* no bounce, and no two-finger swipe back/forward, when the wheel reaches the end of the page */
+  overscroll-behavior: none;
 }
 
 .game-container {
