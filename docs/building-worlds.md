@@ -25,6 +25,7 @@ Read them in this order; each one adds a few ideas to the previous one.
 | `src/worlds/isocasino`      | `?world=isocasino`  | A floor manager: rooms, objects with stats, **pedestrians** reusing the traffic rules, **click to select** with an info panel.                                  |
 | `src/worlds/isovegas`       | `?world=isovegas`   | **Multi-cell landmarks**, a drawing kit with **day and night**, a shared scene clock, a sky, camera fit and fly-to.                                              |
 | `src/worlds/isoairport`     | `?world=isoairport` | **Geometry off the grid**: diagonal runways and taxiways drawn in grid space, planes on paths with a state machine, sliced buildings, a sky layer, a flight board. |
+| `src/worlds/isosoccer`      | `?world=isosoccer`  | **A game on the map**: ball physics with height, a team AI, keyboard control of one agent (arrow keys), goals sliced per cell, a TV camera that follows the ball. |
 
 ## Anatomy of a world
 

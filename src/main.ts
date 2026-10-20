@@ -32,6 +32,8 @@ const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
     (await import('./worlds/isovienna/isoviennaGameLauncher.ts')).isoviennaGameLauncher,
   isoairport: async () =>
     (await import('./worlds/isoairport/isoairportGameLauncher.ts')).isoairportGameLauncher,
+  isosoccer: async () =>
+    (await import('./worlds/isosoccer/isosoccerGameLauncher.ts')).isosoccerGameLauncher,
 }
 
 // read the 'world' query parameter
