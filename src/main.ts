@@ -20,6 +20,10 @@ const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
   snake: async () => (await import('./worlds/snake/snakeGameLauncher.ts')).snakeGameLauncher,
   isosnake: async () =>
     (await import('./worlds/isosnake/isosnakeGameLauncher.ts')).isosnakeGameLauncher,
+  isoislands: async () =>
+    (await import('./worlds/isoislands/isoislandsGameLauncher.ts')).isoislandsGameLauncher,
+  isocity: async () =>
+    (await import('./worlds/isocity/isocityGameLauncher.ts')).isocityGameLauncher,
 }
 
 // read the 'world' query parameter
