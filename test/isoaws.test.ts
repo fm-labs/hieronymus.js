@@ -148,43 +148,53 @@ describe('isoaws layout', () => {
     }
   })
 
-  it('keeps districts apart from each other, sharing their ring roads', () => {
+  it('keeps every campus inside its island, with no roads outside the campuses', () => {
+    const campuses = layout.districts.flatMap((d) => d.campuses.map((c) => c.rect))
     for (const d of layout.districts) {
       const r = d.rect
-      for (let col = r.col; col < r.col + r.cols; col++) {
-        expect(isRoad(col, r.row)).toBe(true)
-        expect(isRoad(col, r.row + r.rows - 1)).toBe(true)
-      }
       for (const c of d.campuses) {
-        // a campus lies inside its district, away from the ring road
-        expect(c.rect.col).toBeGreaterThan(r.col + 1)
-        expect(c.rect.row).toBeGreaterThan(r.row + 1)
-        expect(c.rect.col + c.rect.cols).toBeLessThan(r.col + r.cols - 1)
-        expect(c.rect.row + c.rect.rows).toBeLessThan(r.row + r.rows - 1)
+        expect(c.rect.col).toBeGreaterThan(r.col)
+        expect(c.rect.row).toBeGreaterThan(r.row)
+        expect(c.rect.col + c.rect.cols).toBeLessThan(r.col + r.cols)
+        expect(c.rect.row + c.rect.rows).toBeLessThan(r.row + r.rows)
       }
+    }
+    const inside = (col: number, row: number) =>
+      campuses.some(
+        (c) => col >= c.col && col < c.col + c.cols && row >= c.row && row < c.row + c.rows,
+      )
+    for (const [col, row] of roadCells(layout)) {
+      expect(inside(col, row), `road outside a campus at ${col},${row}`).toBe(true)
     }
   })
 
-  it('connects all roads', () => {
-    const roads = roadCells(layout)
-    const seen = new Set([roads[0].join()])
-    const queue = [roads[0]]
-    while (queue.length) {
-      const [col, row] = queue.pop()!
-      for (const [dc, dr] of [
-        [0, 1],
-        [1, 0],
-        [0, -1],
-        [-1, 0],
-      ]) {
-        const next: [number, number] = [col + dc, row + dr]
-        if (isRoad(...next) && !seen.has(next.join())) {
-          seen.add(next.join())
-          queue.push(next)
+  it('connects the roads of each campus, and only those', () => {
+    for (const campus of layout.districts.flatMap((d) => d.campuses)) {
+      const r = campus.rect
+      const roads = roadCells(layout).filter(
+        ([col, row]) =>
+          col >= r.col && col < r.col + r.cols && row >= r.row && row < r.row + r.rows,
+      )
+      const seen = new Set([roads[0].join()])
+      const queue = [roads[0]]
+      while (queue.length) {
+        const [col, row] = queue.pop()!
+        for (const [dc, dr] of [
+          [0, 1],
+          [1, 0],
+          [0, -1],
+          [-1, 0],
+        ]) {
+          const next: [number, number] = [col + dc, row + dr]
+          if (isRoad(...next) && !seen.has(next.join())) {
+            seen.add(next.join())
+            queue.push(next)
+          }
         }
       }
+      // all of the campus' roads, and none from elsewhere
+      expect(seen.size).toBe(roads.length)
     }
-    expect(seen.size).toBe(roads.length)
   })
 
   it('has no road wider than one lane', () => {

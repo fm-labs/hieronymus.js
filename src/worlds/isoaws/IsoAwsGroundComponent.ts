@@ -88,8 +88,6 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
         if (!isVisible(scene, x, y, tileSize)) continue
         visible.push([col, row])
         area({ col, row, cols: 1, rows: 1 }, GROUND_COLORS.road)
-        // bridges stand on pillars above the water
-        if (layout.owner[row * layout.columns + col] < 0) this.drawPillar(p, col, row)
       }
     }
     for (const [color, path] of paths) {
@@ -169,17 +167,6 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
       ctx.stroke()
       ctx.restore()
     }
-  }
-
-  /** A bridge pillar below a road cell over the water */
-  private drawPillar(p: IsoPainter, col: number, row: number) {
-    const [x, y] = p.at(col + 0.5, row + 0.5)
-    p.box(x, y + SLAB_DEPTH, {
-      cols: 0.2,
-      rows: 0.2,
-      height: SLAB_DEPTH,
-      color: GROUND_COLORS.slab,
-    })
   }
 
   /** Lane dashes along the straight pieces of road */

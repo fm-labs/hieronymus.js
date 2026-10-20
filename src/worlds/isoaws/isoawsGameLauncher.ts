@@ -56,7 +56,13 @@ async function loadInventory(params: URLSearchParams) {
 }
 
 export const isoawsGameLauncher = async (app: HTMLDivElement) => {
-  const config: GameConfig = { id: 'isoaws', name: 'Iso AWS', fullscreen: true }
+  const config: GameConfig = {
+    id: 'isoaws',
+    name: 'Iso AWS',
+    fullscreen: true,
+    // as far out as fitView goes for all accounts
+    camera: { minZoom: 0.08 },
+  }
   const game = new Game(app, config)
 
   game.addSystem(new InputSystem(game))

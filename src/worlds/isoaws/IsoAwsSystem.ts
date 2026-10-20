@@ -121,7 +121,7 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
       'left:10px;top:10px;bottom:76px;width:280px;display:flex;flex-direction:column;padding:0',
     )
     this.$info = this.createPanel(
-      'right:10px;top:10px;width:300px;max-height:calc(100% - 96px);overflow-y:auto',
+      'right:10px;top:10px;width:300px;max-height:calc(100vh - 96px);overflow-y:auto',
     )
     this.$hud = this.createPanel('left:10px;bottom:10px;right:10px;padding:8px 14px')
     this.renderExplorer()
@@ -387,7 +387,8 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
     // the panel class makes the system ignore clicks on it
     $panel.className = 'isoaws-panel'
     $panel.style.cssText =
-      `position:absolute;${position};z-index:10;padding:12px 14px;box-sizing:border-box;` +
+      // fixed to the viewport, so the panels stay put whatever the canvas and the page do
+      `position:fixed;${position};z-index:10;padding:12px 14px;box-sizing:border-box;` +
       'background:rgba(15,20,34,0.86);color:#e8ecf4;font:12px/1.5 "Helvetica Neue",Arial,sans-serif;' +
       'border-radius:10px;border:1px solid rgba(255,153,0,0.35);' +
       'box-shadow:0 6px 24px rgba(0,0,0,0.35);backdrop-filter:blur(6px)'
