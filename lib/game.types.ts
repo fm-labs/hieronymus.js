@@ -6,6 +6,8 @@ export type GameConfig = {
   fullscreen?: boolean
   width?: number
   height?: number
+  /** limits for the user's zoom gestures (default 0.05 … 10) */
+  camera?: { minZoom?: number; maxZoom?: number }
 }
 
 export interface IGame {

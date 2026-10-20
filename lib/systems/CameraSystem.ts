@@ -1,5 +1,29 @@
-import type { IGame, IGameSystem } from '../game.types'
+import type { Camera2D, IGame, IGameSystem } from '../game.types'
 import { AbstractGameSystem } from './AbstractGameSystem'
+
+/**
+ * Zooms the camera by `factor`, keeping the world point under `screen` (relative to the container)
+ * in place. The view is drawn with translate(-offset), then scale(zoom).
+ * A zoom outside the limits, e.g. set by a world to fit the map, may move back towards them, never further.
+ */
+export function zoomCameraAt(
+  camera: Camera2D,
+  factor: number,
+  screen: { x: number; y: number },
+  minZoom: number,
+  maxZoom: number,
+): Camera2D {
+  const { offset, zoom } = camera
+  const next = Math.min(Math.max(maxZoom, zoom), Math.max(Math.min(minZoom, zoom), zoom * factor))
+  return {
+    ...camera,
+    zoom: next,
+    offset: {
+      x: ((screen.x + offset.x) / zoom) * next - screen.x,
+      y: ((screen.y + offset.y) / zoom) * next - screen.y,
+    },
+  }
+}
 
 export class CameraSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'CameraSystem'
@@ -91,22 +115,18 @@ export class CameraSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private handleZoomEvent(e: WheelEvent) {
-    const deltaX = e.deltaX
-    const deltaY = e.deltaY
-    const minZoom = 0.5
-    const maxZoom = 10
-    const zoomStep = 0.1
-    if (deltaY < 0) {
-      // zoom in
-      const newZoom = Math.min(this._game.camera.zoom + zoomStep, maxZoom)
-      console.log('zoom in', newZoom)
-      this._game.camera.zoom = newZoom
-    } else {
-      // zoom out
-      const newZoom = Math.max(this._game.camera.zoom - zoomStep, minZoom)
-      console.log('zoom out', newZoom)
-      this._game.camera.zoom = newZoom
+    if (this._game.gamePaused) {
+      return
     }
+    const { minZoom = 0.05, maxZoom = 10 } = this._game.config.camera ?? {}
+    const rect = this._game.$container.getBoundingClientRect()
+    this._game.camera = zoomCameraAt(
+      this._game.camera,
+      Math.exp(-e.deltaY * 0.01),
+      { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      minZoom,
+      maxZoom,
+    )
   }
 
   private handleCameraResetEvent() {

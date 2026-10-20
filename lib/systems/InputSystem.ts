@@ -12,6 +12,7 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     this.handleMouseEvent = this.handleMouseEvent.bind(this)
     this.handleWheelEvent = this.handleWheelEvent.bind(this)
     this.handleWindowResizeEvent = this.handleWindowResizeEvent.bind(this)
+    this.handleGestureEvent = this.handleGestureEvent.bind(this)
   }
 
   public onLoad() {
@@ -32,6 +33,9 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
 
     // The `{ passive: false }` option is important to allow `preventDefault` to work.
     window.addEventListener('wheel', this.handleWheelEvent, { passive: false })
+    // Safari pinches with gesture events, which would zoom the page
+    window.addEventListener('gesturestart', this.handleGestureEvent)
+    window.addEventListener('gesturechange', this.handleGestureEvent)
 
     // handle window resize events
     window.addEventListener('resize', this.handleWindowResizeEvent)
@@ -88,6 +92,8 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     window.removeEventListener('mouseup', this.handleMouseEvent)
     window.removeEventListener('dblclick', this.handleMouseEvent)
     window.removeEventListener('wheel', this.handleWheelEvent)
+    window.removeEventListener('gesturestart', this.handleGestureEvent)
+    window.removeEventListener('gesturechange', this.handleGestureEvent)
     window.removeEventListener('resize', this.handleWindowResizeEvent)
   }
 
@@ -113,24 +119,19 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     // event.deltaX - The horizontal scroll amount
     // event.deltaY - The vertical scroll amount
 
-    const isCtrlPressed = e.ctrlKey || e.metaKey // metaKey for Mac command key
-
-    if (e.deltaX === 0 && e.deltaY % 1 !== 0) {
+    // ctrl + wheel, and the trackpad pinch (which browsers send as ctrl + wheel), zoom;
+    // metaKey for the Mac command key
+    if ((e.ctrlKey || e.metaKey) && e.deltaY !== 0) {
+      // the camera zooms, not the page
+      e.preventDefault()
       this._game.eventbus.emit('zoom', e)
-      console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
-    } else if (isCtrlPressed && e.deltaY !== 0) {
-      this._game.eventbus.emit('zoom', e)
-      console.log('zoom event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
     } else {
-      //this._game.eventbus.emit(`mouse.${e.type}`, e)
-      //console.log('wheel event', e.deltaX, e.deltaY, e.type, e.altKey, e.ctrlKey, e.shiftKey, e)
       this._game.eventbus.emit('wheel', e)
     }
+  }
 
-    // @todo Evaluate: Disable browser zoom when using wheel / trackpad gesture
-    //e.preventDefault()
-    //e.stopPropagation()
-    //e.stopImmediatePropagation()
+  private handleGestureEvent(e: Event) {
+    e.preventDefault()
   }
 
   private handleWindowResizeEvent(e: UIEvent) {
