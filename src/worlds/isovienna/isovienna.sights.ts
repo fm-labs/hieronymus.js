@@ -1,0 +1,482 @@
+import type { LandmarkKind, PropKind } from './isovienna.map.ts'
+
+/**
+ * Travel-guide details for the side pane. Addresses and lines are real,
+ * opening hours, prices, ratings and crowds are mocked up for the demo.
+ */
+export type SightDetails = {
+  /** e.g. "Gothic cathedral" */
+  category: string
+  /** Vienna's districts are numbered, the 1st is the old town */
+  district?: string
+  address?: string
+  built?: string
+  architect?: string
+  style?: string
+  /** Opening hours, 0..24, close may be past midnight. Missing = always open. */
+  open?: [number, number]
+  tickets?: string
+  /** U-Bahn and tram lines */
+  transport?: string
+  rating: number
+  reviews: number
+  /** The busiest hour of the day */
+  peak: number
+  highlights: string[]
+  tip: string
+}
+
+export const SIGHT_DETAILS: Record<LandmarkKind, SightDetails> = {
+  stephansdom: {
+    category: 'Gothic cathedral',
+    district: '1st · Innere Stadt',
+    address: 'Stephansplatz 3, 1010 Wien',
+    built: '1137 – 1511',
+    architect: 'Hans Puchsbaum, Anton Pilgram',
+    style: 'Romanesque & Gothic',
+    open: [6, 22],
+    tickets: 'Free · tower climb € 6.50 · catacombs € 7',
+    transport: 'U1 U3 Stephansplatz',
+    rating: 4.8,
+    reviews: 48213,
+    peak: 14,
+    highlights: [
+      'Climb the 343 steps of the south tower',
+      'The Pummerin, Austria’s largest bell',
+      'The catacombs with the urns of the Habsburgs',
+      'The colorful tiled roof with the double-headed eagle',
+    ],
+    tip: 'Come at dusk: the roof tiles glow and the square is full of street musicians.',
+  },
+  hofburg: {
+    category: 'Imperial palace',
+    district: '1st · Innere Stadt',
+    address: 'Michaelerkuppel, 1010 Wien',
+    built: '13th century – 1913',
+    architect: 'Fischer von Erlach, Gottfried Semper',
+    style: 'Gothic to Neo-Baroque',
+    open: [9, 18],
+    tickets: 'Sisi Museum & apartments € 18 · students € 16',
+    transport: 'U3 Herrengasse · tram 1 2 D 71',
+    rating: 4.6,
+    reviews: 31877,
+    peak: 11,
+    highlights: [
+      'The Sisi Museum and the imperial apartments',
+      'The Spanish Riding School with its white Lipizzaner horses',
+      'The imperial treasury with the crown of the Holy Roman Empire',
+      'The baroque state hall of the National Library',
+    ],
+    tip: 'Watch the Lipizzaners train in the morning, it costs a fraction of a show.',
+  },
+  staatsoper: {
+    category: 'Opera house',
+    district: '1st · Innere Stadt',
+    address: 'Opernring 2, 1010 Wien',
+    built: '1861 – 1869',
+    architect: 'August Sicard von Sicardsburg, Eduard van der Nüll',
+    style: 'Neo-Renaissance',
+    open: [10, 23],
+    tickets: 'Standing room € 15 · guided tour € 13 · seats from € 20',
+    transport: 'U1 U2 U4 Karlsplatz · tram 1 2 D 71',
+    rating: 4.8,
+    reviews: 27450,
+    peak: 19,
+    highlights: [
+      'More than 350 performances a season, a different opera almost every night',
+      'The Opera Ball on the last Thursday of carnival',
+      'Live opera on the big screen outside, for free',
+    ],
+    tip: 'Queue for standing room 80 minutes before the show: the best acoustics for the price of a schnitzel.',
+  },
+  burgtheater: {
+    category: 'Theatre',
+    district: '1st · Innere Stadt',
+    address: 'Universitätsring 2, 1010 Wien',
+    built: '1874 – 1888',
+    architect: 'Gottfried Semper, Carl von Hasenauer',
+    style: 'Neo-Baroque',
+    open: [10, 23],
+    tickets: 'Tour € 9 · seats from € 8',
+    transport: 'U2 Schottentor · tram 1 71 D',
+    rating: 4.7,
+    reviews: 8932,
+    peak: 19,
+    highlights: [
+      'Ceiling paintings by the young Gustav Klimt in the staircases',
+      'Classics and premieres in German, some with English surtitles',
+    ],
+    tip: 'Ask for the staircase tour, the Klimt paintings are hidden from the audience.',
+  },
+  rathaus: {
+    category: 'City hall',
+    district: '1st · Innere Stadt',
+    address: 'Friedrich-Schmidt-Platz 1, 1010 Wien',
+    built: '1872 – 1883',
+    architect: 'Friedrich von Schmidt',
+    style: 'Neo-Gothic',
+    open: [8, 22],
+    tickets: 'Free guided tours · Christmas market free',
+    transport: 'U2 Rathaus · tram 1 71 D',
+    rating: 4.7,
+    reviews: 21304,
+    peak: 18,
+    highlights: [
+      'The Christkindlmarkt with mulled wine and an ice rink in winter',
+      'The film festival on the square in summer',
+      'The Rathausmann, a 3.4 m iron knight on top of the tower',
+    ],
+    tip: 'Keep the punch mug as a souvenir, or return it for the deposit.',
+  },
+  parlament: {
+    category: 'Parliament',
+    district: '1st · Innere Stadt',
+    address: 'Dr.-Karl-Renner-Ring 3, 1010 Wien',
+    built: '1874 – 1883',
+    architect: 'Theophil Hansen',
+    style: 'Greek Revival',
+    open: [9, 17],
+    tickets: 'Free · guided tours free with registration',
+    transport: 'U2 U3 Volkstheater · tram 1 2 D 71',
+    rating: 4.6,
+    reviews: 6211,
+    peak: 11,
+    highlights: [
+      'The Pallas Athene fountain in front',
+      'The glass roof and terrace with a view over the Ring',
+      'The Demokratikum visitor center',
+    ],
+    tip: 'Have lunch on the rooftop terrace, it is open to everyone.',
+  },
+  votivkirche: {
+    category: 'Church',
+    district: '9th · Alsergrund',
+    address: 'Rooseveltplatz, 1090 Wien',
+    built: '1856 – 1879',
+    architect: 'Heinrich von Ferstel',
+    style: 'Neo-Gothic',
+    open: [11, 19],
+    tickets: 'Free · museum € 8',
+    transport: 'U2 Schottentor',
+    rating: 4.7,
+    reviews: 9145,
+    peak: 15,
+    highlights: ['The twin spires, 99 m tall', 'Colorful stained glass windows'],
+    tip: 'The park in front is the quietest place for a break near the university.',
+  },
+  museums: {
+    category: 'Museums',
+    district: '1st · Innere Stadt',
+    address: 'Maria-Theresien-Platz, 1010 Wien',
+    built: '1871 – 1891',
+    architect: 'Gottfried Semper, Carl von Hasenauer',
+    style: 'Neo-Renaissance',
+    open: [10, 18],
+    tickets: 'Kunsthistorisches € 21 · Naturhistorisches € 16',
+    transport: 'U2 U3 Volkstheater · U2 Museumsquartier',
+    rating: 4.8,
+    reviews: 35780,
+    peak: 13,
+    highlights: [
+      'Bruegel’s "Tower of Babel" and "Hunters in the Snow"',
+      'The Venus of Willendorf, 30,000 years old',
+      'Dinosaurs and a meteorite hall',
+      'The café under the dome of the art museum',
+    ],
+    tip: 'On Thursday evenings the art museum stays open late and the café becomes a gourmet dinner.',
+  },
+  karlskirche: {
+    category: 'Baroque church',
+    district: '4th · Wieden',
+    address: 'Karlsplatz, 1040 Wien',
+    built: '1716 – 1737',
+    architect: 'Johann Bernhard Fischer von Erlach',
+    style: 'Baroque',
+    open: [9, 18],
+    tickets: '€ 9.50 including the panorama lift',
+    transport: 'U1 U2 U4 Karlsplatz',
+    rating: 4.7,
+    reviews: 15402,
+    peak: 15,
+    highlights: [
+      'A lift up into the dome, eye to eye with the frescoes',
+      'The two columns with spiral reliefs',
+      'Concerts of Vivaldi’s Four Seasons',
+    ],
+    tip: 'The pond in front reflects the dome perfectly on a calm morning.',
+  },
+  secession: {
+    category: 'Exhibition hall',
+    district: '1st · Innere Stadt',
+    address: 'Friedrichstraße 12, 1010 Wien',
+    built: '1897 – 1898',
+    architect: 'Joseph Maria Olbrich',
+    style: 'Art Nouveau (Jugendstil)',
+    open: [10, 18],
+    tickets: '€ 12 · students € 7.50',
+    transport: 'U1 U2 U4 Karlsplatz',
+    rating: 4.5,
+    reviews: 7310,
+    peak: 14,
+    highlights: [
+      'Klimt’s Beethoven Frieze in the basement',
+      'The motto above the door: "To every age its art, to art its freedom"',
+    ],
+    tip: 'Combine it with a walk through the Naschmarkt, right next door.',
+  },
+  naschmarkt: {
+    category: 'Market',
+    district: '6th · Mariahilf',
+    address: 'Linke & Rechte Wienzeile, 1060 Wien',
+    built: 'since 1774',
+    style: 'Open-air market',
+    open: [6, 21],
+    tickets: 'Free',
+    transport: 'U4 Kettenbrückengasse · U1 U2 U4 Karlsplatz',
+    rating: 4.4,
+    reviews: 40118,
+    peak: 12,
+    highlights: [
+      'About 120 stalls with fruit, spices, cheese and olives',
+      'Seafood and falafel restaurants between the stalls',
+      'The flea market on Saturday mornings',
+    ],
+    tip: 'Taste before you buy: the vendors love to hand out samples.',
+  },
+  belvedere: {
+    category: 'Baroque palace & museum',
+    district: '3rd · Landstraße',
+    address: 'Prinz-Eugen-Straße 27, 1030 Wien',
+    built: '1712 – 1723',
+    architect: 'Johann Lukas von Hildebrandt',
+    style: 'Baroque',
+    open: [9, 18],
+    tickets: 'Upper Belvedere € 17.50 · garden free',
+    transport: 'Tram D Schloss Belvedere',
+    rating: 4.7,
+    reviews: 38960,
+    peak: 13,
+    highlights: [
+      'Klimt’s "The Kiss" and the world’s largest Klimt collection',
+      'The terraced gardens between the two palaces',
+      'The view over the city to St. Stephen’s',
+    ],
+    tip: 'Enter through the upper garden gate, the queue is shorter.',
+  },
+  schoenbrunn: {
+    category: 'Imperial summer palace',
+    district: '13th · Hietzing',
+    address: 'Schönbrunner Schloßstraße 47, 1130 Wien',
+    built: '1696 – 1780',
+    architect: 'Fischer von Erlach, Nikolaus Pacassi',
+    style: 'Baroque & Rococo',
+    open: [8, 18],
+    tickets: 'Grand Tour € 29 · gardens free · zoo € 27',
+    transport: 'U4 Schönbrunn · tram 10 60',
+    rating: 4.7,
+    reviews: 112584,
+    peak: 11,
+    highlights: [
+      'The Grand Tour through 40 rooms of the palace',
+      'The Gloriette with a café and a view of the city',
+      'The oldest zoo in the world, from 1752',
+      'The maze and the palm house',
+    ],
+    tip: 'Buy a timed ticket online, and walk up to the Gloriette while you wait.',
+  },
+  stadtpark: {
+    category: 'City park',
+    district: '1st & 3rd · Innere Stadt',
+    address: 'Parkring, 1010 Wien',
+    built: '1862',
+    architect: 'Josef Selleny, Rudolph Siebeck',
+    style: 'English landscape garden',
+    tickets: 'Free',
+    transport: 'U4 Stadtpark · tram 2',
+    rating: 4.6,
+    reviews: 24873,
+    peak: 16,
+    highlights: [
+      'The golden statue of Johann Strauss playing the violin',
+      'Waltz concerts in the Kursalon',
+      'Ducks and willows along the Wien river',
+    ],
+    tip: 'Get there early for a photo with the golden Strauss, before the tour groups arrive.',
+  },
+  musikverein: {
+    category: 'Concert hall',
+    district: '1st · Innere Stadt',
+    address: 'Musikvereinsplatz 1, 1010 Wien',
+    built: '1867 – 1870',
+    architect: 'Theophil Hansen',
+    style: 'Greek Revival',
+    open: [9, 22],
+    tickets: 'Tour € 10 · concerts from € 25',
+    transport: 'U1 U2 U4 Karlsplatz',
+    rating: 4.8,
+    reviews: 12607,
+    peak: 20,
+    highlights: [
+      'The Golden Hall, one of the best-sounding halls in the world',
+      'The New Year’s Concert of the Vienna Philharmonic',
+    ],
+    tip: 'Standing room tickets sell from three hours before the concert.',
+  },
+  prater: {
+    category: 'Amusement park',
+    district: '2nd · Leopoldstadt',
+    address: 'Riesenradplatz 1, 1020 Wien',
+    built: 'Riesenrad 1897',
+    architect: 'Walter Basset',
+    style: 'Fairground',
+    open: [10, 24],
+    tickets: 'Park free · Riesenrad € 15 · rides from € 3',
+    transport: 'U1 U2 Praterstern',
+    rating: 4.5,
+    reviews: 67233,
+    peak: 17,
+    highlights: [
+      'A ride in the red cabins of the Riesenrad, 65 m above the city',
+      'More than 250 rides, from a ghost train to a 117 m swing',
+      'Schweinsbraten and beer at the Schweizerhaus',
+    ],
+    tip: 'Book a dinner cabin on the Riesenrad, for a candlelit round above Vienna.',
+  },
+  donauturm: {
+    category: 'Observation tower',
+    district: '22nd · Donaustadt',
+    address: 'Donauturmstraße 8, 1220 Wien',
+    built: '1962 – 1964',
+    architect: 'Hannes Lintl',
+    style: 'Modernist',
+    open: [10, 23.5],
+    tickets: 'Observation deck € 17.90',
+    transport: 'U1 Kaisermühlen · bus 20B',
+    rating: 4.6,
+    reviews: 19544,
+    peak: 18,
+    highlights: [
+      'The revolving restaurant, one full turn every 26 to 52 minutes',
+      'A view to the Vienna Woods and on clear days to Slovakia',
+      'The Donaupark around it',
+    ],
+    tip: 'Order the cake in the café at sunset, it turns while you eat.',
+  },
+  hundertwasser: {
+    category: 'Apartment building',
+    district: '3rd · Landstraße',
+    address: 'Kegelgasse 34–38, 1030 Wien',
+    built: '1983 – 1985',
+    architect: 'Friedensreich Hundertwasser, Josef Krawina',
+    style: 'Hundertwasser',
+    open: [9, 18],
+    tickets: 'Outside free · Hundertwasser Village € 3',
+    transport: 'Tram 1 Hetzgasse',
+    rating: 4.4,
+    reviews: 33105,
+    peak: 13,
+    highlights: [
+      'Wavy floors, onion domes and 250 trees on the roofs and balconies',
+      'Every window is different',
+      'The KunstHausWien museum around the corner',
+    ],
+    tip: 'People live here: look, take photos, but keep it quiet.',
+  },
+}
+
+export const PROP_DETAILS: Record<PropKind, SightDetails> = {
+  tree: {
+    category: 'Tree',
+    tickets: 'Free',
+    rating: 4.3,
+    reviews: 128,
+    peak: 15,
+    highlights: ['Flowers in May', 'Roasted chestnuts in the autumn, from the stands nearby'],
+    tip: 'The chestnuts from these trees are not for eating, buy the roasted ones.',
+  },
+  house: {
+    category: 'Town house',
+    built: 'around 1880',
+    style: 'Historicism',
+    rating: 4.1,
+    reviews: 42,
+    peak: 18,
+    highlights: ['Ceilings 3.5 m high', 'A courtyard behind the gate'],
+    tip: 'Peek through an open gate: many houses hide a green courtyard.',
+  },
+  cafe: {
+    category: 'Coffee house',
+    open: [7, 22],
+    tickets: 'Melange € 5.20 · Sachertorte € 6.90',
+    rating: 4.6,
+    reviews: 3874,
+    peak: 15,
+    highlights: [
+      'Marble tables and newspapers on wooden holders',
+      'A glass of water with every coffee',
+    ],
+    tip: 'Nobody will rush you: one coffee buys you the whole afternoon.',
+  },
+  wurstel: {
+    category: 'Sausage stand',
+    open: [11, 28],
+    tickets: 'Käsekrainer € 5.50 · Bier € 4.20',
+    rating: 4.5,
+    reviews: 1290,
+    peak: 23,
+    highlights: ['Käsekrainer, Bosna and Burenwurst', 'Mustard sweet or hot'],
+    tip: 'Order "a Eitrige mit an Bugl und an 16er Blech" and the vendor will love you.',
+  },
+  ubahn: {
+    category: 'Underground station',
+    open: [5, 24.5],
+    tickets: 'Single € 2.40 · 24 hours € 8 · year € 365',
+    transport: 'U1 U2 U3 U4 U6',
+    rating: 4.2,
+    reviews: 655,
+    peak: 8,
+    highlights: ['A train every 2 to 5 minutes', 'All night on Fridays and Saturdays'],
+    tip: 'There are no gates: buy and validate the ticket before you board.',
+  },
+  heuriger: {
+    category: 'Wine tavern',
+    open: [15, 23],
+    tickets: '¼ wine € 3.80 · buffet by weight',
+    rating: 4.7,
+    reviews: 2150,
+    peak: 19,
+    highlights: ['This year’s wine from the vineyard next door', 'Schrammel music on weekends'],
+    tip: 'Order a "G’spritzter", wine with soda water, to last the evening.',
+  },
+  vines: {
+    category: 'Vineyard',
+    tickets: 'Free hiking trails',
+    rating: 4.8,
+    reviews: 980,
+    peak: 16,
+    highlights: ['Grüner Veltliner and Gemischter Satz', 'The grape harvest in September'],
+    tip: 'Walk the Wiener Weinwanderweg on the first weekend of October.',
+  },
+}
+
+/** Is the sight open at that time of day? */
+export function isOpen(details: SightDetails, hours: number): boolean {
+  if (!details.open) return true
+  const [open, close] = details.open
+  return (hours >= open && hours < close) || hours + 24 < close
+}
+
+/** How busy the sight is at each hour of the day, 0..1, mocked from its opening hours and peak */
+export function popularTimes(details: SightDetails, seed: string): number[] {
+  let hash = 7
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 9973
+  return Array.from({ length: 24 }, (_, hour) => {
+    if (!isOpen(details, hour + 0.5)) return 0
+    const distance = Math.min(Math.abs(hour - details.peak), 24 - Math.abs(hour - details.peak))
+    const wobble = ((hash * (hour + 3)) % 17) / 17
+    return Math.max(
+      0.08,
+      Math.min(1, Math.exp(-(distance * distance) / 18) * (0.85 + wobble * 0.15)),
+    )
+  })
+}

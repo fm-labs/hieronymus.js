@@ -7,6 +7,7 @@ import {
   type Vehicle,
 } from '../isocity/isocity.traffic.ts'
 import { IsoViennaBoatComponent } from './IsoViennaBoatComponent.ts'
+import { IsoViennaSidePane } from './IsoViennaSidePane.ts'
 import { IsoViennaVehicleComponent, type ViennaVehicleKind } from './IsoViennaVehicleComponent.ts'
 import { mix } from './isovienna.draw.ts'
 import {
@@ -71,10 +72,12 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
   private selected?: Landmark | Prop
   private sky = ''
   private $hud?: HTMLDivElement
-  private $info?: HTMLDivElement
+  private pane?: IsoViennaSidePane
   private $list?: HTMLDivElement
   private previousBackground = ''
   private previousOverflow = ''
+  /** Where the camera glides to, after a sight was chosen */
+  private cameraTarget?: { x: number; y: number }
 
   constructor(game: IGame, world: ViennaWorld, options: IsoViennaSystemOptions) {
     super(game)
@@ -84,6 +87,7 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     this.options = { vehicles: 30, maxVehicles: 80, trams: 4, ...options }
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
+    this.handleDoubleClick = this.handleDoubleClick.bind(this)
     this.preventPageZoom = this.preventPageZoom.bind(this)
   }
 
@@ -96,6 +100,7 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
   public start() {
     this._game.eventbus.on('keyboard.keydown', this.handleKeyDown)
     this._game.eventbus.on('mouse.mousedown', this.handleMouseDown)
+    this._game.eventbus.on('mouse.dblclick', this.handleDoubleClick)
     this.previousBackground = this._game.$container.style.background
     // ctrl + wheel and pinch zoom the map, not the page: a zoomed page would scroll the panels out of view
     window.addEventListener('wheel', this.preventPageZoom, { passive: false })
@@ -103,8 +108,10 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     window.addEventListener('gesturechange', this.preventPageZoom)
     this.previousOverflow = this._game.$container.style.overflow
     this._game.$container.style.overflow = 'hidden'
-    this.$hud = this.createPanel('left:10px;bottom:10px;width:auto')
-    this.$info = this.createPanel('right:10px;top:10px;width:250px')
+    this.$hud = this.createPanel('left:10px;bottom:10px;width:auto;transition:left 0.3s ease')
+    this.pane = new IsoViennaSidePane(this._game.$container, this.world.tileMap.tileWidth, () =>
+      this.select(undefined),
+    )
     this.$list = this.createPanel('right:10px;bottom:10px;width:170px')
     this.renderList()
     this.fitView()
@@ -115,13 +122,14 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
   public stop() {
     this._game.eventbus.off('keyboard.keydown', this.handleKeyDown)
     this._game.eventbus.off('mouse.mousedown', this.handleMouseDown)
+    this._game.eventbus.off('mouse.dblclick', this.handleDoubleClick)
     this._game.$container.style.background = this.previousBackground
     window.removeEventListener('wheel', this.preventPageZoom)
     window.removeEventListener('gesturestart', this.preventPageZoom)
     window.removeEventListener('gesturechange', this.preventPageZoom)
     this._game.$container.style.overflow = this.previousOverflow
     this.$hud?.remove()
-    this.$info?.remove()
+    this.pane?.remove()
     this.$list?.remove()
   }
 
@@ -146,6 +154,7 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     }
     scene.night = nightAmount(scene.hours)
     this.updateSky()
+    this.moveCamera(seconds)
     this.traffic.forEach(({ vehicle, component }) => this.syncComponent(vehicle, component))
   }
 
@@ -334,16 +343,40 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     }
   }
 
-  private centerOn(col: number, row: number) {
+  /** Glide the camera, so the middle of the place ends up in the middle of the screen */
+  private centerOn(place: Landmark | Prop) {
+    const cols = 'cols' in place ? place.cols : 1
+    const rows = 'rows' in place ? place.rows : 1
+    const screen = this.world.tileMap.projection.mapGridToScreen(
+      place.col + cols / 2,
+      place.row + rows / 2,
+    )
     const { zoom } = this._game.camera
-    const screen = this.world.tileMap.projection.mapGridToScreen(col, row)
     const width = this._game.$container.offsetWidth || window.innerWidth
     const height = this._game.$container.offsetHeight || window.innerHeight
-    this._game.camera.offset = {
-      x: screen.x * zoom - width / 2,
+    // the middle of what the side pane leaves free
+    const pane = this.pane?.width ?? 0
+    this.cameraTarget = {
+      x: screen.x * zoom - (pane + (width - pane) / 2),
       // a bit higher, so the towers are in view
-      y: (screen.y - 50) * zoom - height / 2,
+      y: (screen.y - 30) * zoom - height / 2,
     }
+  }
+
+  private moveCamera(seconds: number) {
+    const target = this.cameraTarget
+    if (!target) return
+    const { offset } = this._game.camera
+    const dx = target.x - offset.x
+    const dy = target.y - offset.y
+    if (Math.hypot(dx, dy) < 1) {
+      this._game.camera.offset = { ...target }
+      this.cameraTarget = undefined
+      return
+    }
+    // ease out: cover most of the remaining way in a fraction of a second
+    const step = 1 - Math.exp(-seconds * 8)
+    this._game.camera.offset = { x: offset.x + dx * step, y: offset.y + dy * step }
   }
 
   private select(place: Landmark | Prop | undefined) {
@@ -378,16 +411,33 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   private handleMouseDown(e: MouseEvent) {
-    // ignore clicks on the panels
-    if ((e.target as HTMLElement | null)?.closest?.('.isovienna-panel')) return
+    if (this.isOnPanel(e)) return
+    // a click stops the camera gliding, e.g. to grab the map
+    this.cameraTarget = undefined
+    this.select(this.placeUnder(e))
+  }
 
+  /** Double click a sight to bring it to the middle of the screen */
+  private handleDoubleClick(e: MouseEvent) {
+    if (this.isOnPanel(e)) return
+    const place = this.placeUnder(e)
+    if (!place) return
+    this.select(place)
+    this.centerOn(place)
+  }
+
+  private isOnPanel(e: MouseEvent) {
+    return !!(e.target as HTMLElement | null)?.closest?.('.isovienna-panel')
+  }
+
+  private placeUnder(e: MouseEvent): Landmark | Prop | undefined {
     // screen → world: the TileMapSystem draws with translate(-offset), then scale(zoom)
     const rect = this._game.$container.getBoundingClientRect()
     const { offset, zoom } = this._game.camera
     const worldX = (e.clientX - rect.left + offset.x) / zoom
     const worldY = (e.clientY - rect.top + offset.y) / zoom
     const { col, row } = this.world.tileMap.projection.mapScreenToGrid(worldX, worldY)
-    this.select(placeAt(this.world.map, col, row))
+    return placeAt(this.world.map, col, row)
   }
 
   private createPanel(position: string): HTMLDivElement {
@@ -414,14 +464,14 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
       $item.onmouseleave = () => ($item.style.color = '')
       $item.onclick = () => {
         this.select(landmark)
-        this.centerOn(landmark.col + landmark.cols / 2, landmark.row + landmark.rows / 2)
+        this.centerOn(landmark)
       }
       this.$list.appendChild($item)
     }
   }
 
   private updateHud() {
-    if (!this.$hud || !this.$info) return
+    if (!this.$hud) return
     const { scene } = this.world
     const icon = scene.night > 0.5 ? '🌙' : scene.winter ? '❄️' : '☀️'
     const state = this.paused ? ' <span style="color:#c8102e">(paused)</span>' : ''
@@ -429,14 +479,11 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     this.$hud.innerHTML =
       `<b style="color:#c8102e;letter-spacing:1px">WIEN</b> · ${icon} ${formatClock(scene.hours)}${state}` +
       ` · ${this.traffic.length - trams} vehicles, ${trams} trams<br>` +
-      '<span style="opacity:0.7">click a sight · N day / night · X summer / winter · + / − traffic · ' +
+      '<span style="opacity:0.7">click a sight · double click to center · N day / night · X summer / winter · + / − traffic · ' +
       'space pause · WASD / wheel pan · ctrl+wheel zoom</span>'
-
-    const place = this.selected
-    this.$info.style.display = place ? 'block' : 'none'
-    if (!place) return
-    this.$info.innerHTML =
-      `<b style="color:#c8102e">${place.name}</b><br>${place.fact}<br>` +
-      `<span style="opacity:0.6">cell ${place.col}, ${place.row} · esc to close</span>`
+    if (this.selected) this.pane?.show(this.selected, scene)
+    else this.pane?.hide()
+    // the HUD moves out of the way of the side pane
+    this.$hud.style.left = `${(this.pane?.width ?? 0) + 10}px`
   }
 }
