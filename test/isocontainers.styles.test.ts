@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   TANK_HEIGHT,
+  TANK_RADIUS,
   applyLooks,
   buildContainersModel,
   parseSize,
+  sizeClass,
   tankHeight,
 } from '../src/worlds/isocontainers/isocontainers.layout'
 import {
@@ -241,6 +243,45 @@ describe('isocontainers tanks', () => {
     expect(parseSize('1.4T')).toBe(1.4e12)
     expect(parseSize('lots')).toBeUndefined()
     expect(parseSize(undefined)).toBeUndefined()
+  })
+
+  it('sorts sizes into classes, each wider than the one before', () => {
+    expect(sizeClass(654)).toBe('kb')
+    expect(sizeClass(46e3)).toBe('kb')
+    expect(sizeClass(1e6)).toBe('mb')
+    expect(sizeClass(370 * 1024 ** 2)).toBe('mb')
+    expect(sizeClass(2.4e9)).toBe('gb')
+    expect(sizeClass(3.6e12)).toBe('tb')
+    expect(sizeClass(undefined)).toBe('unknown')
+    expect(sizeClass(-1)).toBe('unknown')
+    const radii = (['kb', 'mb', 'gb', 'tb'] as const).map((c) => TANK_RADIUS[c])
+    expect(radii).toEqual([...radii].sort((a, b) => a - b))
+    expect(new Set(radii).size).toBe(4)
+  })
+
+  it('gives each volume its class, radius and height; unknown sizes a standard tank', () => {
+    const model = buildContainersModel({
+      title: 't',
+      environments: [
+        {
+          name: 'h',
+          volumes: [
+            { name: 'conf', size: '48 kB' },
+            { name: 'pg', size: '2.4 GB' },
+            { name: 'blobs', size: '1.4 TB' },
+            { name: 'what' },
+          ],
+        },
+      ],
+    })
+    const v = (name: string) => model.volumes.find((x) => x.name === name)!
+    expect(v('conf').sizeClass).toBe('kb')
+    expect(v('pg').bytes).toBe(2.4e9)
+    expect(v('blobs').r).toBe(TANK_RADIUS.tb)
+    expect(v('conf').r).toBeLessThan(v('pg').r)
+    expect(v('what').sizeClass).toBe('unknown')
+    expect(v('what').r).toBe(TANK_RADIUS.unknown)
+    expect(v('what').height).toBe(TANK_HEIGHT)
   })
 
   it('grows with the size, each ×10 by the same step', () => {

@@ -27,6 +27,7 @@ import {
   type MountSpec,
   type Network,
   type Port,
+  type SizeClass,
   type Volume,
 } from './isocontainers.types.ts'
 
@@ -103,6 +104,21 @@ const CALL_RATE: Partial<Record<ContainerKind, number>> = {
 
 /** The height of a tank whose size is not known */
 export const TANK_HEIGHT = 30
+
+/** The radius of a tank by its size class, in cells: the bigger the class, the wider the tank */
+export const TANK_RADIUS: Record<SizeClass, number> = {
+  kb: 0.2,
+  mb: 0.28,
+  gb: 0.36,
+  tb: LOT.tankR,
+  unknown: 0.3,
+}
+
+/** The order of magnitude of a size: below 1 MB is 'kb' (bytes too), below 1 GB 'mb', and so on */
+export function sizeClass(bytes: number | undefined): SizeClass {
+  if (bytes === undefined || !(bytes >= 0)) return 'unknown'
+  return bytes < 1e6 ? 'kb' : bytes < 1e9 ? 'mb' : bytes < 1e12 ? 'gb' : 'tb'
+}
 
 const UNITS: Record<string, number> = { B: 0, K: 1, M: 2, G: 3, T: 4, P: 5 }
 
@@ -279,10 +295,11 @@ function buildEnvironment(
         name,
         driver: 'local',
         anonymous: ANONYMOUS.test(name),
+        sizeClass: 'unknown',
         mounts: [],
         col: 0,
         row: 0,
-        r: LOT.tankR,
+        r: TANK_RADIUS.unknown,
         height: TANK_HEIGHT,
         flash: 0,
         reads: 0,
@@ -297,7 +314,10 @@ function buildEnvironment(
     const v = volume(s.name)
     v.driver = s.driver || v.driver
     v.size = s.size
-    v.height = tankHeight(parseSize(s.size))
+    v.bytes = parseSize(s.size)
+    v.sizeClass = sizeClass(v.bytes)
+    v.r = TANK_RADIUS[v.sizeClass]
+    v.height = tankHeight(v.bytes)
     v.mountpoint = s.mountpoint
     v.note = s.note
   }
@@ -597,10 +617,12 @@ function layoutEnvironment(env: Environment, col0: number, row0: number) {
     districts.push(streets.filter((s) => found.has(s)))
   }
   const loose = env.containers.filter((c) => !c.attachments.some((a) => a.network.street))
-  // named volumes first, the anonymous ones at the back
+  // the tallest tanks at the back, so they hide none: those of unknown size (drawn at a middle height,
+  // taller than the small ones) first, then by size
+  const bytes = (v: Volume) => parseSize(v.size) ?? Infinity
   const yard = env.volumes
     .filter((v) => !v.mounts.length)
-    .sort((a, b) => Number(a.anonymous) - Number(b.anonymous) || a.name.localeCompare(b.name))
+    .sort((a, b) => bytes(b) - bytes(a) || a.name.localeCompare(b.name))
   if (loose.length || (!districts.length && !yard.length)) districts.push([])
 
   // each block is laid out at the origin, then moved into its line

@@ -270,6 +270,9 @@ export type Network = {
   packets: number
 }
 
+/** The order of magnitude of a volume's size: tanks of each class have their own radius and color */
+export type SizeClass = 'kb' | 'mb' | 'gb' | 'tb' | 'unknown'
+
 export type Volume = {
   type: 'volume'
   key: string
@@ -277,6 +280,9 @@ export type Volume = {
   name: string
   driver: string
   size?: string
+  /** The size in bytes, when it is known */
+  bytes?: number
+  sizeClass: SizeClass
   mountpoint?: string
   note?: string
   /** A docker generated name (64 hex digits) */
@@ -284,7 +290,7 @@ export type Volume = {
   mounts: Mount[]
   /** The container whose lot holds the tank */
   owner?: Container
-  // layout: the center of the tank and its radius, in cells; its height in pixels, by its size
+  // layout: the center of the tank and its radius (by size class), in cells; its height in pixels, by its size
   col: number
   row: number
   r: number

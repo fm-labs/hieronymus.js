@@ -159,7 +159,7 @@ model builder fills in sensible defaults.
 | ------------ | ------ | ----- |
 | `name`       | string, required | Matched against the containers' mounts. A 64 hex digit name is an anonymous volume. |
 | `driver`     | string | Default `local`. |
-| `size`       | string | `'2.4 GB'`, `'512MiB'`, `'1.4T'`: the tank's height grows by the same step for each ×10 (`tankHeight()`); unknown size → a middle height. |
+| `size`       | string | `'2.4 GB'`, `'512MiB'`, `'1.4T'`. Its order of magnitude (KB, MB, GB, TB) sets the tank's radius and color, and the height grows by the same step for each ×10 (`tankHeight()`). Unknown size → a grey tank with a dashed rim and a `?`, of standard radius and height. |
 | `mountpoint` | string | Info only. |
 | `note`       | string | |
 
@@ -229,8 +229,18 @@ simulation).
 
 | Group  | Fields |
 | ------ | ------ |
-| data   | `key`, `env`, `name`, `driver`, `size`, `mountpoint`, `note`, `anonymous`, `mounts: Mount[]` |
-| layout | `owner` (the container whose lot holds the tank: the first that mounts it), `col`, `row`, `r`, `height` (by size) |
+| data   | `key`, `env`, `name`, `driver`, `size`, `bytes` (parsed, when known), `sizeClass` (`kb`, `mb`, `gb`, `tb`, `unknown`), `mountpoint`, `note`, `anonymous`, `mounts: Mount[]` |
+| layout | `owner` (the container whose lot holds the tank: the first that mounts it), `col`, `row`, `r` (by size class, `TANK_RADIUS`), `height` (by size) |
+
+Tanks by size class (`TANK_STYLES` in `isocontainers.draw.ts`):
+
+| Class     | Size        | Radius (cells) | Color |
+| --------- | ----------- | -------------- | ----- |
+| `kb`      | below 1 MB  | 0.20           | green `#6ee7b7` |
+| `mb`      | below 1 GB  | 0.28           | cyan `#4cc9f0` |
+| `gb`      | below 1 TB  | 0.36           | blue `#6b8cff` |
+| `tb`      | 1 TB and up | 0.42           | pink `#f472b6` |
+| `unknown` | not known   | 0.30, height 30 px | grey `#9aa3a8`, dashed rim, `?` on top |
 | live   | `flash`, `reads`, `writes` |
 
 ### `Environment`
@@ -264,8 +274,9 @@ simulation).
   groups of networks that share containers. A plate keeps its districts in one line unless that makes
   it more than 2.2 times as wide as deep (a host with many small compose projects); then they wrap
   into the number of lines that makes it closest to square, each line with a road in front and a
-  spine on the left joining the roads to the gate. Volumes nobody mounts are stored in a compact yard
-  (named first, anonymous last). Plates are placed in lines on screen.
+  spine on the left joining the roads to the gate. Volumes nobody mounts are stored in a compact yard,
+  the tallest at the back: unknown sizes first (they are drawn at a middle
+  height), then by size. Plates are placed in lines on screen.
 - **Looks** and **heights**: see below.
 
 ## Building looks

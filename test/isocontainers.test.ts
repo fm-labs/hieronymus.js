@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildContainersModel,
   parsePort,
+  parseSize,
   pointAlong,
 } from '../src/worlds/isocontainers/isocontainers.layout'
 import {
@@ -151,7 +152,10 @@ const PROJECTS: ContainersSpec = {
         }),
       ).flat(),
       volumes: [
-        ...Array.from({ length: 12 }, (_, i) => ({ name: `old${i + 1}_data`, size: '120 MB' })),
+        ...Array.from({ length: 12 }, (_, i) => ({
+          name: `old${i + 1}_data`,
+          size: `${(i + 1) * 40} MB`,
+        })),
         ...Array.from({ length: 9 }, (_, i) => ({ name: `${i}`.padStart(64, 'a') })),
       ],
     },
@@ -310,10 +314,13 @@ describe('isocontainers plates', () => {
     const rows = new Set(yard.map((v) => v.row.toFixed(2))).size
     expect(cols).toBeLessThanOrEqual(7)
     expect(rows).toBeLessThanOrEqual(5)
-    // named before anonymous
+    // back to front (rows grow to the front): unknown sizes first, then by size
     const order = [...yard].sort((a, b) => a.row - b.row || a.col - b.col)
-    expect(order[0].anonymous).toBe(false)
-    expect(order[order.length - 1].anonymous).toBe(true)
+    const sizes = order.map((v) => parseSize(v.size) ?? Infinity)
+    expect(sizes).toEqual([...sizes].sort((a, b) => b - a))
+    expect(order[0].size).toBeUndefined()
+    expect(order[9].name).toBe('old12_data')
+    expect(order[order.length - 1].name).toBe('old1_data')
   })
 
   it('keeps a plate of a few districts in one line', () => {

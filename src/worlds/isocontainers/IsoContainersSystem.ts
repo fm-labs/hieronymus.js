@@ -37,6 +37,7 @@ import {
   COLORS,
   FONT,
   PALETTE,
+  TANK_STYLES,
   hexAlpha,
   stateColor,
   stateText,
@@ -709,9 +710,9 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         this.treeRow(
           $tree,
           v,
-          this.dot(PALETTE.volume, 6),
+          this.dot(TANK_STYLES[v.sizeClass].color, 6),
           v.anonymous ? `${v.name.slice(0, 12)}…` : v.name,
-          'volume',
+          v.size ? `volume · ${v.size}` : 'volume',
         )
     }
     this.updateExplorerStates()
@@ -782,7 +783,11 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
 
   private link(e: Entity, label: string, right = '') {
     const color =
-      e.type === 'container' ? stateColor(e) : e.type === 'network' ? e.accent : PALETTE.volume
+      e.type === 'container'
+        ? stateColor(e)
+        : e.type === 'network'
+          ? e.accent
+          : TANK_STYLES[e.sizeClass].color
     return (
       `<div class="isocontainers-link" data-key="${escapeHtml(e.key)}" style="display:flex;align-items:center;padding:3px 0;cursor:pointer;color:#cfe9db;min-width:0">` +
       `${this.dot(color, 6)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(label)}</span>` +
@@ -1513,7 +1518,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       ['Driver', v.driver],
       ['Host', v.env.name],
     ]
-    if (v.size) rows.push(['Size', v.size])
+    rows.push(['Size', v.size ? `${v.size} · ${TANK_STYLES[v.sizeClass].label} class` : 'unknown'])
     if (v.mountpoint) rows.push(['Mountpoint', v.mountpoint])
     rows.push(['Writes', String(v.writes)], ['Reads', String(v.reads)])
     let html =
@@ -1521,7 +1526,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div style="font:600 19px/1.3 ${FONT.ui};margin-top:4px;word-break:break-all">${escapeHtml(v.name)}</div>` +
       this.chip(
         v.mounts.length ? `${v.mounts.length} MOUNT${v.mounts.length > 1 ? 'S' : ''}` : 'UNUSED',
-        PALETTE.volume,
+        TANK_STYLES[v.sizeClass].color,
         false,
       ) +
       this.facts(rows)

@@ -4,7 +4,7 @@
  * the volumes cylinders, and each network has an accent color.
  */
 import { COLORS, FONT, FlowProjection, fit, roundRect } from '../isoflow/isoflow.draw.ts'
-import type { Container, Entity, GridPoint } from './isocontainers.types.ts'
+import type { Container, Entity, GridPoint, SizeClass } from './isocontainers.types.ts'
 
 export { COLORS, FONT, FlowProjection, fit, roundRect }
 
@@ -21,6 +21,21 @@ export const PALETTE = {
   volume: '#4cc9f0',
   reply: 'rgba(225,245,235,0.85)',
   cross: '#a78bfa',
+}
+
+/**
+ * The look of a tank by the size class of its volume, from small and cool to big and warm: its color
+ * (rim, bands, label), its side (lit, shaded) and its top. A volume of unknown size is grey.
+ */
+export const TANK_STYLES: Record<
+  SizeClass,
+  { color: string; label: string; side: [string, string]; top: string }
+> = {
+  kb: { color: '#6ee7b7', label: 'KB', side: ['#15352b', '#06140f'], top: '#0f271f' },
+  mb: { color: '#4cc9f0', label: 'MB', side: ['#15323b', '#06141a'], top: '#10252c' },
+  gb: { color: '#6b8cff', label: 'GB', side: ['#1a2550', '#090e24'], top: '#141c3d' },
+  tb: { color: '#f472b6', label: 'TB', side: ['#43172f', '#1a0812'], top: '#331224' },
+  unknown: { color: '#9aa3a8', label: '?', side: ['#25292b', '#0f1213'], top: '#1b1e20' },
 }
 
 /** Plane units per cell */
