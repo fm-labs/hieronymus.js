@@ -56,6 +56,12 @@ const BASE_MEM: Record<ContainerKind, number> = {
   tool: 24,
 }
 
+/** What happens in the simulation, for whoever listens (the log) */
+export type SimEvent =
+  | { type: 'request'; link: Link; failed: boolean }
+  /** docker stop, docker start, and the started container is up */
+  | { type: 'stop' | 'start' | 'up'; container: Container }
+
 /** Takes requests: running, and not paused */
 export const isUp = (c: Container) => c.state === 'running'
 
@@ -70,6 +76,8 @@ export class ContainersSimulation {
   eps = 0
   totalRequests = 0
   totalErrors = 0
+  /** Called for each request that arrives (or fails) and each container stopped, started or up */
+  onEvent?: (e: SimEvent) => void
 
   private arrivals = 0
   private failures = 0
@@ -94,6 +102,7 @@ export class ContainersSimulation {
     c.state = 'exited'
     c.exitCode = 0
     c.transition = STOP_SECONDS
+    this.onEvent?.({ type: 'stop', container: c })
   }
 
   /** Start a container; it takes a moment to come up */
@@ -102,6 +111,7 @@ export class ContainersSimulation {
     c.state = 'restarting'
     c.exitCode = undefined
     c.transition = START_SECONDS
+    this.onEvent?.({ type: 'start', container: c })
   }
 
   step(seconds: number) {
@@ -138,7 +148,10 @@ export class ContainersSimulation {
   private stepContainer(c: Container, dt: number) {
     if (c.transition > 0) {
       c.transition = Math.max(0, c.transition - dt)
-      if (c.transition === 0 && c.state === 'restarting') c.state = 'running'
+      if (c.transition === 0 && c.state === 'restarting') {
+        c.state = 'running'
+        this.onEvent?.({ type: 'up', container: c })
+      }
     }
     const up = isUp(c)
     // cpu follows the load smoothly; memory drifts slowly
@@ -191,6 +204,7 @@ export class ContainersSimulation {
       l.to.errors++
       this.totalErrors++
       this.failures++
+      this.onEvent?.({ type: 'request', link: l, failed: true })
       return
     }
     l.to.requests++
@@ -198,6 +212,7 @@ export class ContainersSimulation {
     this.arrivals++
     this.rising.add(l.to)
     if (l.network) l.network.packets++
+    this.onEvent?.({ type: 'request', link: l, failed: false })
   }
 }
 

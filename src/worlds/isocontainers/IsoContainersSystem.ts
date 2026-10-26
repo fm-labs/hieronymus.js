@@ -21,6 +21,8 @@ import {
   type StyleRule,
 } from './isocontainers.styles.ts'
 import { ContainersSimulation } from './isocontainers.sim.ts'
+import { LogSimulator, LogStream, type LogInput } from './isocontainers.log.ts'
+import { LogView } from './IsoContainersLogView.ts'
 import {
   POINTS,
   SEVERITY_LABELS,
@@ -88,7 +90,7 @@ const LIVE_STACK: ContainersSpec = {
 
 const STYLE_STORAGE = 'isocontainers.styles.v1'
 /** The switches of the status bar: what they show, their key, and where the choice is kept */
-type SwitchName = 'showAdvice' | 'showCrossHost'
+type SwitchName = 'showAdvice' | 'showCrossHost' | 'showLog'
 const SWITCHES: Record<
   SwitchName,
   { label: string; key: string; title: string; color: string; storage: string }
@@ -106,6 +108,13 @@ const SWITCHES: Record<
     title: 'Show or hide the connections between hosts (the selection keeps its own)',
     color: PALETTE.cross,
     storage: 'isocontainers.links.v1',
+  },
+  showLog: {
+    label: '▤ LOG',
+    key: 'T',
+    title: 'Show or hide the log of engine and container events',
+    color: COLORS.greenSoft,
+    storage: 'isocontainers.log.v1',
   },
 }
 
@@ -225,6 +234,10 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private readonly world: ContainersWorld
   private readonly options: IsoContainersSystemOptions
   private readonly sim: ContainersSimulation
+  /** The event log: engine, containers and the world; simulated for now */
+  readonly log = new LogStream()
+  private readonly logSim: LogSimulator
+  private logView?: LogView
   private speedIndex = 2
   private $explorer?: HTMLDivElement
   private $info?: HTMLDivElement
@@ -260,8 +273,13 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.options = options
     applyLooks(world.model, this.styleRules())
     this.sim = new ContainersSimulation(world.model)
-    // a few seconds ahead, so the city opens with traffic on the move
-    for (let i = 0; i < 150; i++) this.sim.step(1 / 30)
+    this.logSim = new LogSimulator(world.model, this.log)
+    this.sim.onEvent = this.logSim.hear
+    // a few seconds ahead, so the city opens with traffic on the move (and a few lines in the log)
+    for (let i = 0; i < 150; i++) {
+      this.sim.step(1 / 30)
+      this.logSim.step(1 / 30)
+    }
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
     this.handleMouseUp = this.handleMouseUp.bind(this)
@@ -288,6 +306,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     for (const name of Object.keys(SWITCHES) as SwitchName[])
       this.world.scene[name] = this.loadSwitch(name)
     this.$status = this.createStatusBar()
+    this.createLog()
     this.$toast = document.createElement('div')
     this.$toast.style.cssText =
       `position:fixed;top:66px;left:${LEFT}px;right:20px;z-index:9;text-align:center;pointer-events:none;` +
@@ -326,6 +345,35 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.$hud?.remove()
     this.$toast?.remove()
     this.$status?.remove()
+    this.logView?.remove()
+  }
+
+  // ---- the log ----
+
+  /** The log, written over the city at the bottom right */
+  private createLog() {
+    const $c = this._game.$container
+    const { model, scene } = this.world
+    this.logView = new LogView($c, this.log, {
+      hidden: () => new Set([...scene.hidden].map((e) => e.key)),
+      hostName: (key) => model.environments.find((e) => e.key === key)?.name ?? key,
+      showHost: model.environments.length > 1,
+      caption:
+        this.options.current === 'api'
+          ? `LOG · ${this.options.source ?? 'API'} · EVENTS SIMULATED`
+          : 'LOG · SIMULATED',
+    })
+    this.logView.setVisible(scene.showLog)
+    const { model: m } = this.world
+    this.say(
+      `loaded ${m.title.replace(/\.$/, '')}: ${m.environments.length} host${m.environments.length === 1 ? '' : 's'}, ` +
+        `${m.containers.length} containers`,
+    )
+  }
+
+  /** A line from the world itself: what you did */
+  private say(text: string, extra: Partial<LogInput> = {}) {
+    this.log.push({ source: 'world', level: 'info', actor: 'you', text, ...extra })
   }
 
   public async tick(deltaTime: number) {
@@ -333,6 +381,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const seconds = Math.min(deltaTime, 100) / 1000
     this.world.scene.time += seconds
     this.sim.step(seconds)
+    if (!this.sim.paused) this.logSim.step(seconds * this.sim.speed)
     this.stepGlide(seconds)
     this.stepPlates(seconds)
     this.updateView()
@@ -702,6 +751,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     else if (e.key === 'a' || e.key === 'A') this.toggleAdvisor()
     else if (e.key === 'm' || e.key === 'M') this.toggleSwitch('showAdvice')
     else if (e.key === 'l' || e.key === 'L') this.toggleSwitch('showCrossHost')
+    else if (e.key === 't' || e.key === 'T') this.toggleSwitch('showLog')
     else if (e.key === 'Escape') {
       if (this.paneView === 'building') this.showPane('info')
       else if (this.world.scene.selected) this.select(undefined)
@@ -714,7 +764,9 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
 
   /** docker stop / docker start */
   private toggle(c: Container) {
-    if (c.state === 'running' || c.state === 'restarting' || c.state === 'paused') this.sim.stop(c)
+    const stop = c.state === 'running' || c.state === 'restarting' || c.state === 'paused'
+    this.say(`docker ${stop ? 'stop' : 'start'} ${c.name}`, { host: c.env.key, key: c.key })
+    if (stop) this.sim.stop(c)
     else this.sim.start(c)
     this.renderInfo()
     this.updateExplorerStates()
@@ -764,6 +816,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   }
 
   private showRegions(hidden: Set<string>) {
+    const names = this.world.model.regions.map((r) => r.name).filter((n) => !hidden.has(n))
+    this.say(`show regions ${names.join(', ')}`)
     this.hiddenRegions = hidden
     saveHiddenRegions(this.options.current, hidden)
     this.applyRegions(true)
@@ -787,6 +841,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.hoverPlate(undefined)
     if (scene.selected && scene.hidden.has(scene.selected.env)) this.select(undefined)
     if (scene.openHost && scene.hidden.has(scene.openHost)) this.openHost(undefined)
+    this.logView?.refilter()
     if (fly) this.fitView()
   }
 
@@ -1104,6 +1159,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const open = this.paneOpen()
     if (this.$info) this.$info.style.transform = open ? 'translateX(0)' : 'translateX(110%)'
     if (this.$toast) this.$toast.style.right = open ? `${RIGHT}px` : '20px'
+    this.logView?.setRight(open ? RIGHT - 10 : 0)
     if (this.$status) {
       // centered in the free space between the panels, never under them
       const right = open ? RIGHT : 10
@@ -1408,6 +1464,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private toggleSwitch(name: SwitchName) {
     const scene = this.world.scene
     scene[name] = !scene[name]
+    if (name === 'showLog') this.logView?.setVisible(scene.showLog)
     try {
       localStorage.setItem(SWITCHES[name].storage, scene[name] ? 'on' : 'off')
     } catch {
@@ -1454,6 +1511,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const before = this.rating(a.target.env).stars
     if (!applyFix(a, this.world.model)) return
     const t = a.target
+    this.say(`fixed: ${a.title} (${t.name})`, { host: t.env.key, key: t.key })
     const [col, row, z] =
       t.type === 'container'
         ? [t.col + t.w / 2, t.row + t.d / 2, t.height]

@@ -363,7 +363,8 @@ Today every value that changes over time is **simulated**. A real source changes
 | ---- | ----- |
 | Style rules made in the settings | `localStorage['isocontainers.styles.v1']` |
 | Accepted advice ids | `localStorage['isocontainers.accepted.v1']` |
-| Flags switch, host links switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']` |
+| Flags switch, host links switch, log switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']`, `['isocontainers.log.v1']` |
+| The log's lines (the last 500) | `IsoContainersSystem.log` (`LogStream`) |
 | Regions switched off, by stack | `localStorage['isocontainers.regions.v1']` (`{ [stack]: [region, …] }`); their hosts in `scene.hidden` |
 | The host open in the side pane, the one under the pointer, the pane's tab | `scene.openHost`, `scene.hoveredHost`, `IsoContainersSystem.hostTab` |
 | The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
@@ -393,6 +394,44 @@ fleet-wide, so incidents in hidden regions still show.
 
 The samples are in `isocontainers.samples.ts` (`shop`, `fleet`, `states`, `devbox`, `gallery`) and
 `isocontainers.massive.ts` (`massive`: 61 generated hosts in five regions and `global`).
+
+## The log
+
+At the bottom right, the log is written over the city: no panel and no background, only text with a
+dark halo, so it stays readable over plates and buildings, above the canvas and under the panels;
+clicks pass through to the map. The newest line is at the bottom, older lines fade out toward the
+top. The
+`▤ LOG` switch in the status bar (key `T`) shows or hides it; lines of hidden regions are left out.
+
+Each line is a `LogEvent` in one `LogStream` (`isocontainers.log.ts`, pure):
+
+| Field | |
+| ----- | - |
+| `id`, `time` | increasing number; epoch milliseconds |
+| `source` | `engine` (docker events, marked ◆, cyan), `container` (its output, marked ·), `world` (what you did, marked ▸, green) |
+| `level` | `debug`, `info`, `warn`, `error` (the color of the text) |
+| `host`, `key`, `actor` | the environment key, the entity key, and the name shown (a container, `gate`, `you`) |
+| `text` | the line |
+
+`stream.push(input)` adds a line (the last 500 are kept), `stream.subscribe(fn)` hears each new one.
+`LogView` (`IsoContainersLogView.ts`) draws the last 16.
+
+For now the lines are simulated by `LogSimulator`, from the simulation's `onEvent` (`SimEvent`:
+`request` with `failed`, and `stop`, `start`, `up`):
+
+- a sample of the requests, at most `rate` (2.2) lines a second, as the target's kind writes them:
+  access logs of proxies and webs, `INFO` lines of apps and workers, postgres statements, redis
+  commands, queue publishes, object storage requests, scrapes;
+- every failed request, from the caller (`ERROR upstream postgres:5432: connect: connection refused`)
+  or, for ingress, the host's gate (502), at most one a second per target;
+- the engine events of a stop (`kill`, `die`, `network disconnect`, `stop`) and a start (`network
+  connect`, `volume mount`, `start`), and the container's ready line when it is up;
+- every few seconds a health check (`exec_start`, debug), or for a container in trouble a failing
+  health check or a crash (`die exitCode=1`, `restart`).
+
+The system writes `world` lines itself: the stack loaded, `docker stop|start` from the pane or `S`,
+fixes, and the regions shown. Real engine events (docker's `/events` stream) will be pushed into the
+same stream later, in place of the simulated engine lines.
 
 ## The mission-control API
 

@@ -80,6 +80,8 @@ export type ContainersScene = {
   showAdvice: boolean
   /** The connections between hosts are switched on (the selection's own show anyway) */
   showCrossHost: boolean
+  /** The log is shown on the background */
+  showLog: boolean
   /** Text rising from a building, e.g. the points of a fix */
   popups: Array<{ col: number; row: number; z: number; text: string; color: string; born: number }>
 }
