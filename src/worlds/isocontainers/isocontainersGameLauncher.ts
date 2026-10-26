@@ -3,6 +3,7 @@ import { CameraSystem, Game, InputSystem, TileMapSystem } from '../../../lib'
 import { SAMPLES } from './isocontainers.samples.ts'
 import { toEnvironments } from './isocontainers.import.ts'
 import type { ContainersSpec } from './isocontainers.types.ts'
+import { parseRules, type StyleRule } from './isocontainers.styles.ts'
 import isoContainersWorldBuilder from './isocontainers.world.ts'
 import { IsoContainersSystem } from './IsoContainersSystem.ts'
 
@@ -69,6 +70,20 @@ async function loadSpec(
   return { spec, current: spec.id! }
 }
 
+/** ?styles=<url>: building style rules, a JSON array (or { rules: [...] }) */
+async function loadStyles(params: URLSearchParams): Promise<StyleRule[]> {
+  const url = params.get('styles')
+  if (!url) return []
+  try {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`${url}: ${response.status}`)
+    return parseRules(await response.json())
+  } catch (e) {
+    console.warn('isocontainers: styles not loaded', e)
+    return []
+  }
+}
+
 export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
   const config: GameConfig = {
     id: 'isocontainers',
@@ -83,7 +98,11 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new CameraSystem(game))
 
   const params = new URLSearchParams(window.location.search)
-  const [{ spec, current, source }] = await Promise.all([loadSpec(params), loadFonts()])
+  const [{ spec, current, source }, styleRules] = await Promise.all([
+    loadSpec(params),
+    loadStyles(params),
+    loadFonts(),
+  ])
   const world = isoContainersWorldBuilder(spec)
   // added before the TileMapSystem, so each frame draws the state of the same frame
   game.addSystem(
@@ -92,6 +111,9 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
       current,
       source,
       select: params.get('select') ?? undefined,
+      zoom: Number(params.get('zoom')) || undefined,
+      styleRules,
+      advisor: params.has('advisor'),
     }),
   )
   game.addSystem(new TileMapSystem(game, world.tileMap))

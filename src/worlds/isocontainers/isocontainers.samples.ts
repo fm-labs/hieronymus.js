@@ -1,6 +1,15 @@
 import devServerInspect from '../container/container.json'
 import { fromInspect } from './isocontainers.import.ts'
-import type { ContainersSpec } from './isocontainers.types.ts'
+import type { ContainerSpec, ContainersSpec } from './isocontainers.types.ts'
+
+/** What every container of a host gets unless it says otherwise (like an x- anchor in compose) */
+const withDefaults = (defaults: Partial<ContainerSpec>, containers: ContainerSpec[]) =>
+  containers.map((c) => ({ ...defaults, ...c }))
+
+/** A production host: everything restarts and has a memory limit */
+const PRODUCTION: Partial<ContainerSpec> = { restart: 'unless-stopped', memory: '512 MiB' }
+/** A developer's stack: it restarts, the rest is left to the defaults */
+const DEV: Partial<ContainerSpec> = { restart: 'unless-stopped' }
 
 /** One compose stack: a shop behind a proxy, its data on an internal network */
 const shop: ContainersSpec = {
@@ -31,7 +40,7 @@ const shop: ContainersSpec = {
         { name: 'objects', size: '14.2 GB' },
         { name: 'certs', size: '48 KB' },
       ],
-      containers: [
+      containers: withDefaults(DEV, [
         {
           name: 'traefik',
           image: 'traefik:v3.1',
@@ -68,6 +77,8 @@ const shop: ContainersSpec = {
           name: 'worker',
           image: 'shop/api:2.3.1',
           kind: 'worker',
+          // forgotten: it stays down after a crash
+          restart: 'no',
           networks: { backend: { ip: '172.21.0.5' } },
           dependsOn: ['postgres', 'rabbitmq', 'minio'],
           replicas: 3,
@@ -114,7 +125,7 @@ const shop: ContainersSpec = {
           networks: { backend: {} },
           note: 'Started by hand when someone needs to look at the database.',
         },
-      ],
+      ]),
     },
   ],
 }
@@ -127,13 +138,19 @@ const fleet: ContainersSpec = {
   description:
     'A small production fleet. Calls between hosts are drawn as arcs. ' +
     'One worker keeps restarting and one API replica is unhealthy: stop the database and watch the requests fail.',
+  // the team's own images get an accent; the exporters are only sheds
+  styles: [
+    { image: 'company/*', accent: '#4cc9f0' },
+    { image: 'prom/node-exporter', style: 'shed' },
+    { image: 'gcr.io/cadvisor/cadvisor', style: 'shed' },
+  ],
   environments: [
     {
       name: 'edge-1',
       caption: 'docker 27.3 · 10.0.1.10',
       networks: [{ name: 'public', subnet: '172.18.0.0/16' }],
       volumes: [{ name: 'acme', size: '64 KB' }],
-      containers: [
+      containers: withDefaults(PRODUCTION, [
         {
           name: 'caddy',
           image: 'caddy:2.8',
@@ -157,7 +174,7 @@ const fleet: ContainersSpec = {
           calls: ['data-1/pgbouncer'],
           memory: '1 GiB',
         },
-      ],
+      ]),
     },
     {
       name: 'apps-1',
@@ -166,7 +183,7 @@ const fleet: ContainersSpec = {
         { name: 'api', subnet: '172.19.0.0/16' },
         { name: 'jobs', subnet: '172.22.0.0/16', internal: true },
       ],
-      containers: [
+      containers: withDefaults(PRODUCTION, [
         {
           name: 'api-1',
           image: 'company/api:5.12.0',
@@ -214,7 +231,7 @@ const fleet: ContainersSpec = {
           calls: ['nats', 'data-1/minio'],
           replicas: 4,
         },
-      ],
+      ]),
     },
     {
       name: 'data-1',
@@ -226,7 +243,7 @@ const fleet: ContainersSpec = {
         { name: 'blobs', size: '1.4 TB' },
         { name: 'backups', size: '640 GB' },
       ],
-      containers: [
+      containers: withDefaults(PRODUCTION, [
         {
           name: 'pgbouncer',
           image: 'edoburu/pgbouncer:1.23',
@@ -267,7 +284,7 @@ const fleet: ContainersSpec = {
           mounts: ['backups:/backups', 'pg-replica:/source:ro'],
           note: 'Runs nightly at 03:00 from cron.',
         },
-      ],
+      ]),
     },
     {
       name: 'ops-1',
@@ -278,7 +295,7 @@ const fleet: ContainersSpec = {
         { name: 'grafana', size: '220 MB' },
         { name: 'loki', size: '96 GB' },
       ],
-      containers: [
+      containers: withDefaults(PRODUCTION, [
         {
           name: 'grafana',
           image: 'grafana/grafana:11.2.0',
@@ -311,7 +328,7 @@ const fleet: ContainersSpec = {
           image: 'prom/node-exporter:v1.8.2',
           networks: ['host'],
         },
-      ],
+      ]),
     },
   ],
 }

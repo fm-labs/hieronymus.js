@@ -64,10 +64,13 @@ export class ContainersSimulation {
   time = 0
   /** Requests per second, all environments, smoothed */
   rps = 0
+  /** Failed requests per second, smoothed */
+  eps = 0
   totalRequests = 0
   totalErrors = 0
 
   private arrivals = 0
+  private failures = 0
   private bucket = 0
   private rising = new Set<Container | Volume>()
 
@@ -124,7 +127,9 @@ export class ContainersSimulation {
     this.bucket += dt
     if (this.bucket >= 0.5) {
       this.rps = this.rps * 0.5 + (this.arrivals / this.bucket) * 0.5
+      this.eps = this.eps * 0.5 + (this.failures / this.bucket) * 0.5
       this.arrivals = 0
+      this.failures = 0
       this.bucket = 0
     }
   }
@@ -184,6 +189,7 @@ export class ContainersSimulation {
       if (l.to.sparks.length < 3) l.to.sparks.push(0)
       l.to.errors++
       this.totalErrors++
+      this.failures++
       return
     }
     l.to.requests++

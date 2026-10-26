@@ -11,6 +11,7 @@
  * street (or for a second mount of a volume) the link is an arc through the air.
  */
 import { guessKind } from './isocontainers.import.ts'
+import { resolveLook, type StyleRule } from './isocontainers.styles.ts'
 import {
   type Attachment,
   type Container,
@@ -97,7 +98,29 @@ const CALL_RATE: Partial<Record<ContainerKind, number>> = {
   app: 0.55,
 }
 
+/** The height of a tank whose size is not known */
 export const TANK_HEIGHT = 30
+
+const UNITS: Record<string, number> = { B: 0, K: 1, M: 2, G: 3, T: 4, P: 5 }
+
+/** '2.4 GB', '512MiB', '48 kB', '1.4T' → bytes; undefined when it is not a size */
+export function parseSize(text: string | undefined): number | undefined {
+  const m = /^\s*([\d.]+)\s*([KMGTP]?)(i?B?)\s*$/i.exec(text ?? '')
+  if (!m || !Number.isFinite(Number(m[1]))) return undefined
+  const unit = m[2].toUpperCase() || 'B'
+  return Number(m[1]) * (m[3].toLowerCase().startsWith('i') ? 1024 : 1000) ** UNITS[unit]
+}
+
+/**
+ * The height of a tank by the size of its volume, in pixels. Sizes span many orders of magnitude
+ * (a 48 KB config next to a 1.4 TB blob store), so each ×10 adds the same height: 1 MB is 16 px,
+ * 1 GB 43, 1 TB 70.
+ */
+export function tankHeight(bytes: number | undefined): number {
+  if (bytes === undefined) return TANK_HEIGHT
+  const decades = Math.log10(Math.max(1, bytes) / 1e6)
+  return Math.round(Math.max(8, Math.min(76, 16 + decades * 9)))
+}
 
 /** '127.0.0.1:5432:5432', '8080:80', '80', '53:53/udp' */
 export function parsePort(spec: string): Port | undefined {
@@ -117,7 +140,10 @@ export const isPublished = (p: Port) => p.hostPort !== undefined
 const ANONYMOUS = /^[0-9a-f]{64}$/
 
 /** Build the model of a spec: entities, layout and links */
-export function buildContainersModel(spec: ContainersSpec): ContainersModel {
+export function buildContainersModel(
+  spec: ContainersSpec,
+  styleRules: StyleRule[] = spec.styles ?? [],
+): ContainersModel {
   const byKey = new Map<string, Container | Network | Volume>()
   const environments = spec.environments.map((e, i) => buildEnvironment(e, i, byKey))
   const links = environments.flatMap((env, i) =>
@@ -127,9 +153,13 @@ export function buildContainersModel(spec: ContainersSpec): ContainersModel {
   for (const env of environments) layoutEnvironment(env, 0, 0)
   placeEnvironments(environments)
 
+  const containers = environments.flatMap((e) => e.containers)
+  for (const c of containers) {
+    c.look = resolveLook(c, styleRules)
+    c.height = Math.round(c.baseHeight * c.look.scale)
+  }
   for (const link of links) route(link)
 
-  const containers = environments.flatMap((e) => e.containers)
   return {
     spec,
     title: spec.title,
@@ -249,6 +279,7 @@ function buildEnvironment(
         col: 0,
         row: 0,
         r: LOT.tankR,
+        height: TANK_HEIGHT,
         flash: 0,
         reads: 0,
         writes: 0,
@@ -262,6 +293,7 @@ function buildEnvironment(
     const v = volume(s.name)
     v.driver = s.driver || v.driver
     v.size = s.size
+    v.height = tankHeight(parseSize(s.size))
     v.mountpoint = s.mountpoint
     v.note = s.note
   }
@@ -332,13 +364,18 @@ function buildContainer(s: ContainerSpec, env: Environment): Container {
     cpus: s.cpus,
     created: s.created,
     labels: s.labels ?? {},
+    user: s.user,
+    privileged: s.privileged,
+    healthcheck: s.healthcheck ?? (s.health ? true : undefined),
     note: s.note,
+    look: { style: 'tower', roof: 'none', scale: 1, source: 'default' },
     inferred: false,
     col: 0,
     row: 0,
     w: LOT.w,
     d: LOT.d,
     height: HEIGHTS[kind],
+    baseHeight: HEIGHTS[kind],
     driveways: [],
     flyovers: [],
     flash: 0,
@@ -801,7 +838,7 @@ function route(link: Link) {
         [v.col, pipe],
         [v.col, v.row + v.r],
       ]
-    } else link.arc = { a: center(to), b: [v.col, v.row, TANK_HEIGHT] }
+    } else link.arc = { a: center(to), b: [v.col, v.row, v.height] }
   } else if (link.kind === 'ingress') {
     const d = to.driveways.find((x) => !x.network.internal)
     if (d) {
@@ -859,6 +896,28 @@ function simplify(points: GridPoint[]): GridPoint[] {
     out.push(p)
   }
   return out
+}
+
+/** Resolve the looks again (the rules changed), and the heights that come with them */
+export function applyLooks(model: ContainersModel, styleRules: StyleRule[]) {
+  for (const c of model.containers) c.look = resolveLook(c, styleRules)
+  updateHeights(model)
+}
+
+/**
+ * Set each building's height from its look (its kind's height times the style's scale), and move the
+ * ends of the arcs that start or end on a roof with it.
+ */
+export function updateHeights(model: ContainersModel) {
+  for (const c of model.containers) c.height = Math.round(c.baseHeight * c.look.scale)
+  for (const l of model.links) {
+    if (!l.arc) continue
+    if (l.kind === 'mount') l.arc.a[2] = l.to.height
+    else {
+      if (l.from) l.arc.a[2] = l.from.height
+      l.arc.b[2] = l.to.height
+    }
+  }
 }
 
 /** The total length of a link, in cells; arcs count their ground distance */

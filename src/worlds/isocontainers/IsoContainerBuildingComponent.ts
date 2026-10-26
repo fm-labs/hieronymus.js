@@ -2,20 +2,34 @@ import type { GameComponentProperties, IGameComponent } from '../../../lib/game.
 import { AbstractGameComponent } from '../../../lib'
 import { noise } from '../isovegas/isovegas.draw.ts'
 import { isPublished } from './isocontainers.layout.ts'
-import { KIND_LABELS, type Container } from './isocontainers.types.ts'
+import { KIND_LABELS, type Container, type GridPoint } from './isocontainers.types.ts'
+import { STYLES } from './isocontainers.styles.ts'
+import {
+  arch,
+  badge,
+  cornice,
+  crenels,
+  door,
+  facade,
+  faceQuad,
+  footprint,
+  frontOf,
+  planePath,
+  roofProp,
+  sides,
+  visibleFaces,
+  type Face,
+} from './isocontainers.buildings.ts'
 import {
   COLORS,
   FONT,
   PALETTE,
   U,
-  boxSides,
   fit,
   focusAlpha,
   hexAlpha,
   isVisible,
-  leftQuad,
   poly,
-  rightQuad,
   stateColor,
   type ContainersScene,
 } from './isocontainers.draw.ts'
@@ -29,7 +43,6 @@ import {
   icicles,
   moodOf,
   phaseOf,
-  windowColor,
   type Mood,
 } from './isocontainers.fx.ts'
 
@@ -37,8 +50,6 @@ export interface IsoContainerBuildingComponentProps extends GameComponentPropert
   container: Container
   scene: ContainersScene
 }
-
-const FLOOR = 9
 
 /** How visible a building is, by mood: what is gone steps back, what burns does not */
 const MOOD_ALPHA: Partial<Record<Mood, number>> = { stopped: 0.72, dead: 0.85, created: 0.9 }
@@ -102,54 +113,24 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     const { container: c, scene } = this.properties
     const P = scene.projection
     const { row, d } = c
+    const style = STYLES[c.look.style]
+    const points = footprint(style.shape, col, row, w, d)
+    const faces = visibleFaces(points)
     const [left, right] = faceColors(mood)
-    boxSides(ctx, P, col, row, w, d, 0, h, left, right)
-    if (mood === 'burning' || mood === 'dead') this.scorch(ctx, col, w, h)
+    sides(ctx, P, faces, h, left, right)
+    if (mood === 'burning' || mood === 'dead') this.scorch(ctx, faces, h)
 
-    // windows: short strips per floor, in the color of the state
-    const floors = Math.max(1, Math.floor((h - 8) / FLOOR))
     const up = c.state === 'running'
     const load = up ? Math.min(0.9, 0.18 + c.cpu / 60 + c.flash * 0.35) : 0
-    const phase = phaseOf(c)
-    const time = scene.time
-    const windows = (
-      count: number,
-      quad: (a: number, b: number, z: number) => [number, number][],
-      salt: number,
-    ) => {
-      for (let f = 0; f < floors; f++) {
-        const z = 6 + f * FLOOR
-        if (z + 3.5 > h - 2) break
-        for (let i = 0; i < count; i++) {
-          // each window has its own threshold; it fades in and out as the load moves past it
-          const level = Math.max(0, Math.min(1, (load - noise(i + index * 7, f, salt)) * 5))
-          const color = windowColor(c, mood, level, i + salt * 11, f, floors, time, phase)
-          poly(ctx, quad(i, count, z))
-          ctx.fillStyle = color ?? 'rgba(255,255,255,0.035)'
-          ctx.fill()
-        }
-      }
-    }
-    const across = Math.max(1, Math.round(w / 0.42))
-    windows(
-      across,
-      (i, k, z) => {
-        const step = (w - 0.2) / k
-        const a = col + 0.1 + i * step + 0.05
-        return leftQuad(P, row + d, a, a + step - 0.1, z, z + 3.5)
-      },
-      1,
-    )
-    const deep = Math.max(1, Math.round(d / 0.42))
-    windows(
-      deep,
-      (i, k, z) => {
-        const step = (d - 0.2) / k
-        const a = row + d - 0.1 - i * step - 0.05
-        return rightQuad(P, col + w, a, a - step + 0.1, z, z + 3.5)
-      },
-      2,
-    )
+    const x = { c, mood, load, h, index, time: scene.time }
+    faces.forEach((f, i) => facade(ctx, P, style, f, i + 1, x))
+    const front = frontOf(faces)
+    const light = up ? stateColor(c) : undefined
+    if (front && style.arch) arch(ctx, P, front, h, light)
+    else if (front && style.door) door(ctx, P, front, h, style.facade === 'ribbon', light)
+    if (front && index === 0 && c.look.badge && mood !== 'created')
+      badge(ctx, P, front, h, c.look.badge, c.look.accent)
+    if (c.look.accent && mood !== 'created') cornice(ctx, P, faces, h, c.look.accent)
 
     // the edges: catching the light, or dashed lines of a blueprint
     ctx.save()
@@ -158,24 +139,25 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       ctx.setLineDash([4, 4])
       ctx.lineWidth = 1.2
       ctx.beginPath()
-      for (const [a, b] of [
-        [col, row + d],
-        [col + w, row + d],
-        [col + w, row],
-      ]) {
-        ctx.moveTo(...P.at(a, b, 0))
-        ctx.lineTo(...P.at(a, b, h))
+      for (const f of faces) {
+        const q = faceQuad(P, f, 0, f.len, 0, h)
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[1])
+        ctx.lineTo(...q[2])
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[3])
       }
-      ctx.moveTo(...P.at(col, row + d, 0))
-      ctx.lineTo(...P.at(col + w, row + d, 0))
-      ctx.lineTo(...P.at(col + w, row, 0))
       ctx.stroke()
     } else {
       ctx.strokeStyle = 'rgba(200,220,212,0.16)'
       ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.moveTo(...P.at(col + w, row + d, 0))
-      ctx.lineTo(...P.at(col + w, row + d, h))
+      // between two faces that both show
+      for (let i = 1; i < faces.length; i++) {
+        const q = faceQuad(P, faces[i], 0, faces[i].len, 0, h)
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[3])
+      }
       ctx.stroke()
     }
     ctx.restore()
@@ -183,19 +165,21 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     // the top of a tower; the roof text goes on the first one
     P.plane(ctx, h, () => {
       const [u0, v0, W, D] = [col * U, row * U, w * U, d * U]
+      planePath(ctx, points)
       if (mood === 'created') {
         ctx.fillStyle = 'rgba(76,201,240,0.05)'
-        ctx.fillRect(u0, v0, W, D)
+        ctx.fill()
       } else {
         const face = ctx.createLinearGradient(u0, v0, u0 + W, v0 + D)
         const charred = mood === 'burning' || mood === 'dead'
         face.addColorStop(0, charred ? '#151312' : mood === 'paused' ? '#1c2a32' : '#1a2629')
         face.addColorStop(1, charred ? '#0c0b0b' : mood === 'paused' ? '#15222a' : PALETTE.roof)
         ctx.fillStyle = face
-        ctx.fillRect(u0, v0, W, D)
+        ctx.fill()
+        planePath(ctx, points, 7)
         ctx.strokeStyle = PALETTE.roofEdge
         ctx.lineWidth = 2
-        ctx.strokeRect(u0 + 7, v0 + 7, W - 14, D - 14)
+        ctx.stroke()
       }
       if (mood === 'paused') {
         // frost: a pale sheen and a few crystal lines
@@ -203,13 +187,14 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
         frost.addColorStop(0, 'rgba(190,230,255,0.22)')
         frost.addColorStop(1, 'rgba(143,211,255,0.06)')
         ctx.fillStyle = frost
-        ctx.fillRect(u0, v0, W, D)
+        planePath(ctx, points)
+        ctx.fill()
         ctx.strokeStyle = 'rgba(210,240,255,0.25)'
         ctx.lineWidth = 1.2
         ctx.beginPath()
         for (let k = 0; k < 5; k++) {
-          const x = u0 + W * noise(k, 1, index + 3)
-          const y = v0 + D * noise(k, 2, index + 3)
+          const x = u0 + W * (0.15 + 0.7 * noise(k, 1, index + 3))
+          const y = v0 + D * (0.15 + 0.7 * noise(k, 2, index + 3))
           for (let a = 0; a < 3; a++) {
             const angle = (a * Math.PI) / 3
             ctx.moveTo(x - Math.cos(angle) * 7, y - Math.sin(angle) * 7)
@@ -218,19 +203,19 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
         }
         ctx.stroke()
       }
-      this.rim(ctx, u0, v0, W, D, mood)
+      this.rim(ctx, points, mood)
     })
+    if (style.crenels && mood !== 'created') {
+      const [l, r] = faceColors(mood)
+      crenels(ctx, P, faces, h, [l === '#0f181a' ? '#1a2a2d' : l, r, '#2c3f43'])
+    }
   }
 
   /** Soot climbing up the sides of a burnt building, from the windows to the roof */
-  private scorch(ctx: CanvasRenderingContext2D, col: number, w: number, h: number) {
-    const { container: c, scene } = this.properties
-    const P = scene.projection
-    const { row, d } = c
-    for (const quad of [
-      leftQuad(P, row + d, col, col + w, h * 0.35, h),
-      rightQuad(P, col + w, row + d, row, h * 0.35, h),
-    ]) {
+  private scorch(ctx: CanvasRenderingContext2D, faces: Face[], h: number) {
+    const P = this.properties.scene.projection
+    for (const f of faces) {
+      const quad = faceQuad(P, f, 0, f.len, h * 0.35, h)
       const [, y0] = quad[0]
       const [, y1] = quad[3]
       const gradient = ctx.createLinearGradient(0, y0, 0, y1)
@@ -243,14 +228,7 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
   }
 
   /** The edge of a roof, in the color of the mood */
-  private rim(
-    ctx: CanvasRenderingContext2D,
-    u0: number,
-    v0: number,
-    W: number,
-    D: number,
-    mood: Mood,
-  ) {
+  private rim(ctx: CanvasRenderingContext2D, points: GridPoint[], mood: Mood) {
     const { container: c, scene } = this.properties
     const color = stateColor(c)
     ctx.save()
@@ -295,7 +273,8 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       default:
         ctx.strokeStyle = hexAlpha(color, 0.35)
     }
-    ctx.strokeRect(u0 + 1, v0 + 1, W - 2, D - 2)
+    planePath(ctx, points, 1)
+    ctx.stroke()
     ctx.restore()
   }
 
@@ -304,20 +283,32 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     const { container: c, scene } = this.properties
     const P = scene.projection
     const dark = mood === 'stopped' || mood === 'dead' || mood === 'created'
+    const color = mood === 'paused' ? ICE : stateColor(c)
+    const lit = mood === 'ok' || mood === 'unhealthy' || mood === 'starting' || mood === 'burning'
+    const style = STYLES[c.look.style]
+    // nothing stands on a blueprint
+    const prop = mood === 'created' ? 'none' : c.look.roof
+    // the corners of an octagon are cut: the text moves in
+    const inset = style.shape === 'octagon' ? Math.min(width, c.d) * 0.12 * U : 0
+    const reserve = prop === 'none' ? 18 : 34
     P.plane(ctx, h, () => {
-      const [u0, v0, W, D] = [c.col * U, c.row * U, width * U, c.d * U]
+      const [u0, v0, W, D] = [c.col * U + inset, c.row * U, width * U - inset * 2, c.d * U]
       const pad = 14
       ctx.textBaseline = 'middle'
       ctx.font = `600 ${width < 1.6 ? 16 : 22}px ${FONT.ui}`
       ctx.fillStyle = dark ? COLORS.muted : COLORS.text
       ctx.fillText(
-        fit(ctx, c.service && c.name.length > 18 ? c.service : c.name, W - pad * 2 - 18),
+        fit(ctx, c.service && c.name.length > 18 ? c.service : c.name, W - pad * 2 - reserve),
         u0 + pad,
         v0 + 28,
       )
       ctx.font = `500 11.5px ${FONT.mono}`
       ctx.fillStyle = COLORS.muted
-      ctx.fillText(fit(ctx, c.image.split('/').pop() ?? c.image, W - pad * 2), u0 + pad, v0 + 50)
+      ctx.fillText(
+        fit(ctx, c.image.split('/').pop() ?? c.image, W - pad * 2 - reserve + 18),
+        u0 + pad,
+        v0 + 50,
+      )
       ctx.font = `600 10px ${FONT.mono}`
       ctx.fillStyle = COLORS.faint
       const kind = KIND_LABELS[c.kind].toUpperCase() + (c.replicas > 1 ? ` · ×${c.replicas}` : '')
@@ -343,9 +334,8 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
         x += w + 5
       }
 
+      if (prop !== 'none') return
       // the status light, top right
-      const color = mood === 'paused' ? ICE : stateColor(c)
-      const lit = mood === 'ok' || mood === 'unhealthy' || mood === 'starting' || mood === 'burning'
       ctx.save()
       if (lit) {
         ctx.shadowColor = color
@@ -357,6 +347,29 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       ctx.fill()
       ctx.restore()
     })
+    if (prop === 'none') return
+
+    // what stands on the roof, at its back corner; the status light on top of it
+    const top = roofProp(ctx, P, prop, c.col + width - 0.32, c.row + 0.32, h, {
+      light: color,
+      lit,
+      load: c.state === 'running' ? Math.min(1, 0.15 + c.cpu / 50) : 0,
+      running: c.state === 'running',
+      time: scene.time,
+      phase: phaseOf(c),
+      charred: mood === 'burning' || mood === 'dead',
+    })
+    if (!top) return
+    ctx.save()
+    if (lit) {
+      ctx.shadowColor = color
+      ctx.shadowBlur = 10
+    }
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.arc(top[0], top[1], 3.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
   }
 
   private outline(ctx: CanvasRenderingContext2D, h: number) {

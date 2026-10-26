@@ -481,3 +481,74 @@ function icon(
   }
   ctx.restore()
 }
+
+export const SEVERITY_COLORS = { risk: COLORS.red, warn: COLORS.amber, tip: '#6fb6d6' }
+
+/**
+ * The advisor's flag on a building: a small bubble at the front corner of the roof with how many
+ * pieces of advice are open, in the color of the worst.
+ */
+export function adviceChip(
+  ctx: CanvasRenderingContext2D,
+  P: FlowProjection,
+  c: Container,
+  h: number,
+  advice: { count: number; severity: keyof typeof SEVERITY_COLORS },
+  time: number,
+  zoom: number,
+) {
+  const color = SEVERITY_COLORS[advice.severity]
+  const s = Math.max(1, 0.7 / zoom)
+  const bob = Math.sin(time * 1.6 + phaseOf(c) * 6) * 1.5
+  const [bx, by] = P.at(c.col + 0.32, c.row + c.d - 0.32, h)
+  const [x, y] = [bx, by - 16 * s + bob]
+  const r = 7.5 * s
+  ctx.save()
+  ctx.fillStyle = 'rgba(9,13,14,0.92)'
+  ctx.strokeStyle = color
+  ctx.lineWidth = 1.6 * s
+  if (advice.severity === 'risk') {
+    ctx.shadowColor = color
+    ctx.shadowBlur = 8 * s
+  }
+  // a bubble with a tail down to the roof
+  ctx.beginPath()
+  ctx.arc(x, y, r, Math.PI * 0.62, Math.PI * 2.38)
+  ctx.lineTo(bx, by - 2 * s + bob / 2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.shadowBlur = 0
+  ctx.fillStyle = color
+  ctx.font = `700 ${9 * s}px ${FONT.mono}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(advice.count > 9 ? '9+' : String(advice.count), x, y + 0.5 * s)
+  ctx.restore()
+}
+
+/** Text rising from a building and fading out, e.g. '+4' for a fix */
+export const POPUP_SECONDS = 1.8
+
+export function popup(
+  ctx: CanvasRenderingContext2D,
+  P: FlowProjection,
+  p: { col: number; row: number; z: number; text: string; color: string; born: number },
+  time: number,
+  zoom: number,
+) {
+  const t = (time - p.born) / POPUP_SECONDS
+  if (t < 0 || t > 1) return
+  const s = Math.max(1, 0.8 / zoom)
+  const [x, y] = P.at(p.col, p.row, p.z)
+  ctx.save()
+  ctx.globalAlpha *= t < 0.15 ? t / 0.15 : 1 - Math.max(0, (t - 0.5) / 0.5)
+  ctx.font = `700 ${15 * s}px ${FONT.mono}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.shadowColor = p.color
+  ctx.shadowBlur = 12
+  ctx.fillStyle = p.color
+  ctx.fillText(p.text, x, y - 20 * s - t * 40 * s)
+  ctx.restore()
+}

@@ -5,8 +5,37 @@
  * and the live state.
  */
 
+import type { StyleRule } from './isocontainers.styles.ts'
+
 export type ContainerState = 'running' | 'exited' | 'paused' | 'restarting' | 'created' | 'dead'
 export type ContainerHealth = 'healthy' | 'unhealthy' | 'starting'
+
+/** The architecture of a building */
+export type BuildingStyle =
+  | 'tower'
+  | 'glass'
+  | 'vault'
+  | 'silo'
+  | 'factory'
+  | 'gatehouse'
+  | 'lighthouse'
+  | 'shed'
+
+/** What stands on a roof; its top carries the status light */
+export type RoofProp = 'none' | 'antenna' | 'tank' | 'dome' | 'chimney' | 'beacon' | 'vents'
+
+/** The resolved look of a building: its style, options, and where they came from */
+export type BuildingLook = {
+  style: BuildingStyle
+  roof: RoofProp
+  /** Times the height of its kind */
+  scale: number
+  accent?: string
+  /** A short sign on the front, e.g. 'PG' */
+  badge?: string
+  /** Where the style came from, e.g. 'kind', 'rule postgres', 'label' */
+  source: string
+}
 
 export type ContainerKind =
   | 'proxy'
@@ -55,6 +84,11 @@ export type ContainerSpec = {
   cpus?: number
   created?: string
   labels?: Record<string, string>
+  /** The user it runs as ('root' when the image sets none); undefined when unknown */
+  user?: string
+  privileged?: boolean
+  /** A health check is defined (undefined: unknown) */
+  healthcheck?: boolean
   note?: string
 }
 
@@ -92,6 +126,8 @@ export type ContainersSpec = {
   subtitle?: string
   description?: string
   environments: EnvironmentSpec[]
+  /** How buildings look, by image, kind or name (see isocontainers.styles.ts) */
+  styles?: StyleRule[]
 }
 
 /** A grid point: [col, row] */
@@ -159,7 +195,12 @@ export type Container = {
   cpus?: number
   created?: string
   labels: Record<string, string>
+  user?: string
+  privileged?: boolean
+  healthcheck?: boolean
   note?: string
+  /** What the building looks like (see isocontainers.styles.ts) */
+  look: BuildingLook
   /** The calls were guessed (no depends_on or calls in the input) */
   inferred: boolean
   // layout: the building's footprint, its height in pixels, the driveways to its streets
@@ -168,6 +209,8 @@ export type Container = {
   w: number
   d: number
   height: number
+  /** The height by kind, before the style scales it */
+  baseHeight: number
   driveways: Driveway[]
   /** Networks it joins that are not next to its lot: drawn as arcs */
   flyovers: Network[]
@@ -222,10 +265,11 @@ export type Volume = {
   mounts: Mount[]
   /** The container whose lot holds the tank */
   owner?: Container
-  // layout: the center of the tank and its radius, in cells
+  // layout: the center of the tank and its radius, in cells; its height in pixels, by its size
   col: number
   row: number
   r: number
+  height: number
   // live state
   flash: number
   reads: number

@@ -1,9 +1,12 @@
 import type { GameComponentProperties, IGameComponent } from '../../../lib/game.types'
 import { AbstractGameComponent } from '../../../lib'
-import { TANK_HEIGHT, linkLength } from './isocontainers.layout.ts'
+import { linkLength } from './isocontainers.layout.ts'
 import { TAIL } from './isocontainers.sim.ts'
 import { FLOW_COLORS } from './IsoContainersGroundComponent.ts'
 import {
+  POPUP_SECONDS,
+  adviceChip,
+  popup,
   MARKER_LIFT,
   hasMarker,
   heightOf,
@@ -123,7 +126,16 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
       ctx.globalAlpha = focusAlpha(scene, c, 0.25)
       marker(ctx, P, c, heightOf(c), scene.time, scene.zoom)
     }
+    // the advisor's flags: risks and warnings, and the tips while the advisor is open
+    for (const c of scene.showAdvice ? model.containers : []) {
+      const advice = scene.advice.get(c)
+      if (!advice || (advice.severity === 'tip' && !scene.allAdvice)) continue
+      ctx.globalAlpha = focusAlpha(scene, c, 0.25)
+      adviceChip(ctx, P, c, heightOf(c), advice, scene.time, scene.zoom)
+    }
     ctx.globalAlpha = 1
+    scene.popups = scene.popups.filter((p) => scene.time - p.born < POPUP_SECONDS)
+    for (const p of scene.popups) popup(ctx, P, p, scene.time, scene.zoom)
 
     const labelled = new Set<Entity>()
     if (scene.hovered) labelled.add(scene.hovered)
@@ -185,7 +197,7 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
       const [x, y] = P.at(e.col + e.w / 2, e.row + e.d / 2, heightOf(e) + lift)
       pill(ctx, x, y, e.name, stateColor(e), stateText(e))
     } else if (e.type === 'volume') {
-      const [x, y] = P.at(e.col, e.row, TANK_HEIGHT + 14)
+      const [x, y] = P.at(e.col, e.row, e.height + 14)
       pill(
         ctx,
         x,

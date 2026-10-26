@@ -38,6 +38,14 @@ export type ContainersScene = {
   focus?: Set<unknown>
   /** The camera zoom, so markers stay readable from far away */
   zoom: number
+  /** Open advice per container: how many, and the worst */
+  advice: Map<unknown, { count: number; severity: 'risk' | 'warn' | 'tip' }>
+  /** Show the tips too (the advisor is open), not only risks and warnings */
+  allAdvice: boolean
+  /** The advisor's flags are switched on */
+  showAdvice: boolean
+  /** Text rising from a building, e.g. the points of a fix */
+  popups: Array<{ col: number; row: number; z: number; text: string; color: string; born: number }>
 }
 
 export const isVisible = (scene: ContainersScene, x: number, y: number, margin = 200) =>

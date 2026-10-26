@@ -1,7 +1,30 @@
 import type { IGame, IGameSystem } from '../../../lib/game.types'
 import { AbstractGameSystem } from '../../../lib'
-import { LOT, TANK_HEIGHT, isPublished, neighborhood } from './isocontainers.layout.ts'
+import { LOT, applyLooks, isPublished, neighborhood } from './isocontainers.layout.ts'
+import {
+  ROOFS,
+  SCALE_RANGE,
+  STYLES,
+  STYLE_ACCENTS,
+  imageRepository,
+  lookToLabels,
+  parseRules,
+  removeRule,
+  upsertRule,
+  type StyleOptions,
+  type StyleRule,
+} from './isocontainers.styles.ts'
 import { ContainersSimulation } from './isocontainers.sim.ts'
+import {
+  POINTS,
+  SEVERITY_LABELS,
+  advise,
+  applyFix,
+  rate,
+  type Advice,
+  type Rating,
+} from './isocontainers.advisor.ts'
+import { FIRE, ICE, SEVERITY_COLORS, moodOf, type Mood } from './isocontainers.fx.ts'
 import {
   KIND_LABELS,
   type Container,
@@ -22,11 +45,87 @@ export type IsoContainersSystemOptions = {
   source?: string
   /** Select and fly to a container (or network, volume) at the start */
   select?: string
+  /** The zoom to fly in with */
+  zoom?: number
+  /** Building style rules from the URL (?styles=); the stack's own come first, the user's last */
+  styleRules?: StyleRule[]
+  /** Open the advisor at the start */
+  advisor?: boolean
+}
+
+/** Who a style change applies to */
+type StyleScope = 'image' | 'name' | 'kind'
+
+const STYLE_STORAGE = 'isocontainers.styles.v1'
+const FLAGS_STORAGE = 'isocontainers.flags.v1'
+
+/** The groups of the health meter, in its order: what is fine first, what is gone last */
+const HEALTH_GROUPS: Array<{ label: string; color: string; moods: Mood[] }> = [
+  { label: 'healthy', color: COLORS.green, moods: ['ok'] },
+  { label: 'starting', color: COLORS.amber, moods: ['starting', 'booting'] },
+  { label: 'failing', color: COLORS.red, moods: ['unhealthy', 'crashloop'] },
+  { label: 'paused', color: ICE, moods: ['paused'] },
+  { label: 'crashed', color: FIRE, moods: ['burning', 'dead'] },
+  { label: 'stopped', color: 'rgba(233,239,236,0.22)', moods: ['stopped', 'created'] },
+]
+
+/** What counts as an incident: a container that fails or crashed */
+const INCIDENT_MOODS = new Set<Mood>(['unhealthy', 'crashloop', 'burning', 'dead'])
+const ACCEPTED_STORAGE = 'isocontainers.accepted.v1'
+
+function loadAccepted(): Set<string> {
+  try {
+    const list = JSON.parse(localStorage.getItem(ACCEPTED_STORAGE) ?? '[]')
+    return new Set(Array.isArray(list) ? list.filter((x) => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveAccepted(ids: Set<string>) {
+  try {
+    localStorage.setItem(ACCEPTED_STORAGE, JSON.stringify([...ids]))
+  } catch {
+    // private mode: accepted until the page reloads
+  }
+}
+
+/** Five stars, in halves */
+function stars(value: number, size = 13) {
+  let html = ''
+  for (let i = 0; i < 5; i++) {
+    const fill = value >= i + 1 ? 1 : value >= i + 0.5 ? 0.5 : 0
+    const on = COLORS.amber
+    const off = 'rgba(255,255,255,0.16)'
+    const background =
+      fill === 0.5 ? `linear-gradient(90deg,${on} 50%,${off} 50%)` : fill ? on : off
+    html +=
+      `<span style="font-size:${size}px;line-height:1;background:${background};-webkit-background-clip:text;` +
+      `background-clip:text;color:transparent">★</span>`
+  }
+  return `<span style="letter-spacing:1px;white-space:nowrap">${html}</span>`
+}
+
+/** The user's own style rules, kept in this browser */
+function loadLocalRules(): StyleRule[] {
+  try {
+    return parseRules(JSON.parse(localStorage.getItem(STYLE_STORAGE) ?? '[]'))
+  } catch {
+    return []
+  }
+}
+
+function saveLocalRules(rules: StyleRule[]) {
+  try {
+    localStorage.setItem(STYLE_STORAGE, JSON.stringify(rules))
+  } catch {
+    // private mode: the rules last until the page reloads
+  }
 }
 
 const LEFT = 300
 const RIGHT = 350
-const TOP = 120
+const TOP = 70
 const BOTTOM = 56
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8]
 
@@ -40,7 +139,7 @@ const MONO_LABEL = `font:600 10px/1.4 ${FONT.mono};letter-spacing:2px;text-trans
 
 /**
  * Runs the containers world: the simulation, the camera (drag to pan, fly to things), hover and
- * selection, the explorer on the left, the info pane on the right, the title and the HUD.
+ * selection, the explorer on the left, the info pane on the right, the status bar and the HUD.
  * Keys: 1-9 open a stack, space pause, + / − speed, F fit, S stop / start the selected container, Esc clear.
  */
 export class IsoContainersSystem extends AbstractGameSystem implements IGameSystem {
@@ -53,7 +152,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private $explorer?: HTMLDivElement
   private $info?: HTMLDivElement
   private $hud?: HTMLDivElement
-  private $title?: HTMLDivElement
   private previousBackground = ''
   private previousCursor = ''
   private drag?: { x: number; y: number; ox: number; oy: number; moved: boolean }
@@ -61,11 +159,21 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private lastCamera = { x: NaN, y: NaN, zoom: NaN }
   private backgroundKey = ''
   private refresh = 0
+  private localRules = loadLocalRules()
+  private advice: Advice[] = []
+  /** What the advisor said at the start: what is gone since was fixed */
+  private initialAdvice = new Set<string>()
+  private accepted = loadAccepted()
+  private advisorOpen = false
+  private $toast?: HTMLDivElement
+  private $status?: HTMLDivElement
+  private styleScope: StyleScope = 'image'
 
   constructor(game: IGame, world: ContainersWorld, options: IsoContainersSystemOptions) {
     super(game)
     this.world = world
     this.options = options
+    applyLooks(world.model, this.styleRules())
     this.sim = new ContainersSimulation(world.model)
     // a few seconds ahead, so the city opens with traffic on the move
     for (let i = 0; i < 150; i++) this.sim.step(1 / 30)
@@ -83,11 +191,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const $c = this._game.$container
     this.previousBackground = $c.style.background
     this.previousCursor = $c.style.cursor
-    this.$title = document.createElement('div')
-    this.$title.style.cssText =
-      `position:fixed;top:26px;left:${LEFT}px;right:20px;z-index:9;text-align:center;pointer-events:none;` +
-      `font:500 34px/1.2 ${FONT.ui};letter-spacing:-0.5px;transition:right 0.3s ease`
-    $c.appendChild(this.$title)
     this.$explorer = this.createPanel(
       `left:10px;top:10px;bottom:${BOTTOM + 10}px;width:${LEFT - 20}px;display:flex;flex-direction:column;padding:0`,
     )
@@ -96,14 +199,26 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         'transform:translateX(110%);transition:transform 0.3s ease',
     )
     this.$hud = this.createPanel(`left:10px;bottom:10px;right:10px;padding:9px 14px`)
-    this.renderTitle()
+    this.world.scene.showAdvice = this.loadFlags()
+    this.$status = this.createStatusBar()
+    this.$toast = document.createElement('div')
+    this.$toast.style.cssText =
+      `position:fixed;top:66px;left:${LEFT}px;right:20px;z-index:9;text-align:center;pointer-events:none;` +
+      `font:700 12px ${FONT.mono};letter-spacing:2px;color:${COLORS.amber};opacity:0;transition:opacity 0.4s ease`
+    $c.appendChild(this.$toast)
+    this.refreshAdvice()
+    this.initialAdvice = new Set(this.advice.map((a) => a.id))
     this.renderExplorer()
+    if (this.options.advisor) this.toggleAdvisor()
     this.fitView(true)
     this.updateView()
     this.updateBackground()
     this.updateHud()
     const first = this.options.select && this.find(this.options.select)
-    if (first) this.select(first, true)
+    if (first) {
+      this.select(first)
+      this.focusOn(first, this.options.zoom)
+    }
   }
 
   public stop() {
@@ -117,7 +232,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.$explorer?.remove()
     this.$info?.remove()
     this.$hud?.remove()
-    this.$title?.remove()
+    this.$toast?.remove()
+    this.$status?.remove()
   }
 
   public async tick(deltaTime: number) {
@@ -132,9 +248,11 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (this.refresh <= 0) {
       this.refresh = 0.3
       this.updateHud()
+      this.updateStatus()
       this.updateExplorerStates()
       // live values, but not under the pointer: a rebuilt button would swallow the click
-      if (this.world.scene.selected && !this.$info?.matches(':hover')) this.renderInfo()
+      if ((this.world.scene.selected || this.advisorOpen) && !this.$info?.matches(':hover'))
+        this.renderInfo()
     }
   }
 
@@ -160,7 +278,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   /** The free part of the screen between the panels, where the camera centers things */
   private freeArea() {
     const { width, height } = this.viewport()
-    const right = this.world.scene.selected ? RIGHT : 10
+    const right = this.world.scene.selected || this.advisorOpen ? RIGHT : 10
     const left = width > 900 ? LEFT : 10
     const w = Math.max(240, width - left - right)
     const h = Math.max(200, height - TOP - BOTTOM)
@@ -251,19 +369,19 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.glideTo((x0 + x1) / 2, (y0 + y1) / 2, zoom, now)
   }
 
-  private focusOn(e: Entity) {
+  private focusOn(e: Entity, zoomTo?: number) {
     const P = this.world.scene.projection
     const [x, y] =
       e.type === 'container'
         ? P.at(e.col + e.w / 2, e.row + e.d / 2, e.height / 2)
         : e.type === 'volume'
-          ? P.at(e.col, e.row, TANK_HEIGHT / 2)
+          ? P.at(e.col, e.row, e.height / 2)
           : P.at((e.col0 + e.col1) / 2, e.row)
     const zoom =
       e.type === 'network'
         ? Math.max(0.6, this._game.camera.zoom)
         : Math.max(this._game.camera.zoom, 1.1)
-    this.glideTo(x, y, Math.min(1.8, zoom))
+    this.glideTo(x, y, zoomTo ?? Math.min(1.8, zoom))
   }
 
   /** The dot grid moves and scales with the camera, so the floor feels attached to the city */
@@ -323,7 +441,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       }
     }
     for (const v of model.volumes) {
-      for (const z of [TANK_HEIGHT, 0]) {
+      for (const z of [v.height, v.height / 2, 0]) {
         const [col, row] = this.gridAt(clientX, clientY, z)
         if (Math.hypot(col - v.col, row - v.row) <= v.r + 0.08) {
           consider(v, v.col + v.row)
@@ -391,8 +509,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     else if (e.key === 'f' || e.key === 'F') this.fitView()
     else if ((e.key === 's' || e.key === 'S') && selected?.type === 'container')
       this.toggle(selected)
-    else if (e.key === 'Escape') this.select(undefined)
-    else return
+    else if (e.key === 'a' || e.key === 'A') this.toggleAdvisor()
+    else if (e.key === 'm' || e.key === 'M') this.toggleFlags()
+    else if (e.key === 'Escape') {
+      if (this.world.scene.selected) this.select(undefined)
+      else if (this.advisorOpen) this.toggleAdvisor()
+    } else return
     this.sim.speed = SPEEDS[this.speedIndex]
     this.updateHud()
   }
@@ -418,8 +540,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const scene = this.world.scene
     scene.selected = thing
     scene.focus = thing ? neighborhood(thing, this.world.model) : undefined
-    if (this.$info) this.$info.style.transform = thing ? 'translateX(0)' : 'translateX(110%)'
-    if (this.$title) this.$title.style.right = thing ? `${RIGHT}px` : '20px'
+    this.updatePane()
     if (thing && fly) this.focusOn(thing)
     this.renderInfo()
     this.highlightExplorer()
@@ -440,14 +561,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     $panel.dataset.nativeScroll = ''
     this._game.$container.appendChild($panel)
     return $panel
-  }
-
-  private renderTitle() {
-    const { model } = this.world
-    if (!this.$title) return
-    this.$title.innerHTML =
-      `<div style="color:${COLORS.text}">${escapeHtml(model.title)}</div>` +
-      `<div style="color:#76827f">${escapeHtml(model.subtitle)}</div>`
   }
 
   private dot(color: string, size = 7, glow = false) {
@@ -493,11 +606,16 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div style="display:flex;gap:6px;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06)">` +
       `${stat(model.environments.length, 'hosts')}${stat(model.containers.length, 'containers')}` +
       `${stat(model.networks.filter((n) => n.street).length, 'networks')}${stat(model.volumes.length, 'volumes')}</div>` +
+      `<div class="isocontainers-rating" title="The advisor (A)" style="display:flex;align-items:center;padding:10px 16px;cursor:pointer;` +
+      `border-bottom:1px solid rgba(255,255,255,0.06)"></div>` +
       `<div class="isocontainers-tree" style="overflow-y:auto;padding:4px 8px 12px;flex:1"></div>`
 
     $panel.querySelectorAll<HTMLDivElement>('.isocontainers-stack').forEach(($row) => {
       $row.onclick = () => this.open($row.dataset.id!)
     })
+    const $rating = $panel.querySelector<HTMLDivElement>('.isocontainers-rating')!
+    $rating.onclick = () => this.toggleAdvisor()
+    this.updateRating()
     const $tree = $panel.querySelector<HTMLDivElement>('.isocontainers-tree')!
     for (const env of model.environments) {
       const $env = document.createElement('div')
@@ -613,10 +731,29 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     )
   }
 
+  /** The info pane shows while something is selected, or the advisor is open */
+  private updatePane() {
+    const open = !!this.world.scene.selected || this.advisorOpen
+    if (this.$info) this.$info.style.transform = open ? 'translateX(0)' : 'translateX(110%)'
+    if (this.$toast) this.$toast.style.right = open ? `${RIGHT}px` : '20px'
+    if (this.$status) {
+      // centered in the free space between the panels, never under them
+      const right = open ? RIGHT : 10
+      this.$status.style.right = `${right}px`
+      this.$status.style.maxWidth = `calc(100vw - ${LEFT + right}px)`
+    }
+  }
+
   private renderInfo() {
     const $info = this.$info
     const e = this.world.scene.selected
-    if (!$info || !e) return
+    if (!$info) return
+    if (!e) {
+      if (!this.advisorOpen) return
+      $info.innerHTML = this.advisorInfo()
+      this.bindInfo($info)
+      return
+    }
     let html =
       e.type === 'container'
         ? this.containerInfo(e)
@@ -625,11 +762,10 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
           : this.volumeInfo(e)
     html += `<div style="margin-top:14px;color:${COLORS.faint};font-size:11px">esc to close · click a name to jump</div>`
     $info.innerHTML = html
-    $info.querySelectorAll<HTMLDivElement>('.isocontainers-link').forEach(($link) => {
-      $link.onclick = () => this.select(this.world.model.byKey.get($link.dataset.key!), true)
-    })
+    this.bindInfo($info)
     const $toggle = $info.querySelector<HTMLButtonElement>('.isocontainers-toggle')
     if ($toggle && e.type === 'container') $toggle.onclick = () => this.toggle(e)
+    if (e.type === 'container') this.bindStyleEditor($info, e)
   }
 
   private containerInfo(c: Container): string {
@@ -671,6 +807,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       this.facts(rows)
     if (c.note) html += `<div style="margin-top:10px;color:#c5cfcc">${escapeHtml(c.note)}</div>`
     html += this.section('Live') + this.facts(live)
+    html += this.adviceSection(c)
+    html += this.styleEditor(c)
     if (c.command)
       html +=
         this.section('Command') +
@@ -740,6 +878,445 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     return html
   }
 
+  /** Links to entities and the advisor's buttons */
+  private bindInfo($info: HTMLDivElement) {
+    $info.querySelectorAll<HTMLDivElement>('.isocontainers-link').forEach(($link) => {
+      $link.onclick = () => this.select(this.world.model.byKey.get($link.dataset.key!), true)
+    })
+    $info.querySelectorAll<HTMLButtonElement>('.isocontainers-advice').forEach(($b) => {
+      $b.onclick = () => {
+        const a = this.advice.find((x) => x.id === $b.dataset.id)
+        if (!a) return
+        if ($b.dataset.action === 'fix') this.fix(a)
+        else if ($b.dataset.action === 'accept') this.accept(a)
+        else if ($b.dataset.action === 'copy') this.copy($b, a.fix)
+      }
+    })
+    $info.querySelectorAll<HTMLElement>('.isocontainers-advisor-open').forEach(($b) => {
+      $b.onclick = () => {
+        this.advisorOpen = true
+        this.world.scene.allAdvice = true
+        this.select(undefined)
+      }
+    })
+  }
+
+  // ---- the status bar ----
+
+  /**
+   * The bar at the top: a health meter of all containers by state, the incidents, the traffic and
+   * its error rate, the advisor's rating, and the switch for its flags. Built once, then only its
+   * values change, so a click on it is never lost to a rebuild.
+   */
+  private createStatusBar(): HTMLDivElement {
+    const $bar = this.createPanel(
+      `top:10px;left:${LEFT}px;right:10px;margin:0 auto;width:max-content;max-width:calc(100vw - ${LEFT + 10}px);` +
+        'padding:7px 8px 7px 16px;border-radius:22px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;' +
+        'column-gap:14px;row-gap:6px;white-space:nowrap;' +
+        'transition:right 0.3s ease',
+    )
+    const label = `font:600 9.5px ${FONT.mono};letter-spacing:1.5px;color:${COLORS.muted}`
+    const value = `font:600 13px ${FONT.ui};color:${COLORS.text}`
+    $bar.innerHTML =
+      `<div style="display:flex;align-items:center;gap:10px"><span style="${label}">HEALTH</span>` +
+      `<div class="isocontainers-meter" style="display:flex;gap:2px;width:140px;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.06)"></div>` +
+      `<span class="isocontainers-health" style="${value}"></span></div>` +
+      `<div class="isocontainers-incidents" style="font:600 10.5px ${FONT.mono};letter-spacing:1px"></div>` +
+      `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-rps" style="${value}"></span><span style="${label}">REQ/S</span></div>` +
+      `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-errors" style="${value}"></span><span style="${label}">ERRORS</span></div>` +
+      `<div class="isocontainers-status-rating" title="The advisor (A)" style="display:flex;align-items:center;gap:6px;cursor:pointer"></div>` +
+      `<button class="isocontainers-flags" title="Show or hide the advisor's flags (M)" style="padding:4px 10px;border-radius:14px;cursor:pointer;` +
+      `font:600 10px ${FONT.mono};letter-spacing:1px"></button>`
+    $bar.querySelector<HTMLDivElement>('.isocontainers-status-rating')!.onclick = () =>
+      this.toggleAdvisor()
+    $bar.querySelector<HTMLButtonElement>('.isocontainers-flags')!.onclick = () =>
+      this.toggleFlags()
+    return $bar
+  }
+
+  private updateStatus() {
+    const $bar = this.$status
+    if (!$bar) return
+    const { model } = this.world
+    const moods = model.containers.map(moodOf)
+
+    // the meter: one segment per group, as wide as its share
+    const $meter = $bar.querySelector<HTMLDivElement>('.isocontainers-meter')!
+    const counts = HEALTH_GROUPS.map((g) => moods.filter((m) => g.moods.includes(m)).length)
+    const key = counts.join(',')
+    if ($meter.dataset.key !== key) {
+      $meter.dataset.key = key
+      $meter.innerHTML = HEALTH_GROUPS.map((g, i) =>
+        counts[i]
+          ? `<div title="${counts[i]} ${g.label}" style="flex:${counts[i]} 0 0;background:${g.color};` +
+            `${i === 0 ? `box-shadow:0 0 8px ${g.color}` : ''}"></div>`
+          : '',
+      ).join('')
+    }
+    const healthy = counts[0]
+    const $health = $bar.querySelector<HTMLSpanElement>('.isocontainers-health')!
+    $health.textContent = `${healthy}/${moods.length}`
+    $health.style.color = healthy === moods.length ? COLORS.green : COLORS.text
+
+    const incidents = moods.filter((m) => INCIDENT_MOODS.has(m)).length
+    const $incidents = $bar.querySelector<HTMLDivElement>('.isocontainers-incidents')!
+    $incidents.innerHTML = incidents
+      ? `${this.dot(COLORS.red, 7, true)}<span style="color:${COLORS.red}">${incidents} INCIDENT${incidents > 1 ? 'S' : ''}</span>`
+      : `${this.dot(COLORS.green, 7)}<span style="color:${COLORS.green}">NO INCIDENTS</span>`
+
+    const sim = this.sim
+    $bar.querySelector<HTMLSpanElement>('.isocontainers-rps')!.textContent = sim.rps.toFixed(1)
+    const share = sim.eps / Math.max(1e-6, sim.rps + sim.eps)
+    const $errors = $bar.querySelector<HTMLSpanElement>('.isocontainers-errors')!
+    $errors.textContent =
+      sim.rps + sim.eps < 0.01 ? '–' : `${(share * 100).toFixed(share < 0.1 ? 1 : 0)}%`
+    $errors.style.color = share > 0.05 ? COLORS.red : share > 0.005 ? COLORS.amber : COLORS.text
+
+    const r = this.rating()
+    $bar.querySelector<HTMLDivElement>('.isocontainers-status-rating')!.innerHTML =
+      `${stars(r.stars, 13)}<span style="font:600 13px ${FONT.ui};color:${COLORS.text}">${r.score}</span>`
+
+    const on = this.world.scene.showAdvice
+    const $flags = $bar.querySelector<HTMLButtonElement>('.isocontainers-flags')!
+    $flags.textContent = `⚑ FLAGS ${on ? 'ON' : 'OFF'}`
+    $flags.style.color = on ? COLORS.amber : COLORS.muted
+    $flags.style.background = on ? 'rgba(255,192,77,0.1)' : 'rgba(255,255,255,0.04)'
+    $flags.style.border = `1px solid ${on ? 'rgba(255,192,77,0.45)' : 'rgba(255,255,255,0.12)'}`
+  }
+
+  private loadFlags(): boolean {
+    try {
+      return localStorage.getItem(FLAGS_STORAGE) !== 'off'
+    } catch {
+      return true
+    }
+  }
+
+  /** Show or hide the advisor's flags over the buildings */
+  private toggleFlags() {
+    const scene = this.world.scene
+    scene.showAdvice = !scene.showAdvice
+    try {
+      localStorage.setItem(FLAGS_STORAGE, scene.showAdvice ? 'on' : 'off')
+    } catch {
+      // private mode: the choice lasts until the page reloads
+    }
+    this.updateStatus()
+  }
+
+  // ---- the advisor ----
+
+  private refreshAdvice() {
+    this.advice = advise(this.world.model)
+    const map = this.world.scene.advice
+    map.clear()
+    const order = { risk: 0, warn: 1, tip: 2 } as const
+    for (const a of this.advice) {
+      if (this.accepted.has(a.id)) continue
+      const entry = map.get(a.target)
+      if (!entry) map.set(a.target, { count: 1, severity: a.severity })
+      else {
+        entry.count++
+        if (order[a.severity] < order[entry.severity]) entry.severity = a.severity
+      }
+    }
+    this.updateRating()
+  }
+
+  private rating(env?: Container['env']): Rating {
+    const { model } = this.world
+    const advice = env ? this.advice.filter((a) => a.target.env === env) : this.advice
+    return rate(advice, env ? env.containers.length : model.containers.length, this.accepted)
+  }
+
+  private toggleAdvisor() {
+    this.advisorOpen = !this.advisorOpen
+    this.world.scene.allAdvice = this.advisorOpen
+    if (this.advisorOpen) this.select(undefined)
+    else this.updatePane()
+    this.renderInfo()
+  }
+
+  /** Try a fix: the view changes, the advice goes, the points rise from the building */
+  private fix(a: Advice) {
+    const before = this.rating(a.target.env).stars
+    if (!applyFix(a, this.world.model)) return
+    const t = a.target
+    const [col, row, z] =
+      t.type === 'container'
+        ? [t.col + t.w / 2, t.row + t.d / 2, t.height]
+        : [t.col, t.row, t.height]
+    this.world.scene.popups.push({
+      col,
+      row,
+      z,
+      text: `+${POINTS[a.severity]}`,
+      color: COLORS.green,
+      born: this.world.scene.time,
+    })
+    this.refreshAdvice()
+    const after = this.rating(a.target.env)
+    if (!this.advice.length) this.toast('ALL ADVISORS HAPPY · EVERY QUEST DONE')
+    else if (after.stars === 5 && before < 5)
+      this.toast(`${a.target.env.name.toUpperCase()} REACHED FIVE STARS`)
+    else if (after.stars > before)
+      this.toast(`${a.target.env.name.toUpperCase()} · ${after.stars} STARS`)
+    this.renderInfo()
+  }
+
+  private accept(a: Advice) {
+    if (this.accepted.has(a.id)) this.accepted.delete(a.id)
+    else this.accepted.add(a.id)
+    saveAccepted(this.accepted)
+    this.refreshAdvice()
+    this.renderInfo()
+  }
+
+  private toast(text: string) {
+    const $t = this.$toast
+    if (!$t) return
+    $t.textContent = `★ ${text}`
+    $t.style.opacity = '1'
+    clearTimeout(Number($t.dataset.timer))
+    $t.dataset.timer = String(setTimeout(() => ($t.style.opacity = '0'), 2600))
+  }
+
+  private updateRating() {
+    this.updateStatus()
+    const $r = this.$explorer?.querySelector<HTMLDivElement>('.isocontainers-rating')
+    if (!$r) return
+    const r = this.rating()
+    $r.innerHTML =
+      `${stars(r.stars, 15)}<span style="font:600 15px ${FONT.ui};color:${COLORS.text};margin-left:8px">${r.score}</span>` +
+      `<span style="margin-left:auto;font:600 10px ${FONT.mono};letter-spacing:1px;color:${r.open ? COLORS.amber : COLORS.green}">` +
+      `${r.open ? `${r.open} QUEST${r.open > 1 ? 'S' : ''}` : 'ALL DONE'} ›</span>`
+  }
+
+  private severityChip(a: Advice) {
+    const color = SEVERITY_COLORS[a.severity]
+    return (
+      `<span style="flex:none;padding:0 6px;border-radius:4px;font:700 9px/16px ${FONT.mono};letter-spacing:1px;` +
+      `color:${color};background:${color}1c;border:1px solid ${color}55">${SEVERITY_LABELS[a.severity].toUpperCase()}</span>`
+    )
+  }
+
+  /** The advisor: the rating of each host and the open quests, the worst first */
+  private advisorInfo(): string {
+    const { model } = this.world
+    const r = this.rating()
+    const fixed = [...this.initialAdvice].filter(
+      (id) => !this.advice.some((a) => a.id === id),
+    ).length
+    const accepted = this.advice.filter((a) => this.accepted.has(a.id)).length
+    let html =
+      `<div style="${MONO_LABEL}">Advisor · quests</div>` +
+      `<div style="display:flex;align-items:center;gap:10px;margin-top:6px">${stars(r.stars, 20)}` +
+      `<span style="font:600 22px ${FONT.ui}">${r.score}</span></div>` +
+      `<div style="color:${COLORS.muted};margin-top:4px">${fixed} fixed · ${accepted} accepted · ${r.open} open</div>`
+    if (model.environments.length > 1)
+      html +=
+        this.section('Hosts') +
+        model.environments
+          .map((env) => {
+            const er = this.rating(env)
+            return (
+              `<div style="display:flex;align-items:center;padding:3px 0"><span>${escapeHtml(env.name)}</span>` +
+              `<span style="margin-left:auto">${stars(er.stars, 11)}</span>` +
+              `<span style="width:30px;text-align:right;font:600 11px ${FONT.mono};color:${COLORS.muted}">${er.score}</span></div>`
+            )
+          })
+          .join('')
+    const open = this.advice.filter((a) => !this.accepted.has(a.id))
+    html += this.section(`Quests (${open.length})`)
+    if (!open.length)
+      html += `<div style="margin-top:8px;color:${COLORS.green}">Nothing left to do. The city is in order.</div>`
+    html += open
+      .map(
+        (a) =>
+          `<div class="isocontainers-link" data-key="${escapeHtml(a.target.key)}" style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04)">` +
+          `${this.severityChip(a)}<div style="min-width:0;flex:1"><div style="color:${COLORS.text}">${escapeHtml(a.title)}</div>` +
+          `<div style="color:${COLORS.faint};font:500 10.5px ${FONT.mono};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">` +
+          `${escapeHtml(model.environments.length > 1 ? `${a.target.env.name} / ${a.target.name}` : a.target.name)}</div></div>` +
+          `<span style="font:600 10px ${FONT.mono};color:${COLORS.muted}">+${POINTS[a.severity]}</span></div>`,
+      )
+      .join('')
+    html += `<div style="margin-top:12px;color:${COLORS.faint};font-size:11px">A to close · click a quest to see the fix</div>`
+    return html
+  }
+
+  /** The advice for one container or volume, with its fix */
+  private adviceSection(target: Container | Volume): string {
+    const list = this.advice.filter((a) => a.target === target)
+    if (!list.length)
+      return (
+        this.section('Advisor') +
+        `<div style="margin-top:6px;color:${COLORS.green}">${this.dot(COLORS.green, 6)}Nothing to improve here.</div>`
+      )
+    const button = (a: Advice, action: string, label: string) =>
+      `<button class="isocontainers-advice" data-id="${escapeHtml(a.id)}" data-action="${action}" style="padding:3px 10px;border-radius:6px;cursor:pointer;` +
+      `font:600 10px ${FONT.mono};letter-spacing:1px;color:${action === 'fix' ? COLORS.green : COLORS.text};` +
+      `background:${action === 'fix' ? 'rgba(62,224,127,0.1)' : 'rgba(255,255,255,0.06)'};` +
+      `border:1px solid ${action === 'fix' ? 'rgba(62,224,127,0.45)' : 'rgba(255,255,255,0.14)'}">${label}</button>`
+    const items = list
+      .map((a) => {
+        const accepted = this.accepted.has(a.id)
+        return (
+          `<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.025);` +
+          `border:1px solid rgba(255,255,255,0.06);${accepted ? 'opacity:0.55' : ''}">` +
+          `<div style="display:flex;gap:8px;align-items:flex-start">${this.severityChip(a)}` +
+          `<div style="font-weight:600;color:${COLORS.text}">${escapeHtml(a.title)}${accepted ? ' (accepted)' : ''}</div></div>` +
+          `<div style="margin-top:6px;color:#c5cfcc">${escapeHtml(a.detail)}</div>` +
+          `<pre style="margin:8px 0 0;padding:8px 10px;border-radius:6px;background:rgba(0,0,0,0.3);font:11px/1.5 ${FONT.mono};` +
+          `color:#b9c6c2;white-space:pre-wrap;word-break:break-word">${escapeHtml(a.fix)}</pre>` +
+          `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">` +
+          (a.fixable ? button(a, 'fix', `TRY FIX +${POINTS[a.severity]}`) : '') +
+          button(a, 'accept', accepted ? 'UNDO ACCEPT' : 'ACCEPT') +
+          button(a, 'copy', 'COPY') +
+          '</div></div>'
+        )
+      })
+      .join('')
+    return (
+      `<div style="display:flex;align-items:baseline;margin-top:14px"><div style="${MONO_LABEL}">Advisor (${list.length})</div>` +
+      `<div class="isocontainers-advisor-open" style="margin-left:auto;color:${COLORS.muted};font-size:11px;cursor:pointer">all quests ›</div></div>` +
+      items +
+      `<div style="margin-top:8px;color:${COLORS.faint};font-size:11px">A fix you try changes this view only: put the snippet in your compose file.</div>`
+    )
+  }
+
+  // ---- building styles ----
+
+  private styleRules(): StyleRule[] {
+    return [
+      ...(this.world.model.spec.styles ?? []),
+      ...(this.options.styleRules ?? []),
+      ...this.localRules,
+    ]
+  }
+
+  /** The rule target of a container, for a scope */
+  private styleTarget(c: Container, scope: StyleScope): Pick<StyleRule, 'image' | 'kind' | 'name'> {
+    if (scope === 'name') return { name: c.name }
+    if (scope === 'kind') return { kind: c.kind }
+    return { image: imageRepository(c.image) }
+  }
+
+  private setLook(c: Container, options: StyleOptions) {
+    this.localRules = upsertRule(this.localRules, this.styleTarget(c, this.styleScope), options)
+    this.restyle()
+  }
+
+  private resetLook(c: Container) {
+    this.localRules = removeRule(this.localRules, this.styleTarget(c, this.styleScope))
+    this.restyle()
+  }
+
+  private restyle() {
+    saveLocalRules(this.localRules)
+    applyLooks(this.world.model, this.styleRules())
+    this.renderInfo()
+  }
+
+  private styleEditor(c: Container): string {
+    const look = c.look
+    const button = (option: string, value: string, label: string, active: boolean, title = '') =>
+      `<button class="isocontainers-style" data-option="${option}" data-value="${escapeHtml(value)}" title="${escapeHtml(title)}" ` +
+      `style="padding:3px 8px;border-radius:6px;cursor:pointer;font:600 10px ${FONT.mono};letter-spacing:0.5px;` +
+      `color:${active ? COLORS.text : COLORS.muted};background:${active ? 'rgba(62,224,127,0.14)' : 'rgba(255,255,255,0.04)'};` +
+      `border:1px solid ${active ? 'rgba(62,224,127,0.55)' : 'rgba(255,255,255,0.1)'}">${escapeHtml(label)}</button>`
+    const row = (label: string, content: string) =>
+      `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:7px">` +
+      `<div style="width:46px;flex:none;padding-top:3px;color:${COLORS.muted};font-size:11.5px">${label}</div>` +
+      `<div style="display:flex;flex-wrap:wrap;gap:4px;min-width:0">${content}</div></div>`
+    const styles = Object.entries(STYLES)
+      .map(([id, d]) => button('style', id, d.label, look.style === id, d.description))
+      .join('')
+    const roofs = Object.entries(ROOFS)
+      .map(([id, label]) => button('roof', id, label, look.roof === id))
+      .join('')
+    const swatch = (color: string) =>
+      `<button class="isocontainers-style" data-option="accent" data-value="${color}" title="${color || 'no accent'}" ` +
+      `style="width:18px;height:18px;border-radius:50%;cursor:pointer;padding:0;` +
+      `background:${color || 'transparent'};border:2px solid ${look.accent === color || (!color && !look.accent) ? COLORS.text : 'rgba(255,255,255,0.15)'}">` +
+      `${color ? '' : `<span style="color:${COLORS.muted};font-size:10px;line-height:14px">×</span>`}</button>`
+    const accents = ['', ...STYLE_ACCENTS].map(swatch).join('')
+    const factor = Math.round((look.scale / STYLES[look.style].scale) * 100) / 100
+    const height =
+      button('scale', '-', '−', false) +
+      `<span style="padding:3px 6px;font:600 11px ${FONT.mono};color:${COLORS.text}">${factor.toFixed(2)}×</span>` +
+      button('scale', '+', '+', false)
+    const sign =
+      `<input class="isocontainers-badge" maxlength="4" value="${escapeHtml(look.badge ?? '')}" placeholder="none" ` +
+      `style="width:64px;padding:3px 8px;border-radius:6px;font:600 11px ${FONT.mono};color:${COLORS.text};` +
+      `background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);outline:none;text-transform:uppercase">`
+    const scopes: Array<[StyleScope, string]> = [
+      ['image', `all ${imageRepository(c.image).split('/').pop()}`],
+      ['name', 'only this one'],
+      ['kind', `all ${KIND_LABELS[c.kind].toLowerCase()}s`],
+    ]
+    const scope = scopes
+      .map(([id, label]) => button('scope', id, label, this.styleScope === id))
+      .join('')
+    const action = (name: string, label: string) =>
+      `<button class="isocontainers-style" data-option="${name}" data-value="" style="padding:3px 10px;border-radius:6px;cursor:pointer;` +
+      `font:600 10px ${FONT.mono};letter-spacing:1px;color:${COLORS.text};background:rgba(255,255,255,0.06);` +
+      `border:1px solid rgba(255,255,255,0.14)">${label}</button>`
+    const source =
+      look.source === 'kind'
+        ? `default for ${KIND_LABELS[c.kind].toLowerCase()}s`
+        : look.source === 'labels'
+          ? 'from its labels (they win over rules)'
+          : `from ${look.source}`
+    return (
+      `<div style="display:flex;align-items:baseline;margin-top:14px"><div style="${MONO_LABEL}">Building</div>` +
+      `<div style="margin-left:auto;color:${COLORS.faint};font-size:11px">${escapeHtml(source)}</div></div>` +
+      row('Style', styles) +
+      row('Roof', roofs) +
+      row('Accent', accents) +
+      row('Height', height) +
+      row('Sign', sign) +
+      row('For', scope) +
+      `<div style="display:flex;gap:6px;margin-top:10px">${action('reset', 'RESET')}${action('labels', 'COPY LABELS')}${action('rules', 'COPY RULES')}</div>`
+    )
+  }
+
+  private bindStyleEditor($info: HTMLDivElement, c: Container) {
+    $info.querySelectorAll<HTMLButtonElement>('.isocontainers-style').forEach(($b) => {
+      $b.onclick = () => {
+        const { option, value = '' } = $b.dataset
+        if (option === 'style') this.setLook(c, { style: value as Container['look']['style'] })
+        else if (option === 'roof') this.setLook(c, { roof: value as Container['look']['roof'] })
+        else if (option === 'accent') this.setLook(c, { accent: value })
+        else if (option === 'scale') {
+          const factor = c.look.scale / STYLES[c.look.style].scale
+          const next = Math.round((factor + (value === '+' ? 0.25 : -0.25)) * 4) / 4
+          this.setLook(c, { scale: Math.max(SCALE_RANGE[0], Math.min(SCALE_RANGE[1], next)) })
+        } else if (option === 'scope') {
+          this.styleScope = value as StyleScope
+          this.renderInfo()
+        } else if (option === 'reset') this.resetLook(c)
+        else if (option === 'labels') this.copy($b, lookToLabels(c.look))
+        else if (option === 'rules') this.copy($b, JSON.stringify(this.localRules, null, 2))
+      }
+    })
+    const $badge = $info.querySelector<HTMLInputElement>('.isocontainers-badge')
+    if ($badge)
+      $badge.onchange = () => this.setLook(c, { badge: $badge.value.trim().toUpperCase() })
+  }
+
+  /** Copy text, and say so on the button */
+  private copy($button: HTMLButtonElement, text: string) {
+    const label = $button.textContent
+    const done = (ok: boolean) => {
+      $button.textContent = ok ? 'COPIED' : 'NO CLIPBOARD'
+      setTimeout(() => ($button.textContent = label), 1200)
+    }
+    navigator.clipboard?.writeText(text).then(
+      () => done(true),
+      () => done(false),
+    ) ?? done(false)
+  }
+
   private networkInfo(n: Network): string {
     const rows: Array<[string, string]> = [
       ['Driver', n.driver],
@@ -791,6 +1368,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
             this.link(m.container, m.container.name, `${m.target}${m.readOnly ? ' ro' : ''}`),
           )
           .join('')
+    if (this.advice.some((a) => a.target === v)) html += this.adviceSection(v)
     return html
   }
 
@@ -813,6 +1391,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div>${status}${paused} &nbsp;${label(`${sim.speed}×`)}</div>` +
       `<div style="margin-left:auto;color:${COLORS.faint};font-size:11.5px;overflow:hidden;text-overflow:ellipsis">` +
       `click a building, street or tank · drag to pan · wheel pan · ctrl+wheel zoom · 1-${this.options.samples.length} stacks · ` +
-      `S stop/start · space pause · + / − speed · F fit · esc clear</div></div>`
+      `A advisor · M flags · S stop/start · space pause · + / − speed · F fit · esc clear</div></div>`
   }
 }

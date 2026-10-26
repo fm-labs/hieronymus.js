@@ -95,15 +95,15 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
     P.plane(ctx, 0, () => {
       ctx.textBaseline = 'top'
       ctx.textAlign = 'center'
-      ctx.font = `700 13px ${FONT.mono}`
+      ctx.font = `700 17px ${FONT.mono}`
       ctx.fillStyle = COLORS.greenSoft
       ctx.fillText('HOST', col * U, (row + 0.55) * U)
-      ctx.font = `500 10.5px ${FONT.mono}`
+      ctx.font = `600 14px ${FONT.mono}`
       ctx.fillStyle = COLORS.muted
       const text = ports.length
         ? ports.slice(0, 6).join(' · ') + (ports.length > 6 ? ' …' : '')
         : 'no published ports'
-      ctx.fillText(text, col * U, (row + 0.55) * U + 18)
+      ctx.fillText(text, col * U, (row + 0.55) * U + 23)
       ctx.textAlign = 'left'
     })
   }

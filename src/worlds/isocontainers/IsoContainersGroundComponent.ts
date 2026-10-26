@@ -129,28 +129,37 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.stroke()
       ctx.restore()
 
-      // the name, right of the gate
+      // the name, right of the gate; it keeps a readable size when zoomed out, as long as it fits
       const lx = (env.gate[0] + 1.3) * U
-      const ly = v0 + h - 54
+      const running = env.containers.filter((c) => c.state === 'running').length
+      const caption =
+        `${env.caption ?? 'docker host'} · ${running}/${env.containers.length} up`.toUpperCase()
+      ctx.font = `700 58px ${FONT.ui}`
+      const nameWidth = ctx.measureText(env.name).width
+      ctx.font = `600 22px ${FONT.mono}`
+      const captionWidth = ctx.measureText(caption).width
+      const room = (env.col + env.cols) * U - lx - 40
+      const k = Math.max(
+        0.5,
+        Math.min(
+          Math.max(1, 0.55 / this.properties.scene.zoom),
+          2.2,
+          room / (nameWidth + 24 + captionWidth),
+        ),
+      )
+      const ly = v0 + h - 30 - 28 * k
       ctx.save()
       ctx.shadowColor = 'rgba(255,255,255,0.35)'
       ctx.shadowBlur = 6
       ctx.fillStyle = COLORS.text
-      ctx.font = `700 40px ${FONT.ui}`
+      ctx.font = `700 ${58 * k}px ${FONT.ui}`
       ctx.textBaseline = 'middle'
-      ctx.fillText(env.name, lx, ly + 2)
-      const width = ctx.measureText(env.name).width
+      ctx.fillText(env.name, lx, ly + 2 * k)
       ctx.restore()
-      ctx.font = `500 15px ${FONT.mono}`
+      ctx.font = `600 ${22 * k}px ${FONT.mono}`
       ctx.fillStyle = COLORS.muted
       ctx.textBaseline = 'middle'
-      const running = env.containers.filter((c) => c.state === 'running').length
-      const caption = env.caption ?? 'docker host'
-      ctx.fillText(
-        `${caption} · ${running}/${env.containers.length} up`.toUpperCase(),
-        lx + width + 18,
-        ly + 4,
-      )
+      ctx.fillText(caption, lx + (nameWidth + 24) * k, ly + 5 * k)
     })
   }
 
@@ -385,7 +394,17 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.shadowBlur = 10
       ctx.fillStyle = 'rgba(0,0,0,0.45)'
       ctx.beginPath()
-      ctx.ellipse(v.col * U + 10, v.row * U - 4, v.r * U * 1.1, v.r * U, 0, 0, Math.PI * 2)
+      // taller tanks throw longer shadows
+      const reach = 4 + v.height * 0.2
+      ctx.ellipse(
+        v.col * U + reach,
+        v.row * U - reach * 0.4,
+        v.r * U * 1.1,
+        v.r * U,
+        0,
+        0,
+        Math.PI * 2,
+      )
       ctx.fill()
       ctx.restore()
     }

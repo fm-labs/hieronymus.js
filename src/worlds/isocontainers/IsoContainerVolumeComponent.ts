@@ -1,6 +1,5 @@
 import type { GameComponentProperties, IGameComponent } from '../../../lib/game.types'
 import { AbstractGameComponent } from '../../../lib'
-import { TANK_HEIGHT } from './isocontainers.layout.ts'
 import type { Volume } from './isocontainers.types.ts'
 import {
   COLORS,
@@ -43,11 +42,13 @@ export class IsoContainerVolumeComponent extends AbstractGameComponent implement
     if (!isVisible(scene, this.x, this.y, 80)) return
     const unused = !v.mounts.length
     ctx.globalAlpha = focusAlpha(scene, v) * (unused ? 0.6 : 1)
-    const h = TANK_HEIGHT
+    const h = v.height
 
     cylinderSide(ctx, P, v.col, v.row, v.r, 0, h, '#15323b', '#06141a')
-    // two bands around the tank
-    for (const z of [h * 0.33, h * 0.66]) {
+    // bands around the tank, about every 10 px
+    const bands = Math.max(1, Math.round(h / 11))
+    for (let i = 1; i <= bands; i++) {
+      const z = (h * i) / (bands + 1)
       P.plane(ctx, z, () => {
         ctx.strokeStyle = 'rgba(76,201,240,0.18)'
         ctx.lineWidth = 2

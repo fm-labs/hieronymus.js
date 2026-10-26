@@ -185,6 +185,9 @@ export function fromInspect(data: Json[], name = 'docker host', caption?: string
       cpus: d.HostConfig?.NanoCpus ? d.HostConfig.NanoCpus / 1e9 : undefined,
       created: d.Created,
       labels,
+      user: String(d.Config.User ?? '') || 'root',
+      privileged: !!d.HostConfig?.Privileged,
+      healthcheck: hasHealthcheck(d.Config.Healthcheck),
     })
   }
   return {
@@ -195,6 +198,10 @@ export function fromInspect(data: Json[], name = 'docker host', caption?: string
     volumes: [...volumes.values()],
   }
 }
+
+/** A health check that is not switched off ({ Test: ['NONE'] }) */
+const hasHealthcheck = (h: Json) =>
+  isRecord(h) && !(Array.isArray(h.Test ?? h.test) && (h.Test ?? h.test)[0] === 'NONE')
 
 /** `docker compose config --format json` → one environment */
 export function fromCompose(data: Json, name?: string): EnvironmentSpec {
@@ -253,6 +260,11 @@ export function fromCompose(data: Json, name?: string): EnvironmentSpec {
       memory: s.deploy?.resources?.limits?.memory ?? s.mem_limit,
       cpus: Number(s.deploy?.resources?.limits?.cpus ?? s.cpus) || undefined,
       labels: isRecord(s.labels) ? s.labels : {},
+      user: s.user,
+      privileged: s.privileged,
+      healthcheck: s.healthcheck
+        ? !s.healthcheck.disable && hasHealthcheck(s.healthcheck)
+        : undefined,
     })
   }
   const networks: NetworkSpec[] = Object.entries<Json>(data.networks ?? {}).map(([key, n]) => ({
