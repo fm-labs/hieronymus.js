@@ -51,6 +51,9 @@ export type ContainersScene = {
   selected?: Entity
   /** The plate under the pointer */
   hoveredPlate?: Environment
+  /** The host whose gate is under the pointer, and the one open in the side pane */
+  hoveredHost?: Environment
+  openHost?: Environment
   /**
    * How lit each plate's rim is (0 to 1, eased toward the hover) and when the pointer last entered it
    * (scene time), for the ripple on entering

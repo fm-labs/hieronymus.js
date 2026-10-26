@@ -46,6 +46,7 @@ import {
 } from './isocontainers.draw.ts'
 import type { ContainersWorld } from './isocontainers.world.ts'
 import { IsoContainerBuildingComponent } from './IsoContainerBuildingComponent.ts'
+import { GATE_HEIGHT } from './IsoContainersGateComponent.ts'
 
 export type IsoContainersSystemOptions = {
   /** The stacks that can be opened from the explorer */
@@ -216,6 +217,10 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private styleScope: StyleScope = 'image'
   /** The info pane shows the container, or its building settings */
   private paneView: 'info' | 'building' = 'info'
+  /** The tab of the host pane; it stays when another host is opened */
+  private hostTab: 'engine' | 'network' = 'engine'
+  /** The tab of the container pane; it stays when another container is selected */
+  private containerTab: 'info' | 'advisor' = 'info'
 
   constructor(game: IGame, world: ContainersWorld, options: IsoContainersSystemOptions) {
     super(game)
@@ -306,11 +311,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       this.updateExplorerStates()
       // live values, but not under the pointer: a rebuilt button would swallow the click
       // (the building settings have nothing live: they stay as they are)
-      if (
-        (this.world.scene.selected || this.advisorOpen) &&
-        this.paneView === 'info' &&
-        !this.$info?.matches(':hover')
-      )
+      if (this.paneOpen() && this.paneView === 'info' && !this.$info?.matches(':hover'))
         this.renderInfo()
     }
   }
@@ -362,7 +363,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   /** The free part of the screen between the panels, where the camera centers things */
   private freeArea() {
     const { width, height } = this.viewport()
-    const right = this.world.scene.selected || this.advisorOpen ? RIGHT : 10
+    const right = this.paneOpen() ? RIGHT : 10
     const left = width > 900 ? LEFT : 10
     const w = Math.max(240, width - left - right)
     const h = Math.max(200, height - TOP - BOTTOM)
@@ -389,7 +390,13 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       const f = this.freeArea()
       this.setCamera(x * z - f.x, y * z - f.y, z)
       this.glide = undefined
-    } else this.glide = { x, y, zoom: z }
+    } else {
+      // start from where the camera is now: a drag or the wheel since the last glide moved it, and
+      // stepGlide would take that for the user taking over and stop at once
+      const { offset, zoom: current } = this._game.camera
+      this.lastCamera = { x: offset.x, y: offset.y, zoom: current }
+      this.glide = { x, y, zoom: z }
+    }
   }
 
   private setCamera(x: number, y: number, zoom: number) {
@@ -427,12 +434,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
   }
 
-  /** Zoom out and center, so all plates fit between the panels */
-  private fitView(now = false) {
+  /** Zoom out and center, so all plates (or the given ones) fit between the panels */
+  private fitView(now = false, environments = this.world.model.environments, maxZoom = 1.4) {
     const P = this.world.scene.projection
     const xs: number[] = []
     const ys: number[] = []
-    for (const e of this.world.model.environments) {
+    for (const e of environments) {
       for (const [c, r, z] of [
         [e.col, e.row, 0],
         [e.col + e.cols, e.row, 0],
@@ -449,7 +456,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const [x0, x1] = [Math.min(...xs), Math.max(...xs)]
     const [y0, y1] = [Math.min(...ys), Math.max(...ys)]
     const f = this.freeArea()
-    const zoom = Math.min(1.4, (f.w * 0.94) / (x1 - x0), (f.h * 0.94) / (y1 - y0))
+    const zoom = Math.min(maxZoom, (f.w * 0.94) / (x1 - x0), (f.h * 0.94) / (y1 - y0))
     this.glideTo((x0 + x1) / 2, (y0 + y1) / 2, zoom, now)
   }
 
@@ -501,6 +508,20 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const x = (clientX - rect.left + offset.x) / zoom
     const y = (clientY - rect.top + offset.y) / zoom + z * P.zScale
     return P.toGrid(x, y)
+  }
+
+  /** The host whose gate (its pad, pillars, beam or label) is under a screen point */
+  private pickHost(clientX: number, clientY: number): Environment | undefined {
+    const half = LOT.avenue / 2 + 0.4
+    for (const env of this.world.model.environments) {
+      const [gc, gr] = env.gate
+      for (const z of [GATE_HEIGHT, GATE_HEIGHT / 2, 0]) {
+        const [col, row] = this.gridAt(clientX, clientY, z)
+        // on the ground, the label in front counts too
+        if (Math.abs(col - gc) <= half && row >= gr - 0.5 && row <= gr + (z ? 0.5 : 1.2)) return env
+      }
+    }
+    return undefined
   }
 
   /** The thing under a screen point: buildings and tanks (front-most wins), then streets */
@@ -561,6 +582,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
     if (this.isOnPanel(e)) {
       if (!(e.target as HTMLElement).closest('[data-key]')) this.world.scene.hovered = undefined
+      if (!(e.target as HTMLElement).closest('[data-host]'))
+        this.world.scene.hoveredHost = undefined
       this.hoverPlate(undefined)
       return
     }
@@ -574,15 +597,18 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
           row <= env.row + env.rows,
       ),
     )
-    const thing = this.pick(e.clientX, e.clientY)
+    const host = this.pickHost(e.clientX, e.clientY)
+    const thing = host ? undefined : this.pick(e.clientX, e.clientY)
+    this.world.scene.hoveredHost = host
     this.world.scene.hovered = thing
-    this._game.$container.style.cursor = thing ? 'pointer' : ''
+    this._game.$container.style.cursor = thing || host ? 'pointer' : ''
   }
 
   /** The pointer left the page: nothing is under it */
   private handleMouseLeave = () => {
     this.hoverPlate(undefined)
     this.world.scene.hovered = undefined
+    this.world.scene.hoveredHost = undefined
   }
 
   private handleMouseUp(e: MouseEvent) {
@@ -591,6 +617,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (!drag) return
     this._game.$container.style.cursor = ''
     if (drag.moved) return
+    const host = this.pickHost(e.clientX, e.clientY)
+    if (host) return this.openHost(host === this.world.scene.openHost ? undefined : host)
     const thing = this.pick(e.clientX, e.clientY)
     this.select(thing && thing !== this.world.scene.selected ? thing : undefined)
   }
@@ -617,6 +645,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     else if (e.key === 'Escape') {
       if (this.paneView === 'building') this.showPane('info')
       else if (this.world.scene.selected) this.select(undefined)
+      else if (this.world.scene.openHost) this.openHost(undefined)
       else if (this.advisorOpen) this.toggleAdvisor()
     } else return
     this.sim.speed = SPEEDS[this.speedIndex]
@@ -650,11 +679,29 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const scene = this.world.scene
     if (thing !== scene.selected) this.paneView = 'info'
     scene.selected = thing
+    scene.openHost = undefined
     scene.focus = thing ? neighborhood(thing, this.world.model) : undefined
     this.updatePane()
     if (thing && fly) this.focusOn(thing)
     this.renderInfo()
     this.highlightExplorer()
+  }
+
+  /** Open a host in the side pane (undefined closes it); it takes the place of the selection */
+  private openHost(env: Environment | undefined, fly = false) {
+    const scene = this.world.scene
+    if (env && env !== scene.openHost && this.$info) this.$info.scrollTop = 0
+    scene.openHost = env
+    if (env) {
+      scene.selected = undefined
+      scene.focus = undefined
+      this.paneView = 'info'
+    }
+    this.updatePane()
+    this.renderInfo()
+    this.highlightExplorer()
+    // the whole plate, between the panels, but not closer than a building's view
+    if (env && fly) this.fitView(false, [env], 1.1)
   }
 
   // ---- panels ----
@@ -736,7 +783,18 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const $tree = $panel.querySelector<HTMLDivElement>('.isocontainers-tree')!
     for (const env of model.environments) {
       const $env = document.createElement('div')
-      $env.style.cssText = `${MONO_LABEL};color:${COLORS.text};padding:10px 8px 4px`
+      $env.dataset.host = env.key
+      $env.title = 'The host: its engine and network'
+      $env.style.cssText = `${MONO_LABEL};color:${COLORS.text};padding:8px 8px 4px;margin-top:2px;border-radius:6px;cursor:pointer`
+      $env.onmouseenter = () => {
+        this.world.scene.hoveredHost = env
+        if (!$env.dataset.active) $env.style.background = 'rgba(255,255,255,0.05)'
+      }
+      $env.onmouseleave = () => {
+        if (this.world.scene.hoveredHost === env) this.world.scene.hoveredHost = undefined
+        $env.style.background = $env.dataset.active ? 'rgba(62,224,127,0.12)' : ''
+      }
+      $env.onclick = () => this.openHost(env === this.world.scene.openHost ? undefined : env, true)
       $env.innerHTML =
         `<div>${escapeHtml(env.name)}</div>` +
         `<div style="color:${COLORS.faint};letter-spacing:1px;font-size:9px">${escapeHtml(env.caption ?? '')}</div>`
@@ -798,6 +856,15 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   }
 
   private highlightExplorer() {
+    const host = this.world.scene.openHost?.key
+    this.$explorer
+      ?.querySelectorAll<HTMLDivElement>('.isocontainers-tree > div[data-host]')
+      .forEach(($env) => {
+        const active = $env.dataset.host === host
+        $env.dataset.active = active ? '1' : ''
+        $env.style.background = active ? 'rgba(62,224,127,0.12)' : ''
+        if (active) $env.scrollIntoView({ block: 'nearest' })
+      })
     const key = this.world.scene.selected?.key
     this.$explorer
       ?.querySelectorAll<HTMLDivElement>('.isocontainers-tree > div[data-key]')
@@ -852,9 +919,13 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     )
   }
 
-  /** The info pane shows while something is selected, or the advisor is open */
+  /** The info pane shows while something is selected, a host is open, or the advisor is */
+  private paneOpen() {
+    return !!this.world.scene.selected || !!this.world.scene.openHost || this.advisorOpen
+  }
+
   private updatePane() {
-    const open = !!this.world.scene.selected || this.advisorOpen
+    const open = this.paneOpen()
     if (this.$info) this.$info.style.transform = open ? 'translateX(0)' : 'translateX(110%)'
     if (this.$toast) this.$toast.style.right = open ? `${RIGHT}px` : '20px'
     if (this.$status) {
@@ -869,6 +940,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const $info = this.$info
     const e = this.world.scene.selected
     if (!$info) return
+    if (!e && this.world.scene.openHost) {
+      $info.innerHTML = this.hostInfo(this.world.scene.openHost)
+      this.bindInfo($info)
+      this.bindTabs($info, (tab) => (this.hostTab = tab as 'engine' | 'network'))
+      return
+    }
     if (!e) {
       if (!this.advisorOpen) return
       $info.innerHTML = this.advisorInfo()
@@ -894,6 +971,17 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if ($toggle && e.type === 'container') $toggle.onclick = () => this.toggle(e)
     const $settings = $info.querySelector<HTMLButtonElement>('.isocontainers-settings')
     if ($settings) $settings.onclick = () => this.showPane('building')
+    this.bindTabs($info, (tab) => (this.containerTab = tab as 'info' | 'advisor'))
+  }
+
+  private bindTabs($info: HTMLDivElement, choose: (tab: string) => void) {
+    $info.querySelectorAll<HTMLButtonElement>('.isocontainers-tab').forEach(($b) => {
+      $b.onclick = () => {
+        choose($b.dataset.tab!)
+        $info.scrollTop = 0
+        this.renderInfo()
+      }
+    })
   }
 
   private showPane(view: 'info' | 'building') {
@@ -942,10 +1030,14 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<button class="isocontainers-toggle" style="margin:8px 0 0 auto;padding:3px 12px;border-radius:6px;cursor:pointer;` +
       `font:600 10.5px ${FONT.mono};letter-spacing:1px;color:${COLORS.text};background:rgba(255,255,255,0.06);` +
       `border:1px solid rgba(255,255,255,0.14)">${up ? 'STOP' : 'START'} · S</button></div>` +
-      this.facts(rows)
+      this.tabBar(this.containerTab, [
+        ['info', 'INFO'],
+        ['advisor', this.advisorTabLabel(c)],
+      ])
+    if (this.containerTab === 'advisor') return html + this.adviceSection(c)
+    html += this.facts(rows)
     if (c.note) html += `<div style="margin-top:10px;color:#c5cfcc">${escapeHtml(c.note)}</div>`
     html += this.section('Live') + this.facts(live)
-    html += this.adviceSection(c)
     if (c.command)
       html +=
         this.section('Command') +
@@ -1293,6 +1385,16 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   }
 
   /** The advice for one container or volume, with its fix */
+  /** 'ADVISOR' with the number of open advice, in the color of the worst */
+  private advisorTabLabel(c: Container) {
+    const open = this.advice.filter((a) => a.target === c && !this.accepted.has(a.id))
+    if (!open.length) return 'ADVISOR'
+    const worst = (['risk', 'warn', 'tip'] as const).find((s) =>
+      open.some((a) => a.severity === s),
+    )!
+    return `ADVISOR<span style="margin-left:7px;padding:0 6px;border-radius:8px;font-size:9.5px;letter-spacing:0;color:${COLORS.bg0};background:${SEVERITY_COLORS[worst]}">${open.length}</span>`
+  }
+
   private adviceSection(target: Container | Volume): string {
     const list = this.advice.filter((a) => a.target === target)
     if (!list.length)
@@ -1534,6 +1636,198 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       () => done(true),
       () => done(false),
     ) ?? done(false)
+  }
+
+  /** Tabs under a pane's header; a click sets the pane's tab (see renderInfo) */
+  private tabBar(active: string, tabs: Array<[id: string, label: string]>) {
+    return (
+      `<div style="display:flex;margin-top:14px;border-bottom:1px solid rgba(255,255,255,0.08)">` +
+      tabs
+        .map(([id, label]) => {
+          const on = id === active
+          return (
+            `<button class="isocontainers-tab" data-tab="${id}" style="flex:1;padding:7px 0 6px;cursor:pointer;` +
+            `display:flex;align-items:center;justify-content:center;` +
+            `background:none;border:none;border-bottom:2px solid ${on ? COLORS.green : 'transparent'};` +
+            `font:600 10.5px ${FONT.mono};letter-spacing:1.5px;color:${on ? COLORS.text : COLORS.muted};` +
+            `transition:color 0.2s ease,border-color 0.2s ease">${label}</button>`
+          )
+        })
+        .join('') +
+      '</div>'
+    )
+  }
+
+  /** A host: its container engine on one tab, its networking on the other */
+  private hostInfo(env: Environment): string {
+    const engine = env.engine
+    const running = env.containers.filter((c) => c.state === 'running').length
+    const total = env.containers.length
+    const failing = env.containers.some((c) => INCIDENT_MOODS.has(moodOf(c)))
+    const product = [engine?.engine ?? 'docker', engine?.version].filter(Boolean).join(' ')
+    let html =
+      `<div style="${MONO_LABEL}">Container host</div>` +
+      `<div style="font:600 19px/1.3 ${FONT.ui};margin-top:4px;word-break:break-word">${escapeHtml(env.name)}</div>` +
+      `<div style="display:flex;align-items:center;gap:8px">` +
+      this.chip(`${running}/${total} RUNNING`, failing ? COLORS.amber : COLORS.green, !failing) +
+      `<span style="margin:8px 0 0 auto;font:500 10.5px ${FONT.mono};color:${COLORS.faint}">${escapeHtml(product.toUpperCase())}</span></div>` +
+      this.tabBar(this.hostTab, [
+        ['engine', 'ENGINE'],
+        ['network', 'NETWORK'],
+      ])
+    html += this.hostTab === 'engine' ? this.hostEngine(env) : this.hostNetwork(env)
+    html += `<div style="margin-top:14px;color:${COLORS.faint};font-size:11px">esc to close · click a name to jump</div>`
+    return html
+  }
+
+  private hostEngine(env: Environment): string {
+    const e = env.engine
+    const rows = (list: Array<[string, string | number | undefined]>) =>
+      list.filter((r): r is [string, string | number] => r[1] !== undefined && r[1] !== '')
+    let html = ''
+    if (e) {
+      const engine = rows([
+        ['Engine', [e.engine, e.version].filter(Boolean).join(' ')],
+        ['Address', e.address],
+        ['Hostname', e.hostname],
+        ['OS', e.os],
+        ['Kernel', e.kernel],
+        ['Architecture', e.arch],
+        ['CPUs', e.cpus],
+        ['Memory', e.memory],
+      ]).map(([k, v]): [string, string] => [k, String(v)])
+      const runtime = rows([
+        ['Runtime', e.runtime],
+        ['Storage', e.storageDriver],
+        ['Logging', e.loggingDriver],
+        ['Cgroup', e.cgroup],
+        ['Root dir', e.rootDir],
+        ['Swarm', e.swarm],
+      ]).map(([k, v]): [string, string] => [k, String(v)])
+      html += this.facts(engine)
+      if (runtime.length) html += this.section('Runtime') + this.facts(runtime)
+    } else {
+      html +=
+        `<div style="margin-top:12px;color:#c5cfcc">No engine details: this host comes from a file or a sample, ` +
+        `not from its engine's API.</div>` +
+        (env.caption ? this.facts([['Caption', env.caption]]) : '')
+    }
+
+    // what runs on it, grouped like the status bar's meter
+    const moods = env.containers.map(moodOf)
+    const groups = HEALTH_GROUPS.map((g) => ({
+      ...g,
+      count: moods.filter((m) => g.moods.includes(m)).length,
+    })).filter((g) => g.count)
+    const total = env.containers.length
+    html += this.section(`Containers (${total})`)
+    if (total)
+      html +=
+        `<div style="display:flex;gap:2px;height:6px;margin-top:8px;border-radius:3px;overflow:hidden">` +
+        groups
+          .map(
+            (g) =>
+              `<div style="flex:${g.count};background:${g.color}" title="${g.count} ${g.label}"></div>`,
+          )
+          .join('') +
+        `</div>` +
+        `<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px">` +
+        groups
+          .map(
+            (g) =>
+              `<span style="display:inline-flex;align-items:center;font:500 10.5px ${FONT.mono};color:${COLORS.muted}">` +
+              `${this.dot(g.color, 6)}${g.count} ${g.label}</span>`,
+          )
+          .join('') +
+        `</div>`
+    const cpu = env.containers.reduce((n, c) => n + c.cpu, 0)
+    const mem = env.containers.reduce((n, c) => n + c.mem, 0)
+    const workload: Array<[string, string]> = []
+    if (e?.images !== undefined) workload.push(['Images', String(e.images)])
+    workload.push(
+      ['Volumes', String(env.volumes.length)],
+      ['Networks', String(env.networks.length)],
+      ['CPU', `${cpu.toFixed(1)} %${e?.cpus ? ` of ${e.cpus * 100} %` : ''}`],
+      [
+        'Memory',
+        `${mem >= 1024 ? `${(mem / 1024).toFixed(1)} GiB` : `${Math.round(mem)} MiB`}${e?.memory ? ` of ${e.memory}` : ''}`,
+      ],
+    )
+    html += this.facts(workload)
+    html += `<div style="margin-top:4px;color:${COLORS.faint};font-size:11px">CPU and memory are simulated</div>`
+
+    if (e?.warnings?.length)
+      html +=
+        this.section(`Warnings (${e.warnings.length})`) +
+        e.warnings
+          .map(
+            (w) =>
+              `<div style="display:flex;margin-top:6px;color:#e8d3a6;font-size:12px">${this.dot(COLORS.amber, 6)}` +
+              `<span>${escapeHtml(w)}</span></div>`,
+          )
+          .join('')
+    return html
+  }
+
+  private hostNetwork(env: Environment): string {
+    const e = env.engine
+    let html = ''
+    const host: Array<[string, string]> = []
+    if (e?.address) host.push(['Address', e.address])
+    if (e?.ipForwarding !== undefined) host.push(['IPv4 forward', e.ipForwarding ? 'on' : 'off'])
+    if (e?.firewall) host.push(['Firewall', e.firewall])
+    if (e?.httpProxy) host.push(['HTTP proxy', e.httpProxy])
+    if (e?.httpsProxy) host.push(['HTTPS proxy', e.httpsProxy])
+    if (e?.noProxy) host.push(['No proxy', e.noProxy])
+    if (host.length) html += this.facts(host)
+
+    // what the outside world reaches, through the host gate
+    const published = env.containers
+      .flatMap((c) => c.ports.filter(isPublished).map((p) => ({ c, p })))
+      .sort((a, b) => a.p.hostPort! - b.p.hostPort!)
+    html += this.section(`Published ports (${published.length})`)
+    html += published.length
+      ? published
+          .map(({ c, p }) =>
+            this.link(
+              c,
+              c.name,
+              `${p.hostIp ?? (p.local ? '127.0.0.1' : '0.0.0.0')}:${p.hostPort} → ${p.port}/${p.proto}`,
+            ),
+          )
+          .join('')
+      : `<div style="margin-top:6px;color:${COLORS.muted}">Nothing is published: no container is reachable from outside.</div>`
+
+    // the streets first, the busiest on top; then host, none and the empty ones
+    const networks = [...env.networks].sort(
+      (a, b) =>
+        Number(b.street) - Number(a.street) ||
+        b.members.length - a.members.length ||
+        a.name.localeCompare(b.name),
+    )
+    html += this.section(`Networks (${networks.length})`)
+    for (const n of networks) {
+      const tags = [
+        n.internal && 'INTERNAL',
+        n.ipv6 && 'IPV6',
+        n.attachable && 'ATTACHABLE',
+        n.scope && n.scope !== 'local' && n.scope.toUpperCase(),
+      ].filter(Boolean)
+      const details = [n.subnet, n.gateway && `gw ${n.gateway}`].filter(Boolean)
+      if (!details.length) details.push('no subnet')
+      const members = n.members.map((c) => c.name).join(', ')
+      html +=
+        `<div ${n.street ? `class="isocontainers-link" data-key="${escapeHtml(n.key)}"` : ''} ` +
+        `title="${escapeHtml(members || 'no containers')}" ` +
+        `style="margin-top:6px;padding:7px 10px;border-radius:8px;background:rgba(255,255,255,0.03);` +
+        `border:1px solid rgba(255,255,255,0.06);${n.street ? 'cursor:pointer;' : 'opacity:0.7;'}min-width:0">` +
+        `<div style="display:flex;align-items:center;min-width:0">${this.square(n.street ? n.accent : COLORS.faint)}` +
+        `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cfe9db">${escapeHtml(n.name)}</span>` +
+        `<span style="margin-left:auto;padding-left:8px;font:500 10px ${FONT.mono};color:${COLORS.faint};text-transform:uppercase" title="${n.members.length} containers">${escapeHtml(n.driver)} · ${n.members.length}</span></div>` +
+        `<div style="margin-top:3px;font:500 10.5px ${FONT.mono};color:${COLORS.muted};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">` +
+        `${escapeHtml(details.join(' · '))}${tags.length ? ` · <span style="color:${COLORS.amber}">${tags.join(' · ')}</span>` : ''}</div></div>`
+    }
+    return html
   }
 
   private networkInfo(n: Network): string {

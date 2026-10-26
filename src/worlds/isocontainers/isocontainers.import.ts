@@ -101,6 +101,10 @@ export function fromInspect(data: Json[], name = 'docker host', caption?: string
         internal: !!d.Internal,
         subnet: ipam?.Subnet,
         gateway: ipam?.Gateway,
+        scope: d.Scope || undefined,
+        ipv6: d.EnableIPv6 ?? undefined,
+        attachable: d.Attachable ?? undefined,
+        created: d.Created || undefined,
       })
       continue
     }

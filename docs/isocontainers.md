@@ -107,6 +107,7 @@ model builder fills in sensible defaults.
 | ------------ | ----------------- | ----- |
 | `name`       | string, required  | Unique among the environments; it is the prefix of every key on this host. Two hosts with the same name get a `'` added to the key. |
 | `caption`    | string            | The small text on the plate, e.g. the docker version or the address. |
+| `engine`     | `EngineSpec`      | Optional: what the engine says about itself (`docker info`), for the host pane. All fields optional: `engine`, `version`, `address`, `hostname`, `os`, `kernel`, `arch`, `cpus`, `memory`, `storageDriver`, `loggingDriver`, `cgroup`, `runtime`, `rootDir`, `images`, `swarm`, `firewall`, `ipForwarding`, `httpProxy`, `httpsProxy`, `noProxy`, `warnings`. |
 | `containers` | `ContainerSpec[]` | |
 | `networks`   | `NetworkSpec[]`   | Optional: a network a container names is created on the fly. List it here to give it a driver, subnet or `internal`. |
 | `volumes`    | `VolumeSpec[]`    | Optional the same way; list it to give it a size (the tank's height) or driver. |
@@ -151,6 +152,7 @@ model builder fills in sensible defaults.
 | `driver`   | string  | Default `bridge` (`host` for the network named host). |
 | `subnet`, `gateway` | string | Info only. |
 | `internal` | boolean | No route outside: the street doesn't connect to the gate's avenue. |
+| `scope`, `ipv6`, `attachable`, `created` | | Info only, shown in the host pane. |
 | `note`     | string  | |
 
 ### `VolumeSpec`
@@ -329,6 +331,10 @@ advice depends on how many of these the source fills in. `rate(advice, container
 0–100 score and 0–5 stars. Accepted advice ids are saved in the browser. `applyFix` changes the
 model in the view only, never the real host.
 
+A container's advice is on the **Advisor** tab of its pane, next to **Info**; the tab shows how many
+are open, in the color of the worst. The tab chosen stays when another container is selected. A
+volume's advice is still at the end of its pane.
+
 ## Real and simulated
 
 Today every value that changes over time is **simulated**. A real source changes this split.
@@ -351,6 +357,7 @@ Today every value that changes over time is **simulated**. A real source changes
 | Style rules made in the settings | `localStorage['isocontainers.styles.v1']` |
 | Accepted advice ids | `localStorage['isocontainers.accepted.v1']` |
 | Flags switch, host links switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']` |
+| The host open in the side pane, the one under the pointer, the pane's tab | `scene.openHost`, `scene.hoveredHost`, `IsoContainersSystem.hostTab` |
 | The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
 | Selected entity, zoom, open panes | URL: `?select=<key>`, `?zoom=`, `?advisor`, `?settings` |
 | The data | URL: `?api[=<base>]`, `?stack=<sample id>` or `?graph=<url>[,<url>…]` (in this order), plus `?styles=<url>` |
@@ -359,6 +366,14 @@ Each plate hovers above the floor: a slab with a lit lip, a floor with faint til
 far below that breathes slowly. When the pointer enters a plate, its rim turns green, a ripple runs
 out from it and two soft lights circle along it; leaving fades it out. The sizes and timings are in
 `PLATE` (`IsoContainersGroundComponent.ts`).
+
+Clicking a host's gate (the HOST arch at the front of its plate) or its name in the explorer opens
+the host in the side pane, in place of a selection. The **Engine** tab has the engine, the machine
+and the runtime (from `engine`), and what runs on it: the containers by state, images, volumes,
+networks and the (simulated) CPU and memory. The **Network** tab has the host's forwarding,
+firewall and proxies, every published port with its container, and all networks, including
+`host`, `none` and empty ones; a network with a street jumps to it. Hosts from a file or a sample
+without `engine` show only what the model knows. Esc or a second click closes it.
 
 The samples are in `isocontainers.samples.ts` (`shop`, `fleet`, `states`, `devbox`, `gallery`) and
 `isocontainers.massive.ts` (`massive`: 61 generated hosts).
@@ -391,7 +406,7 @@ another base URL instead of `/mc-api` (it must add the key itself, or need none)
 | `GET /containers/{alias}/networks` | the networks, as `docker network ls` lists them (with `IPAM`, `Internal`) | yes |
 | `GET /containers/{alias}/volumes` | the volumes, without sizes | yes |
 | `GET /containers/{alias}/df` | disk usage: `Volumes[].UsageData.Size` gives the volume sizes | no |
-| `GET /containers/{alias}/info` | `docker info`: the plate caption (`name · docker 29.9.2 · 16 CPUs · 18 GiB`) | no |
+| `GET /containers/{alias}/info` | `docker info`: the plate caption (`name · docker 29.9.2 · 16 CPUs · 18 GiB`) and the host pane's `engine` (`engineInfo()`) | no |
 
 The responses go through `fromInspect()` unchanged, apart from the sizes merged into the volumes,
 so an API host is read like a `docker inspect` file. Each host is one environment named by the

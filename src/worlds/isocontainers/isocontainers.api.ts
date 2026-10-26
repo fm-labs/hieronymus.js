@@ -11,7 +11,7 @@
  * and .env.example), so the browser never sees the key.
  */
 import { formatBytes, fromInspect } from './isocontainers.import.ts'
-import type { ContainersSpec, EnvironmentSpec } from './isocontainers.types.ts'
+import type { ContainersSpec, EngineSpec, EnvironmentSpec } from './isocontainers.types.ts'
 
 type Json = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -84,6 +84,55 @@ export function hostCaption(info: unknown, containers: number): string {
   return parts.filter(Boolean).join(' · ') || `${containers} containers`
 }
 
+const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+
+/**
+ * The host's side pane facts, from `docker info` and the API's host entry. What docker doesn't say
+ * is left out; without info, only the engine and its address are known.
+ */
+export function engineInfo(info: unknown, host?: ApiHost): EngineSpec {
+  const engine: EngineSpec = {
+    engine: text(host?.properties?.engine) ?? 'docker',
+    address: text(host?.properties?.url),
+  }
+  if (isRecord(info)) {
+    const swarm = isRecord(info.Swarm) ? text(info.Swarm.LocalNodeState) : undefined
+    Object.assign(engine, {
+      version: text(info.ServerVersion),
+      hostname: text(info.Name),
+      os: text(info.OperatingSystem),
+      kernel: text(info.KernelVersion),
+      arch: text(info.Architecture),
+      cpus: typeof info.NCPU === 'number' ? info.NCPU : undefined,
+      memory: formatBytes(info.MemTotal),
+      storageDriver: text(info.Driver),
+      loggingDriver: text(info.LoggingDriver),
+      cgroup:
+        [text(info.CgroupDriver), info.CgroupVersion && `v${info.CgroupVersion}`]
+          .filter(Boolean)
+          .join(' · ') || undefined,
+      runtime: text(info.DefaultRuntime),
+      rootDir: text(info.DockerRootDir),
+      images: typeof info.Images === 'number' ? info.Images : undefined,
+      swarm: swarm && (info.Swarm.ControlAvailable ? `${swarm} · manager` : swarm),
+      firewall: isRecord(info.FirewallBackend) ? text(info.FirewallBackend.Driver) : undefined,
+      ipForwarding: typeof info.IPv4Forwarding === 'boolean' ? info.IPv4Forwarding : undefined,
+      httpProxy: text(info.HttpProxy),
+      httpsProxy: text(info.HttpsProxy),
+      noProxy: text(info.NoProxy),
+      warnings: Array.isArray(info.Warnings)
+        ? info.Warnings.filter((w): w is string => typeof w === 'string')
+        : undefined,
+    } satisfies EngineSpec)
+  }
+  // no undefined keys: the spec stays small and compares cleanly
+  for (const key of Object.keys(engine) as Array<keyof EngineSpec>) {
+    const value = engine[key]
+    if (value === undefined || (Array.isArray(value) && !value.length)) delete engine[key]
+  }
+  return engine
+}
+
 /**
  * One host: its containers, networks and volumes, the volume sizes from `df` and the caption from
  * `info`. The sizes and the caption are nice to have: the host loads without them.
@@ -116,7 +165,10 @@ export async function loadHost(
   )
   const name = host.name || host.id
   const all = list(containers)
-  return fromInspect([...all, ...list(networks), ...sized], name, hostCaption(info, all.length))
+  return {
+    ...fromInspect([...all, ...list(networks), ...sized], name, hostCaption(info, all.length)),
+    engine: engineInfo(info, host),
+  }
 }
 
 /**

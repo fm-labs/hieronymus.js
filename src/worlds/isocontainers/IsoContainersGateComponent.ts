@@ -20,7 +20,9 @@ export interface IsoContainersGateComponentProps extends GameComponentProperties
   scene: ContainersScene
 }
 
-const HEIGHT = 40
+/** The height of the gate's beam, in pixels */
+export const GATE_HEIGHT = 40
+const HEIGHT = GATE_HEIGHT
 const PILLAR = 0.2
 
 /**
@@ -49,16 +51,25 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
     const half = LOT.avenue / 2 + 0.15
     const r0 = row - PILLAR / 2
     const pulse = 0.5 + 0.5 * Math.sin(scene.time * 2)
+    const open = scene.openHost === env
+    const hovered = scene.hoveredHost === env
 
-    // the pad on the ground
+    // the pad on the ground; brighter under the pointer, glowing while its host is open
     P.plane(ctx, 0, () => {
       ctx.fillStyle = PALETTE.asphalt
       ctx.beginPath()
       ctx.roundRect((col - half - 0.2) * U, (row - 0.45) * U, (half * 2 + 0.4) * U, 0.9 * U, 12)
       ctx.fill()
-      ctx.strokeStyle = `rgba(141,255,185,${0.25 + 0.2 * pulse})`
-      ctx.lineWidth = 2
+      ctx.save()
+      if (open) {
+        ctx.shadowColor = COLORS.green
+        ctx.shadowBlur = blur(scene.zoom, 14)
+      }
+      const alpha = open ? 0.75 + 0.2 * pulse : hovered ? 0.6 : 0.25 + 0.2 * pulse
+      ctx.strokeStyle = `rgba(141,255,185,${alpha})`
+      ctx.lineWidth = open ? 3 : 2
       ctx.stroke()
+      ctx.restore()
     })
 
     // the pillars, the back one first, and the beam
@@ -97,7 +108,7 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
       ctx.textBaseline = 'top'
       ctx.textAlign = 'center'
       ctx.font = `700 17px ${FONT.mono}`
-      ctx.fillStyle = COLORS.greenSoft
+      ctx.fillStyle = open || hovered ? COLORS.text : COLORS.greenSoft
       ctx.fillText('HOST', col * U, (row + 0.55) * U)
       ctx.font = `600 14px ${FONT.mono}`
       ctx.fillStyle = COLORS.muted

@@ -236,6 +236,7 @@ function buildEnvironment(
     key: spec.name || `env${index + 1}`,
     name: spec.name || `Environment ${index + 1}`,
     caption: spec.caption,
+    engine: spec.engine,
     containers: [],
     networks: [],
     volumes: [],
@@ -281,6 +282,10 @@ function buildEnvironment(
     n.subnet = s.subnet
     n.gateway = s.gateway
     n.internal = !!s.internal
+    n.scope = s.scope
+    n.ipv6 = s.ipv6
+    n.attachable = s.attachable
+    n.created = s.created
     n.note = s.note
   }
 

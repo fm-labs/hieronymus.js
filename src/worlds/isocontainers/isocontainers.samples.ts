@@ -1,7 +1,7 @@
 import devServerInspect from '../container/container.json'
 import { fromInspect } from './isocontainers.import.ts'
 import { massiveFleet } from './isocontainers.massive.ts'
-import type { ContainerSpec, ContainersSpec } from './isocontainers.types.ts'
+import type { ContainerSpec, ContainersSpec, EngineSpec } from './isocontainers.types.ts'
 
 /** What every container of a host gets unless it says otherwise (like an x- anchor in compose) */
 const withDefaults = (defaults: Partial<ContainerSpec>, containers: ContainerSpec[]) =>
@@ -11,6 +11,27 @@ const withDefaults = (defaults: Partial<ContainerSpec>, containers: ContainerSpe
 const PRODUCTION: Partial<ContainerSpec> = { restart: 'unless-stopped', memory: '512 MiB' }
 /** A developer's stack: it restarts, the rest is left to the defaults */
 const DEV: Partial<ContainerSpec> = { restart: 'unless-stopped' }
+
+/** A production host's engine, as docker info reports it */
+const fleetEngine = (ip: string, extra: Partial<EngineSpec> = {}): EngineSpec => ({
+  engine: 'docker',
+  version: '27.3.1',
+  address: `tcp://${ip}:2376`,
+  os: 'Ubuntu 24.04.1 LTS',
+  kernel: '6.8.0-45-generic',
+  arch: 'x86_64',
+  cpus: 8,
+  memory: '31.3 GiB',
+  storageDriver: 'overlay2',
+  loggingDriver: 'json-file',
+  cgroup: 'systemd · v2',
+  runtime: 'runc',
+  rootDir: '/var/lib/docker',
+  swarm: 'inactive',
+  firewall: 'iptables',
+  ipForwarding: true,
+  ...extra,
+})
 
 /** One compose stack: a shop behind a proxy, its data on an internal network */
 const shop: ContainersSpec = {
@@ -149,6 +170,7 @@ const fleet: ContainersSpec = {
     {
       name: 'edge-1',
       caption: 'docker 27.3 · 10.0.1.10',
+      engine: fleetEngine('10.0.1.10'),
       networks: [{ name: 'public', subnet: '172.18.0.0/16' }],
       volumes: [{ name: 'acme', size: '64 KB' }],
       containers: withDefaults(PRODUCTION, [
@@ -180,6 +202,7 @@ const fleet: ContainersSpec = {
     {
       name: 'apps-1',
       caption: 'docker 27.3 · 10.0.2.10',
+      engine: fleetEngine('10.0.2.10'),
       networks: [
         { name: 'api', subnet: '172.19.0.0/16' },
         { name: 'jobs', subnet: '172.22.0.0/16', internal: true },
@@ -237,6 +260,7 @@ const fleet: ContainersSpec = {
     {
       name: 'data-1',
       caption: 'docker 27.3 · 10.0.3.10',
+      engine: fleetEngine('10.0.3.10'),
       networks: [{ name: 'db', subnet: '172.24.0.0/16' }],
       volumes: [
         { name: 'pg-primary', size: '182 GB' },
@@ -290,6 +314,7 @@ const fleet: ContainersSpec = {
     {
       name: 'ops-1',
       caption: 'docker 27.3 · 10.0.9.10',
+      engine: fleetEngine('10.0.9.10'),
       networks: [{ name: 'monitoring' }],
       volumes: [
         { name: 'prometheus', size: '48 GB' },
@@ -346,6 +371,7 @@ const states: ContainersSpec = {
     {
       name: 'staging',
       caption: 'docker 27.3 · 10.0.4.20',
+      engine: fleetEngine('10.0.4.20'),
       networks: [
         { name: 'frontend', subnet: '172.30.0.0/24' },
         { name: 'backend', subnet: '172.31.0.0/24', internal: true },

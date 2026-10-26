@@ -119,7 +119,47 @@ export type NetworkSpec = {
   gateway?: string
   /** No route to the outside world */
   internal?: boolean
+  /** 'local', 'swarm' or 'global' */
+  scope?: string
+  ipv6?: boolean
+  /** Containers can join it by hand (overlay networks) */
+  attachable?: boolean
+  created?: string
   note?: string
+}
+
+/** What the host's container engine says about itself (docker info); everything is optional */
+export type EngineSpec = {
+  /** 'docker', 'podman' */
+  engine?: string
+  version?: string
+  /** Where the engine is reached, e.g. 'unix:///var/run/docker.sock' or 'tcp://10.0.1.10:2376' */
+  address?: string
+  /** The engine's own name for the host */
+  hostname?: string
+  /** e.g. 'Ubuntu 24.04 LTS', 'Docker Desktop' */
+  os?: string
+  kernel?: string
+  arch?: string
+  cpus?: number
+  /** e.g. '16 GiB' */
+  memory?: string
+  storageDriver?: string
+  loggingDriver?: string
+  /** e.g. 'systemd · v2' */
+  cgroup?: string
+  runtime?: string
+  rootDir?: string
+  images?: number
+  /** 'inactive', 'active · manager' */
+  swarm?: string
+  /** The packet filter docker writes its rules to, e.g. 'iptables' */
+  firewall?: string
+  ipForwarding?: boolean
+  httpProxy?: string
+  httpsProxy?: string
+  noProxy?: string
+  warnings?: string[]
 }
 
 export type VolumeSpec = {
@@ -135,6 +175,8 @@ export type EnvironmentSpec = {
   name: string
   /** The small caption next to the name, e.g. the docker version or the host's address */
   caption?: string
+  /** The container engine, when the host was read from its API */
+  engine?: EngineSpec
   containers?: ContainerSpec[]
   networks?: NetworkSpec[]
   volumes?: VolumeSpec[]
@@ -256,6 +298,10 @@ export type Network = {
   subnet?: string
   gateway?: string
   internal: boolean
+  scope?: string
+  ipv6?: boolean
+  attachable?: boolean
+  created?: string
   note?: string
   members: Container[]
   /** The accent color of the street */
@@ -305,6 +351,7 @@ export type Environment = {
   key: string
   name: string
   caption?: string
+  engine?: EngineSpec
   containers: Container[]
   networks: Network[]
   volumes: Volume[]

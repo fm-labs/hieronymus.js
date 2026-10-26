@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ApiError,
   apiGet,
+  engineInfo,
   hostCaption,
   loadFromApi,
   loadHost,
@@ -87,6 +88,15 @@ describe('isocontainers api', () => {
     expect(spec.environments.map((e) => e.name)).toEqual(['local'])
     const env = spec.environments[0]
     expect(env.caption).toBe('box · docker 29.9.2 · 16 CPUs · 16 GiB')
+    expect(env.engine).toEqual({
+      engine: 'docker',
+      version: '29.9.2',
+      hostname: 'box',
+      cpus: 16,
+      memory: '16 GiB',
+    })
+    // the network's details reach the model
+    expect(env.networks!.find((n) => n.name === 'shop_default')!.subnet).toBe('172.20.0.0/16')
     expect(env.containers!.map((c) => c.name)).toEqual(['api', 'db'])
     // the sizes come from df; an unknown size (-1) stays unknown
     expect(env.volumes!.find((v) => v.name === 'pgdata')!.size).toBe('2.5 GiB')
@@ -158,6 +168,49 @@ describe('isocontainers api', () => {
     }) as typeof fetch
     await expect(apiGet('/x', down)('/a')).rejects.toThrow('not reachable')
     expect(await apiGet('/x', respond('[1]', 200))('/a')).toEqual([1])
+  })
+
+  it('reads the engine from docker info and the host entry', () => {
+    const host = {
+      id: 'local',
+      properties: { engine: 'docker', url: 'unix:///var/run/docker.sock' },
+    }
+    expect(
+      engineInfo(
+        {
+          ServerVersion: '29.9.2',
+          OperatingSystem: 'Docker Desktop',
+          Driver: 'overlayfs',
+          CgroupDriver: 'cgroupfs',
+          CgroupVersion: '2',
+          Images: 46,
+          Swarm: { LocalNodeState: 'inactive' },
+          FirewallBackend: { Driver: 'iptables' },
+          IPv4Forwarding: true,
+          HttpProxy: 'http.docker.internal:3128',
+          NoProxy: '',
+          Warnings: null,
+        },
+        host,
+      ),
+    ).toEqual({
+      engine: 'docker',
+      address: 'unix:///var/run/docker.sock',
+      version: '29.9.2',
+      os: 'Docker Desktop',
+      storageDriver: 'overlayfs',
+      cgroup: 'cgroupfs · v2',
+      images: 46,
+      swarm: 'inactive',
+      firewall: 'iptables',
+      ipForwarding: true,
+      httpProxy: 'http.docker.internal:3128',
+    })
+    // without info, only what the host entry says
+    expect(engineInfo(undefined, host)).toEqual({
+      engine: 'docker',
+      address: 'unix:///var/run/docker.sock',
+    })
   })
 
   it('writes a caption from what docker info has', () => {
