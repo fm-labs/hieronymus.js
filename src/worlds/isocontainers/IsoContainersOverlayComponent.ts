@@ -3,6 +3,15 @@ import { AbstractGameComponent } from '../../../lib'
 import { TANK_HEIGHT, linkLength } from './isocontainers.layout.ts'
 import { TAIL } from './isocontainers.sim.ts'
 import { FLOW_COLORS } from './IsoContainersGroundComponent.ts'
+import {
+  MARKER_LIFT,
+  hasMarker,
+  heightOf,
+  marker,
+  moodOf,
+  phaseOf,
+  smoke,
+} from './isocontainers.fx.ts'
 import type { ContainersModel, Entity, GridPoint, Link } from './isocontainers.types.ts'
 import {
   COLORS,
@@ -102,6 +111,20 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
     }
     ctx.globalAlpha = 1
 
+    // smoke over what burns or burned, then the markers over everything that needs a look
+    for (const c of model.containers) {
+      const mood = moodOf(c)
+      if (mood !== 'burning' && mood !== 'dead') continue
+      ctx.globalAlpha = focusAlpha(scene, c, 0.3)
+      smoke(ctx, P, c, heightOf(c), scene.time + phaseOf(c) * 10, mood === 'burning')
+    }
+    for (const c of model.containers) {
+      if (!hasMarker(c)) continue
+      ctx.globalAlpha = focusAlpha(scene, c, 0.25)
+      marker(ctx, P, c, heightOf(c), scene.time, scene.zoom)
+    }
+    ctx.globalAlpha = 1
+
     const labelled = new Set<Entity>()
     if (scene.hovered) labelled.add(scene.hovered)
     if (scene.selected) labelled.add(scene.selected)
@@ -155,7 +178,11 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
   private label(ctx: CanvasRenderingContext2D, e: Entity) {
     const P = this.properties.scene.projection
     if (e.type === 'container') {
-      const [x, y] = P.at(e.col + e.w / 2, e.row + e.d / 2, e.height + 18)
+      // above the marker, if it has one
+      const lift = hasMarker(e)
+        ? MARKER_LIFT + 30 * Math.max(1, 0.75 / this.properties.scene.zoom)
+        : 18
+      const [x, y] = P.at(e.col + e.w / 2, e.row + e.d / 2, heightOf(e) + lift)
       pill(ctx, x, y, e.name, stateColor(e), stateText(e))
     } else if (e.type === 'volume') {
       const [x, y] = P.at(e.col, e.row, TANK_HEIGHT + 14)

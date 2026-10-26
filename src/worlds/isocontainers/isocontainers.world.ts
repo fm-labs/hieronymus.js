@@ -36,6 +36,7 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
     time: 0,
     view: { x0: -1e9, y0: -1e9, x1: 1e9, y1: 1e9 },
     projection: FlowProjection.iso,
+    zoom: 1,
   }
 
   // the ground is one flat component; everything standing is depth sorted; arcs and labels on top

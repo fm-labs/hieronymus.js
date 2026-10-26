@@ -2,7 +2,9 @@ import type { GameComponentProperties, IGameComponent } from '../../../lib/game.
 import { AbstractGameComponent } from '../../../lib'
 import { LOT, subPath } from './isocontainers.layout.ts'
 import { TAIL, pulseDistances } from './isocontainers.sim.ts'
+import { moodOf, phaseOf } from './isocontainers.fx.ts'
 import type {
+  Container,
   ContainersModel,
   Environment,
   GridPoint,
@@ -310,6 +312,37 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
     ctx.globalAlpha = 1
   }
 
+  /** Light on the ground by mood: firelight under what burns, cold under what is frozen, red under the sick */
+  private moodLight(ctx: CanvasRenderingContext2D, c: Container) {
+    const mood = moodOf(c)
+    const time = this.properties.scene.time + phaseOf(c) * 10
+    let color: string
+    let strength: number
+    if (mood === 'burning') {
+      color = '255,120,40'
+      strength = 0.42 + 0.08 * Math.sin(time * 7.3) + 0.05 * Math.sin(time * 13.1)
+    } else if (mood === 'dead') {
+      color = '255,90,40'
+      strength = 0.12 + 0.04 * Math.sin(time * 1.3)
+    } else if (mood === 'paused') {
+      color = '143,211,255'
+      strength = 0.18
+    } else if (mood === 'unhealthy') {
+      color = '255,90,95'
+      strength = 0.12 + 0.08 * Math.sin(time * 2)
+    } else return
+    const cx = (c.col + c.w / 2) * U
+    const cy = (c.row + c.d / 2) * U
+    const r = c.w * U * (mood === 'burning' ? 1.6 : 1.2)
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
+    gradient.addColorStop(0, `rgba(${color},${strength})`)
+    gradient.addColorStop(1, `rgba(${color},0)`)
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
   /** Soft shadows of the buildings and tanks, and green light under the busy buildings */
   private shadows(ctx: CanvasRenderingContext2D, env: Environment) {
     const { scene } = this.properties
@@ -331,6 +364,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.fill()
       ctx.restore()
 
+      this.moodLight(ctx, c)
       if (c.flash > 0.02) {
         const cx = (c.col + c.w / 2) * U
         const cy = (c.row + c.d / 2) * U

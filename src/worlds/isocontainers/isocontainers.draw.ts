@@ -36,6 +36,8 @@ export type ContainersScene = {
   selected?: Entity
   /** The selected entity, its neighbors and their links; everything else steps back */
   focus?: Set<unknown>
+  /** The camera zoom, so markers stay readable from far away */
+  zoom: number
 }
 
 export const isVisible = (scene: ContainersScene, x: number, y: number, margin = 200) =>

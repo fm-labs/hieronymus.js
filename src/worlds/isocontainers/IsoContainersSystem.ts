@@ -176,6 +176,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     view.y0 = offset.y / zoom
     view.x1 = (offset.x + width) / zoom
     view.y1 = (offset.y + height) / zoom
+    this.world.scene.zoom = zoom
   }
 
   /** Move the camera so a world point is at the center of the free area */

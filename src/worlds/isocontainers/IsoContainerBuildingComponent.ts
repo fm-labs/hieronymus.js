@@ -11,14 +11,27 @@ import {
   boxSides,
   fit,
   focusAlpha,
+  hexAlpha,
   isVisible,
   leftQuad,
   poly,
   rightQuad,
-  hexAlpha,
   stateColor,
   type ContainersScene,
 } from './isocontainers.draw.ts'
+import {
+  FIRE,
+  ICE,
+  arrivals,
+  faceColors,
+  flames,
+  heightOf,
+  icicles,
+  moodOf,
+  phaseOf,
+  windowColor,
+  type Mood,
+} from './isocontainers.fx.ts'
 
 export interface IsoContainerBuildingComponentProps extends GameComponentProperties {
   container: Container
@@ -27,10 +40,15 @@ export interface IsoContainerBuildingComponentProps extends GameComponentPropert
 
 const FLOOR = 9
 
+/** How visible a building is, by mood: what is gone steps back, what burns does not */
+const MOOD_ALPHA: Partial<Record<Mood, number>> = { stopped: 0.72, dead: 0.85, created: 0.9 }
+
 /**
- * A container as a building: a dark slate box with rows of windows that light up with the load,
- * a flat roof with its name, image and ports, and a status light. A running container has a green rim,
- * a restarting one a running amber dash, a stopped one sits dark with a red light.
+ * A container as a building: a dark slate box with rows of windows, a flat roof with its name, image
+ * and ports, and a status light. The state shows everywhere: the windows glow in its color (green,
+ * a sick red pulse, amber floors filling up while it boots, ice blue when paused, embers when it
+ * crashed), a crashed building is charred and burns, a paused one is frosted, a container that was
+ * never started is only a blueprint, and one that was just started rises out of the ground.
  * Replicas stand as a row of towers on the same lot.
  */
 export class IsoContainerBuildingComponent extends AbstractGameComponent implements IGameComponent {
@@ -51,10 +69,10 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
   draw(ctx: CanvasRenderingContext2D): void {
     const { container: c, scene } = this.properties
     const P = scene.projection
-    if (!isVisible(scene, this.x, this.y - c.height, (c.w + c.d) * P.cell)) return
-    const up = c.state === 'running'
-    const down = c.state === 'exited' || c.state === 'dead' || c.state === 'created'
-    ctx.globalAlpha = focusAlpha(scene, c) * (down ? 0.62 : 1)
+    if (!isVisible(scene, this.x, this.y - c.height, (c.w + c.d) * P.cell + 120)) return
+    const mood = moodOf(c)
+    const h = heightOf(c)
+    ctx.globalAlpha = focusAlpha(scene, c) * (MOOD_ALPHA[mood] ?? 1)
 
     // replicas: towers side by side along the columns
     const n = c.replicas
@@ -63,11 +81,13 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     for (let i = 0; i < n; i++) {
       const col = c.col + i * (tw + gap)
       // the first tower is the tallest, the others step down a little
-      const h = c.height * (i === 0 ? 1 : 0.86)
-      this.tower(ctx, col, tw, h, up, i)
+      this.tower(ctx, col, tw, h * (i === 0 ? 1 : 0.86), mood, i)
     }
-    this.roof(ctx, n > 1 ? tw : c.w, up, down)
-    this.outline(ctx)
+    this.roof(ctx, n > 1 ? tw : c.w, h, mood)
+    if (mood === 'paused') icicles(ctx, P, c, h)
+    if (mood === 'burning') flames(ctx, P, c, h, scene.time + phaseOf(c) * 10)
+    arrivals(ctx, P, c, h)
+    this.outline(ctx, h)
     ctx.globalAlpha = 1
   }
 
@@ -76,17 +96,22 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     col: number,
     w: number,
     h: number,
-    up: boolean,
+    mood: Mood,
     index: number,
   ) {
     const { container: c, scene } = this.properties
     const P = scene.projection
     const { row, d } = c
-    boxSides(ctx, P, col, row, w, d, 0, h, PALETTE.faceLeft, PALETTE.faceRight)
+    const [left, right] = faceColors(mood)
+    boxSides(ctx, P, col, row, w, d, 0, h, left, right)
+    if (mood === 'burning' || mood === 'dead') this.scorch(ctx, col, w, h)
 
-    // windows: short strips per floor, lit by the load (and a slow, per-window flicker)
-    const floors = Math.floor((h - 8) / FLOOR)
+    // windows: short strips per floor, in the color of the state
+    const floors = Math.max(1, Math.floor((h - 8) / FLOOR))
+    const up = c.state === 'running'
     const load = up ? Math.min(0.9, 0.18 + c.cpu / 60 + c.flash * 0.35) : 0
+    const phase = phaseOf(c)
+    const time = scene.time
     const windows = (
       count: number,
       quad: (a: number, b: number, z: number) => [number, number][],
@@ -94,14 +119,13 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     ) => {
       for (let f = 0; f < floors; f++) {
         const z = 6 + f * FLOOR
+        if (z + 3.5 > h - 2) break
         for (let i = 0; i < count; i++) {
           // each window has its own threshold; it fades in and out as the load moves past it
-          const level = up
-            ? Math.max(0, Math.min(1, (load - noise(i + index * 7, f, salt)) * 5))
-            : 0
+          const level = Math.max(0, Math.min(1, (load - noise(i + index * 7, f, salt)) * 5))
+          const color = windowColor(c, mood, level, i + salt * 11, f, floors, time, phase)
           poly(ctx, quad(i, count, z))
-          ctx.fillStyle =
-            level > 0.01 ? `rgba(141,255,185,${0.06 + 0.5 * level})` : 'rgba(255,255,255,0.035)'
+          ctx.fillStyle = color ?? 'rgba(255,255,255,0.035)'
           ctx.fill()
         }
       }
@@ -127,71 +151,165 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       2,
     )
 
-    // the front edges catch the light
-    ctx.strokeStyle = 'rgba(200,220,212,0.16)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(...P.at(col + w, row + d, 0))
-    ctx.lineTo(...P.at(col + w, row + d, h))
-    ctx.stroke()
+    // the edges: catching the light, or dashed lines of a blueprint
+    ctx.save()
+    if (mood === 'created') {
+      ctx.strokeStyle = 'rgba(111,182,214,0.55)'
+      ctx.setLineDash([4, 4])
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      for (const [a, b] of [
+        [col, row + d],
+        [col + w, row + d],
+        [col + w, row],
+      ]) {
+        ctx.moveTo(...P.at(a, b, 0))
+        ctx.lineTo(...P.at(a, b, h))
+      }
+      ctx.moveTo(...P.at(col, row + d, 0))
+      ctx.lineTo(...P.at(col + w, row + d, 0))
+      ctx.lineTo(...P.at(col + w, row, 0))
+      ctx.stroke()
+    } else {
+      ctx.strokeStyle = 'rgba(200,220,212,0.16)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(...P.at(col + w, row + d, 0))
+      ctx.lineTo(...P.at(col + w, row + d, h))
+      ctx.stroke()
+    }
+    ctx.restore()
 
     // the top of a tower; the roof text goes on the first one
     P.plane(ctx, h, () => {
       const [u0, v0, W, D] = [col * U, row * U, w * U, d * U]
-      const face = ctx.createLinearGradient(u0, v0, u0 + W, v0 + D)
-      face.addColorStop(0, '#1a2629')
-      face.addColorStop(1, PALETTE.roof)
-      ctx.fillStyle = face
-      ctx.fillRect(u0, v0, W, D)
-      ctx.strokeStyle = PALETTE.roofEdge
-      ctx.lineWidth = 2
-      ctx.strokeRect(u0 + 7, v0 + 7, W - 14, D - 14)
-      this.rim(ctx, u0, v0, W, D, up)
+      if (mood === 'created') {
+        ctx.fillStyle = 'rgba(76,201,240,0.05)'
+        ctx.fillRect(u0, v0, W, D)
+      } else {
+        const face = ctx.createLinearGradient(u0, v0, u0 + W, v0 + D)
+        const charred = mood === 'burning' || mood === 'dead'
+        face.addColorStop(0, charred ? '#151312' : mood === 'paused' ? '#1c2a32' : '#1a2629')
+        face.addColorStop(1, charred ? '#0c0b0b' : mood === 'paused' ? '#15222a' : PALETTE.roof)
+        ctx.fillStyle = face
+        ctx.fillRect(u0, v0, W, D)
+        ctx.strokeStyle = PALETTE.roofEdge
+        ctx.lineWidth = 2
+        ctx.strokeRect(u0 + 7, v0 + 7, W - 14, D - 14)
+      }
+      if (mood === 'paused') {
+        // frost: a pale sheen and a few crystal lines
+        const frost = ctx.createLinearGradient(u0, v0, u0 + W, v0 + D)
+        frost.addColorStop(0, 'rgba(190,230,255,0.22)')
+        frost.addColorStop(1, 'rgba(143,211,255,0.06)')
+        ctx.fillStyle = frost
+        ctx.fillRect(u0, v0, W, D)
+        ctx.strokeStyle = 'rgba(210,240,255,0.25)'
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        for (let k = 0; k < 5; k++) {
+          const x = u0 + W * noise(k, 1, index + 3)
+          const y = v0 + D * noise(k, 2, index + 3)
+          for (let a = 0; a < 3; a++) {
+            const angle = (a * Math.PI) / 3
+            ctx.moveTo(x - Math.cos(angle) * 7, y - Math.sin(angle) * 7)
+            ctx.lineTo(x + Math.cos(angle) * 7, y + Math.sin(angle) * 7)
+          }
+        }
+        ctx.stroke()
+      }
+      this.rim(ctx, u0, v0, W, D, mood)
     })
   }
 
-  /** The edge of a roof, in the color of the state */
+  /** Soot climbing up the sides of a burnt building, from the windows to the roof */
+  private scorch(ctx: CanvasRenderingContext2D, col: number, w: number, h: number) {
+    const { container: c, scene } = this.properties
+    const P = scene.projection
+    const { row, d } = c
+    for (const quad of [
+      leftQuad(P, row + d, col, col + w, h * 0.35, h),
+      rightQuad(P, col + w, row + d, row, h * 0.35, h),
+    ]) {
+      const [, y0] = quad[0]
+      const [, y1] = quad[3]
+      const gradient = ctx.createLinearGradient(0, y0, 0, y1)
+      gradient.addColorStop(0, 'rgba(0,0,0,0)')
+      gradient.addColorStop(1, 'rgba(0,0,0,0.55)')
+      poly(ctx, quad)
+      ctx.fillStyle = gradient
+      ctx.fill()
+    }
+  }
+
+  /** The edge of a roof, in the color of the mood */
   private rim(
     ctx: CanvasRenderingContext2D,
     u0: number,
     v0: number,
     W: number,
     D: number,
-    up: boolean,
+    mood: Mood,
   ) {
     const { container: c, scene } = this.properties
     const color = stateColor(c)
     ctx.save()
     ctx.lineWidth = 2.5
-    if (up && (!c.health || c.health === 'healthy')) {
-      ctx.shadowColor = COLORS.green
-      ctx.shadowBlur = 6 + 10 * c.flash
-      ctx.strokeStyle = `rgba(62,224,127,${0.45 + 0.45 * c.flash})`
-    } else if (c.state === 'restarting' || c.state === 'paused') {
-      // a dash running around the roof; frozen when paused
-      ctx.strokeStyle = COLORS.amber
-      ctx.setLineDash([18, 12])
-      ctx.lineDashOffset = c.state === 'paused' ? 0 : -scene.time * 40
-    } else if (up) {
-      // health check pending (amber) or failing (red): a slow breathing glow
-      ctx.shadowColor = color
-      ctx.shadowBlur = 8 * (0.5 + 0.5 * Math.sin(scene.time * 2))
-      ctx.strokeStyle = color
-    } else ctx.strokeStyle = hexAlpha(color, 0.35)
+    switch (mood) {
+      case 'ok':
+        ctx.shadowColor = COLORS.green
+        ctx.shadowBlur = 6 + 10 * c.flash
+        ctx.strokeStyle = `rgba(62,224,127,${0.45 + 0.45 * c.flash})`
+        break
+      case 'crashloop':
+      case 'booting':
+        // a dash running around the roof
+        ctx.strokeStyle = COLORS.amber
+        ctx.setLineDash([18, 12])
+        ctx.lineDashOffset = -scene.time * 40
+        break
+      case 'paused':
+        // the same dash, frozen
+        ctx.strokeStyle = ICE
+        ctx.shadowColor = ICE
+        ctx.shadowBlur = 6
+        ctx.setLineDash([18, 12])
+        break
+      case 'unhealthy':
+      case 'starting':
+        // a slow breathing glow
+        ctx.shadowColor = color
+        ctx.shadowBlur = 8 + 8 * Math.sin(scene.time * 2)
+        ctx.strokeStyle = color
+        break
+      case 'burning':
+        ctx.shadowColor = FIRE
+        ctx.shadowBlur = 12
+        ctx.strokeStyle = hexAlpha(FIRE, 0.8)
+        break
+      case 'created':
+        ctx.strokeStyle = 'rgba(111,182,214,0.6)'
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([6, 5])
+        break
+      default:
+        ctx.strokeStyle = hexAlpha(color, 0.35)
+    }
     ctx.strokeRect(u0 + 1, v0 + 1, W - 2, D - 2)
     ctx.restore()
   }
 
   /** The text on the main roof: name, image, kind and ports, and the status light */
-  private roof(ctx: CanvasRenderingContext2D, width: number, up: boolean, down: boolean) {
+  private roof(ctx: CanvasRenderingContext2D, width: number, h: number, mood: Mood) {
     const { container: c, scene } = this.properties
     const P = scene.projection
-    P.plane(ctx, c.height, () => {
+    const dark = mood === 'stopped' || mood === 'dead' || mood === 'created'
+    P.plane(ctx, h, () => {
       const [u0, v0, W, D] = [c.col * U, c.row * U, width * U, c.d * U]
       const pad = 14
       ctx.textBaseline = 'middle'
       ctx.font = `600 ${width < 1.6 ? 16 : 22}px ${FONT.ui}`
-      ctx.fillStyle = down ? COLORS.muted : COLORS.text
+      ctx.fillStyle = dark ? COLORS.muted : COLORS.text
       ctx.fillText(
         fit(ctx, c.service && c.name.length > 18 ? c.service : c.name, W - pad * 2 - 18),
         u0 + pad,
@@ -226,11 +344,10 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       }
 
       // the status light, top right
-      const color = stateColor(c)
-      const blink = c.state === 'restarting' ? 0.55 + 0.45 * Math.abs(Math.sin(scene.time * 2)) : 1
+      const color = mood === 'paused' ? ICE : stateColor(c)
+      const lit = mood === 'ok' || mood === 'unhealthy' || mood === 'starting' || mood === 'burning'
       ctx.save()
-      ctx.globalAlpha *= blink
-      if (up) {
+      if (lit) {
         ctx.shadowColor = color
         ctx.shadowBlur = 10
       }
@@ -242,7 +359,7 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     })
   }
 
-  private outline(ctx: CanvasRenderingContext2D) {
+  private outline(ctx: CanvasRenderingContext2D, h: number) {
     const { container: c, scene } = this.properties
     const selected = scene.selected === c
     if (!selected && scene.hovered !== c) return
@@ -251,9 +368,8 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     ctx.strokeStyle = selected ? '#ffffff' : 'rgba(255,255,255,0.6)'
     ctx.shadowColor = 'rgba(255,255,255,0.5)'
     ctx.shadowBlur = selected ? 10 : 0
-    ctx.lineWidth = selected ? 2.5 : 1.8
     if (!selected) ctx.setLineDash([8, 6])
-    P.plane(ctx, c.height, () => {
+    P.plane(ctx, h, () => {
       ctx.lineWidth = selected ? 3.5 : 2.5
       ctx.strokeRect((c.col - 0.1) * U, (c.row - 0.1) * U, (c.w + 0.2) * U, (c.d + 0.2) * U)
     })

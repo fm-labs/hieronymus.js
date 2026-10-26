@@ -180,6 +180,9 @@ export type Container = {
   errors: number
   /** Seconds left while starting or stopping */
   transition: number
+  /** Ages (seconds) of the recent arrivals: a ripple on the roof for each, sparks for the failed ones */
+  pings: number[]
+  sparks: number[]
 }
 
 export type Network = {

@@ -22,7 +22,10 @@ export const PULSE_SPEED = 5
 /** The length of a flow's glowing tail, in cells; it drains into the target before it is gone */
 export const TAIL = 1.6
 const MAX_PULSES = 8
-const START_SECONDS = 1.6
+/** How long a ripple or a spark burst lasts */
+export const EVENT_SECONDS = 1.2
+/** How long a started container takes to come up (it rises out of the ground meanwhile) */
+export const START_SECONDS = 2.4
 const STOP_SECONDS = 0.6
 
 const BASE_CPU: Record<ContainerKind, number> = {
@@ -99,6 +102,12 @@ export class ContainersSimulation {
   step(seconds: number) {
     const { model } = this
     // a glow eases in (~0.2 s) and fades out slowly (~1.2 s), so it never blinks
+    // ripples and sparks age in real time, also while paused, so they finish
+    for (const c of model.containers) {
+      if (c.pings.length) c.pings = c.pings.map((a) => a + seconds).filter((a) => a < EVENT_SECONDS)
+      if (c.sparks.length)
+        c.sparks = c.sparks.map((a) => a + seconds).filter((a) => a < EVENT_SECONDS)
+    }
     for (const x of [...model.containers, ...model.volumes]) {
       if (this.rising.has(x)) {
         x.flash = Math.min(1, x.flash + seconds * 5)
@@ -172,6 +181,7 @@ export class ContainersSimulation {
     }
     if (p.failed || !isUp(l.to)) {
       p.failed = true
+      if (l.to.sparks.length < 3) l.to.sparks.push(0)
       l.to.errors++
       this.totalErrors++
       return
@@ -180,6 +190,7 @@ export class ContainersSimulation {
     this.totalRequests++
     this.arrivals++
     this.rising.add(l.to)
+    if (l.to.pings.length < 3) l.to.pings.push(0)
     if (l.network) l.network.packets++
   }
 }
