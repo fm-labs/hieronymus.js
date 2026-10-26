@@ -351,8 +351,14 @@ Today every value that changes over time is **simulated**. A real source changes
 | Style rules made in the settings | `localStorage['isocontainers.styles.v1']` |
 | Accepted advice ids | `localStorage['isocontainers.accepted.v1']` |
 | Flags switch, host links switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']` |
+| The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
 | Selected entity, zoom, open panes | URL: `?select=<key>`, `?zoom=`, `?advisor`, `?settings` |
 | The data | URL: `?api[=<base>]`, `?stack=<sample id>` or `?graph=<url>[,<url>…]` (in this order), plus `?styles=<url>` |
+
+Each plate hovers above the floor: a slab with a lit lip, a floor with faint tiles, and a soft shadow
+far below that breathes slowly. When the pointer enters a plate, its rim turns green, a ripple runs
+out from it and two soft lights circle along it; leaving fades it out. The sizes and timings are in
+`PLATE` (`IsoContainersGroundComponent.ts`).
 
 The samples are in `isocontainers.samples.ts` (`shop`, `fleet`, `states`, `devbox`, `gallery`) and
 `isocontainers.massive.ts` (`massive`: 61 generated hosts).

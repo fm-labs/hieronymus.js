@@ -3,6 +3,7 @@ import { AbstractGameComponent } from '../../../lib'
 import { LOT, subPath } from './isocontainers.layout.ts'
 import { TAIL, pulseDistances } from './isocontainers.sim.ts'
 import { moodOf, phaseOf } from './isocontainers.fx.ts'
+import { mix } from '../isoflow/isoflow.draw.ts'
 import type {
   Container,
   ContainersModel,
@@ -34,6 +35,29 @@ const HALF = LOT.street / 2
 /** The faint band of a road under its line */
 const BAND = 'rgba(255,255,255,0.022)'
 const LINE = 'rgba(200,220,212,0.32)'
+
+/**
+ * The plates: how far above the floor they hover and how thick they are (in pixels of height), the
+ * radius of their corners, their colors, and the timing of their animations (in seconds).
+ */
+export const PLATE = {
+  float: 46,
+  thickness: 18,
+  radius: 48,
+  floor: '#0a1012',
+  floorLit: '#111b1d',
+  edge: '#18231f',
+  under: '#030506',
+  rim: '#c8d6d0',
+  rimLit: '#8dffb9',
+  rimGlow: 'rgba(230,255,240,0.3)',
+  /** One slow breath of the shadow */
+  breath: 7,
+  /** One turn of the lights along the rim */
+  spin: 10,
+  /** The ripple on entering */
+  ripple: 1.1,
+}
 
 /** The colors of a flow: the glow and its gradient head, and the core; soft, so many don't flicker */
 export const FLOW_COLORS = {
@@ -69,6 +93,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       const [x, y] = P.at(e.col + e.cols / 2, e.row + e.rows / 2)
       return isVisible(scene, x, y, (e.cols + e.rows) * P.cell)
     })
+    envs.forEach((env, i) => this.plateShadow(ctx, env, i * 1.7))
     for (const env of envs) this.plate(ctx, env)
     P.plane(ctx, 0, () => {
       for (const env of envs) this.lots(ctx, env)
@@ -109,29 +134,155 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
     ctx.globalAlpha = 1
   }
 
-  /** A glass plate with a bright rim; the name and the caption along the front edge */
-  private plate(ctx: CanvasRenderingContext2D, env: Environment) {
-    const P = this.properties.scene.projection
+  /**
+   * The shadow of a plate on the floor far below, so the plate seems to hover. A few soft layers
+   * instead of a canvas blur, which costs too much on big plates; it breathes slowly, as if the plate
+   * rose and sank a little.
+   */
+  private plateShadow(ctx: CanvasRenderingContext2D, env: Environment, phase: number) {
+    const { scene } = this.properties
+    const P = scene.projection
     const [u0, v0, w, h] = [env.col * U, env.row * U, env.cols * U, env.rows * U]
-    P.plane(ctx, -8, () => {
-      roundRect(ctx, u0, v0, w, h, 48)
-      ctx.fillStyle = 'rgba(0,0,0,0.4)'
-      ctx.fill()
+    const breath = Math.sin((scene.time / PLATE.breath) * Math.PI * 2 + phase)
+    // under the pointer the plate seems to rise: its shadow falls farther, wider and lighter
+    const lift = scene.plates.get(env)?.glow ?? 0
+    P.plane(ctx, -PLATE.float - 4 * breath - 10 * lift, () => {
+      // a faint pool of light on the floor, so the shadow reads on the dark ground
+      ctx.fillStyle = 'rgba(150,200,180,0.012)'
+      for (let i = 0; i < 4; i++) {
+        const g = 70 + i * 40
+        roundRect(ctx, u0 - g, v0 - g * 0.4, w + g * 2, h + g * 1.4, PLATE.radius + g)
+        ctx.fill()
+      }
+      ctx.fillStyle = `rgba(0,0,0,${0.2 - 0.02 * breath - 0.04 * lift})`
+      for (let i = 0; i < 5; i++) {
+        const g = 6 + i * 12 + 4 * breath + 8 * lift
+        roundRect(ctx, u0 - g, v0 - g * 0.4, w + g * 2, h + g * 1.4, PLATE.radius + g)
+        ctx.fill()
+      }
     })
+  }
+
+  /**
+   * A plate: a slab with a dark edge, its floor with faint tiles, and a bright rim. Under the pointer
+   * the rim lights up green, a ripple runs out from it, and two soft lights circle along it.
+   */
+  private plate(ctx: CanvasRenderingContext2D, env: Environment) {
+    const { scene } = this.properties
+    const P = scene.projection
+    const [u0, v0, w, h] = [env.col * U, env.row * U, env.cols * U, env.rows * U]
+    const R = PLATE.radius
+    const lit = scene.plates.get(env)
+    const glow = lit?.glow ?? 0
+
+    // the slab's edge, from its dark underside up to the floor
+    const steps = Math.max(2, Math.round((PLATE.thickness * P.zScale) / 2))
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps
+      P.plane(ctx, -PLATE.thickness * (1 - t), () => {
+        roundRect(ctx, u0, v0, w, h, R)
+        ctx.fillStyle = mix(PLATE.under, PLATE.edge, t)
+        ctx.fill()
+      })
+    }
+    // the lip under the rim catches a little light, the underside a little less
+    for (const [z, alpha] of [
+      [-PLATE.thickness, 0.07],
+      [-4, 0.16],
+    ]) {
+      P.plane(ctx, z, () => {
+        roundRect(ctx, u0, v0, w, h, R)
+        ctx.strokeStyle = `rgba(225,236,231,${alpha})`
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+      })
+    }
+
     P.plane(ctx, 0, () => {
-      roundRect(ctx, u0, v0, w, h, 48)
-      const glass = ctx.createLinearGradient(u0, v0, u0 + w, v0 + h)
-      glass.addColorStop(0, 'rgba(255,255,255,0.04)')
-      glass.addColorStop(1, 'rgba(255,255,255,0.012)')
-      ctx.fillStyle = glass
+      // the floor: lit from the back, darker toward the front edges
+      roundRect(ctx, u0, v0, w, h, R)
+      const floor = ctx.createRadialGradient(
+        u0 + w * 0.35,
+        v0 + h * 0.3,
+        0,
+        u0 + w * 0.35,
+        v0 + h * 0.3,
+        Math.hypot(w, h) * 0.8,
+      )
+      floor.addColorStop(0, PLATE.floorLit)
+      floor.addColorStop(1, PLATE.floor)
+      ctx.fillStyle = floor
       ctx.fill()
+
       ctx.save()
-      ctx.shadowColor = 'rgba(230,255,240,0.35)'
-      ctx.shadowBlur = blur(this.properties.scene.zoom, 8)
-      ctx.strokeStyle = COLORS.frame
-      ctx.lineWidth = 3.5
+      ctx.clip()
+      // the tiles, one per cell; they fade out from far away before they turn into a moiré
+      const tiles = Math.min(1, Math.max(0, (scene.zoom - 0.18) / 0.25))
+      if (tiles > 0) {
+        ctx.strokeStyle = `rgba(200,220,212,${0.035 * tiles})`
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        for (let c = Math.ceil(env.col); c < env.col + env.cols; c++) {
+          ctx.moveTo(c * U, v0)
+          ctx.lineTo(c * U, v0 + h)
+        }
+        for (let r = Math.ceil(env.row); r < env.row + env.rows; r++) {
+          ctx.moveTo(u0, r * U)
+          ctx.lineTo(u0 + w, r * U)
+        }
+        ctx.stroke()
+      }
+      // a soft green light along the inside of the rim, under the pointer
+      if (glow > 0.01) {
+        roundRect(ctx, u0, v0, w, h, R)
+        ctx.strokeStyle = hexAlpha(COLORS.green, 0.07 * glow)
+        ctx.lineWidth = 56
+        ctx.stroke()
+        ctx.lineWidth = 22
+        ctx.stroke()
+      }
+      ctx.restore()
+
+      // the rim: calm white, turning green under the pointer
+      roundRect(ctx, u0, v0, w, h, R)
+      ctx.save()
+      ctx.shadowColor = glow > 0.01 ? hexAlpha(COLORS.green, 0.35 + 0.35 * glow) : PLATE.rimGlow
+      ctx.shadowBlur = blur(scene.zoom, 8 + 10 * glow)
+      ctx.strokeStyle = mix(PLATE.rim, PLATE.rimLit, glow)
+      ctx.lineWidth = 3.5 + glow
       ctx.stroke()
       ctx.restore()
+
+      if (lit && glow > 0.01) {
+        // two lights circling the rim, slowly
+        const spin = (scene.time / PLATE.spin) * Math.PI * 2
+        const lights = ctx.createConicGradient(spin, u0 + w / 2, v0 + h / 2)
+        for (const at of [0, 0.5]) {
+          lights.addColorStop(at, 'rgba(141,255,185,0)')
+          lights.addColorStop(at + 0.07, `rgba(200,255,222,${0.85 * glow})`)
+          lights.addColorStop(at + 0.075, 'rgba(141,255,185,0)')
+          lights.addColorStop(at + 0.5, 'rgba(141,255,185,0)')
+        }
+        roundRect(ctx, u0, v0, w, h, R)
+        ctx.save()
+        ctx.shadowColor = COLORS.greenSoft
+        ctx.shadowBlur = blur(scene.zoom, 10)
+        ctx.strokeStyle = lights
+        ctx.lineWidth = 3
+        ctx.stroke()
+        ctx.restore()
+
+        // the ripple on entering: a thin ring that grows out from the rim and fades
+        const e = (scene.time - lit.entered) / PLATE.ripple
+        if (e >= 0 && e < 1) {
+          const ease = 1 - (1 - e) ** 3
+          const g = 6 + ease * 34
+          roundRect(ctx, u0 - g, v0 - g, w + g * 2, h + g * 2, R + g)
+          ctx.strokeStyle = hexAlpha(COLORS.greenSoft, 0.45 * (1 - e) ** 2)
+          ctx.lineWidth = 2
+          ctx.stroke()
+        }
+      }
 
       // the name, right of the gate; it keeps a readable size when zoomed out, as long as it fits
       const lx = (env.gate[0] + 1.3) * U

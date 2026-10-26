@@ -4,7 +4,7 @@
  * the volumes cylinders, and each network has an accent color.
  */
 import { COLORS, FONT, FlowProjection, fit, roundRect } from '../isoflow/isoflow.draw.ts'
-import type { Container, Entity, GridPoint, SizeClass } from './isocontainers.types.ts'
+import type { Container, Entity, Environment, GridPoint, SizeClass } from './isocontainers.types.ts'
 
 export { COLORS, FONT, FlowProjection, fit, roundRect }
 
@@ -49,6 +49,13 @@ export type ContainersScene = {
   projection: FlowProjection
   hovered?: Entity
   selected?: Entity
+  /** The plate under the pointer */
+  hoveredPlate?: Environment
+  /**
+   * How lit each plate's rim is (0 to 1, eased toward the hover) and when the pointer last entered it
+   * (scene time), for the ripple on entering
+   */
+  plates: Map<Environment, { glow: number; entered: number }>
   /** The selected entity, its neighbors and their links; everything else steps back */
   focus?: Set<unknown>
   /** The camera zoom, so markers stay readable from far away */

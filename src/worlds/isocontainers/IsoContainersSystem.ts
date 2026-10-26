@@ -30,6 +30,7 @@ import {
   type Container,
   type ContainersSpec,
   type Entity,
+  type Environment,
   type Network,
   type Volume,
 } from './isocontainers.types.ts'
@@ -235,6 +236,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this._game.eventbus.on('mouse.mousedown', this.handleMouseDown)
     this._game.eventbus.on('mouse.mouseup', this.handleMouseUp)
     window.addEventListener('mousemove', this.handleMouseMove)
+    document.addEventListener('mouseleave', this.handleMouseLeave)
     const $c = this._game.$container
     this.previousBackground = $c.style.background
     this.previousCursor = $c.style.cursor
@@ -276,6 +278,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this._game.eventbus.off('mouse.mousedown', this.handleMouseDown)
     this._game.eventbus.off('mouse.mouseup', this.handleMouseUp)
     window.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseleave', this.handleMouseLeave)
     const $c = this._game.$container
     $c.style.background = this.previousBackground
     $c.style.cursor = this.previousCursor
@@ -292,6 +295,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.world.scene.time += seconds
     this.sim.step(seconds)
     this.stepGlide(seconds)
+    this.stepPlates(seconds)
     this.updateView()
     this.updateBackground()
     this.refresh -= seconds
@@ -309,6 +313,31 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       )
         this.renderInfo()
     }
+  }
+
+  /** The rims light up and fade out smoothly as the pointer enters and leaves a plate */
+  private stepPlates(seconds: number) {
+    const { scene, model } = this.world
+    const k = 1 - Math.exp(-seconds * 5)
+    for (const env of model.environments) {
+      const plate = scene.plates.get(env)
+      const target = env === scene.hoveredPlate ? 1 : 0
+      if (!plate) {
+        if (target) scene.plates.set(env, { glow: 0, entered: scene.time })
+        continue
+      }
+      plate.glow += (target - plate.glow) * k
+      if (!target && plate.glow < 0.005) scene.plates.delete(env)
+    }
+  }
+
+  /** The plate under the pointer; entering one starts its ripple */
+  private hoverPlate(env: Environment | undefined) {
+    const scene = this.world.scene
+    if (env === scene.hoveredPlate) return
+    scene.hoveredPlate = env
+    const plate = env && scene.plates.get(env)
+    if (plate) plate.entered = scene.time
   }
 
   /** A container by name (or environment/name), a network or a volume by name */
@@ -532,11 +561,28 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
     if (this.isOnPanel(e)) {
       if (!(e.target as HTMLElement).closest('[data-key]')) this.world.scene.hovered = undefined
+      this.hoverPlate(undefined)
       return
     }
+    const [col, row] = this.gridAt(e.clientX, e.clientY, 0)
+    this.hoverPlate(
+      this.world.model.environments.find(
+        (env) =>
+          col >= env.col &&
+          col <= env.col + env.cols &&
+          row >= env.row &&
+          row <= env.row + env.rows,
+      ),
+    )
     const thing = this.pick(e.clientX, e.clientY)
     this.world.scene.hovered = thing
     this._game.$container.style.cursor = thing ? 'pointer' : ''
+  }
+
+  /** The pointer left the page: nothing is under it */
+  private handleMouseLeave = () => {
+    this.hoverPlate(undefined)
+    this.world.scene.hovered = undefined
   }
 
   private handleMouseUp(e: MouseEvent) {

@@ -42,6 +42,7 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
     showAdvice: true,
     showCrossHost: true,
     popups: [],
+    plates: new Map(),
   }
 
   // the ground is one flat component; everything standing is depth sorted; arcs and labels on top
