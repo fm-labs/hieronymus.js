@@ -72,7 +72,7 @@ export function subnetOf(ip: string, prefix: number): string | undefined {
   return `${octets.join('.')}/${prefix}`
 }
 
-const formatBytes = (bytes: number): string | undefined => {
+export const formatBytes = (bytes: number): string | undefined => {
   if (!(bytes > 0)) return
   const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
   let v = bytes

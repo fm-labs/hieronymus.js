@@ -1,7 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import { resolve } from 'path'
 import dts from 'vite-plugin-dts'
 import { libInjectCss } from 'vite-plugin-lib-inject-css'
+
+// MC_API_URL and MC_API_KEY come from .env.local (see .env.example); only the dev server reads them,
+// they are not exposed to the browser (that takes the VITE_ prefix)
+const env = loadEnv('development', process.cwd(), 'MC_')
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,6 +16,18 @@ export default defineConfig({
   //     '~react-tabulator': path.resolve(__dirname, 'node_modules/react-tabulator'),
   //   },
   // },
+  server: {
+    proxy: {
+      // the mission-control API for the isocontainers world (?world=isocontainers&api):
+      // /mc-api/... → <MC_API_URL>/api/..., with the API key added here, never in the browser
+      '/mc-api': {
+        target: env.MC_API_URL || 'http://127.0.0.1:3080',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/mc-api/, '/api'),
+        headers: env.MC_API_KEY ? { 'x-api-key': env.MC_API_KEY } : {},
+      },
+    },
+  },
   plugins: [dts({ include: ['lib'], rollupTypes: true }), libInjectCss()],
   build: {
     minify: false,

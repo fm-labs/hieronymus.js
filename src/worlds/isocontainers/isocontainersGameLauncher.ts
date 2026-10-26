@@ -2,6 +2,7 @@ import type { GameConfig } from '../../../lib/game.types'
 import { CameraSystem, Game, InputSystem, TileMapSystem } from '../../../lib'
 import { SAMPLES } from './isocontainers.samples.ts'
 import { toEnvironments } from './isocontainers.import.ts'
+import { API_BASE, apiGet, loadFromApi } from './isocontainers.api.ts'
 import type { ContainersSpec } from './isocontainers.types.ts'
 import { parseRules, type StyleRule } from './isocontainers.styles.ts'
 import isoContainersWorldBuilder from './isocontainers.world.ts'
@@ -33,12 +34,30 @@ async function loadFonts() {
 
 /**
  * The environments named by the URL:
+ * ?api[=<base>] the hosts of the mission-control API (by default through the Vite dev proxy, /mc-api);
  * ?graph=<url>[,<url>…] JSON files, one host each: docker inspect output, docker compose config output,
  * or a ContainersSpec; ?stack=<id> one of the samples (shop, fleet, states, devbox, gallery, massive).
  */
 async function loadSpec(
   params: URLSearchParams,
-): Promise<{ spec: ContainersSpec; current: string; source?: string }> {
+): Promise<{ spec: ContainersSpec; current: string; source?: string; error?: string }> {
+  let error: string | undefined
+  if (params.has('api')) {
+    const base = params.get('api') || API_BASE
+    try {
+      const { spec, failed } = await loadFromApi(apiGet(base), base)
+      if (failed.length) console.warn('isocontainers: hosts not loaded', failed)
+      return {
+        spec,
+        current: 'api',
+        source: base,
+        error: failed.length ? `${failed.length} host(s) not loaded: ${failed[0]}` : undefined,
+      }
+    } catch (e) {
+      console.warn('isocontainers: API not loaded, showing a sample', e)
+      error = `API not loaded: ${(e as Error).message}`
+    }
+  }
   const graph = params.get('graph')
   if (graph) {
     try {
@@ -63,11 +82,12 @@ async function loadSpec(
       return { spec, current: 'custom', source: graph }
     } catch (e) {
       console.warn('isocontainers: environment not loaded, showing a sample', e)
+      error ??= `Not loaded: ${(e as Error).message}`
     }
   }
   const id = params.get('stack')
   const spec = SAMPLES.find((s) => s.id === id) ?? SAMPLES[0]
-  return { spec, current: spec.id! }
+  return { spec, current: spec.id!, error }
 }
 
 /** ?styles=<url>: building style rules, a JSON array (or { rules: [...] }) */
@@ -98,7 +118,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new CameraSystem(game))
 
   const params = new URLSearchParams(window.location.search)
-  const [{ spec, current, source }, styleRules] = await Promise.all([
+  const [{ spec, current, source, error }, styleRules] = await Promise.all([
     loadSpec(params),
     loadStyles(params),
     loadFonts(),
@@ -110,6 +130,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
       samples: SAMPLES,
       current,
       source,
+      error,
       select: params.get('select') ?? undefined,
       zoom: Number(params.get('zoom')) || undefined,
       styleRules,

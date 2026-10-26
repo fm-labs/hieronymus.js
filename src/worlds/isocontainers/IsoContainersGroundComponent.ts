@@ -197,7 +197,6 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
     const aw = LOT.avenue / 2
     const gate = env.gate
     const front = env.frontRow
-    const lastAvenue = Math.max(gate[0], ...env.avenues.map((a) => a.col))
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
@@ -209,20 +208,22 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
           (a.col - aw) * U,
           (a.row0 - HALF) * U,
           LOT.avenue * U,
-          (front - a.row0) * U,
+          (a.row1 - a.row0) * U,
           14,
         )
         ctx.fill()
       }
-      roundRect(
-        ctx,
-        (gate[0] - aw) * U,
-        (front - HALF) * U,
-        (lastAvenue - gate[0] + LOT.avenue) * U,
-        LOT.street * U,
-        14,
-      )
-      ctx.fill()
+      for (const r of env.roads) {
+        roundRect(
+          ctx,
+          (r.col0 - aw) * U,
+          (r.row - HALF) * U,
+          (r.col1 - r.col0 + LOT.avenue) * U,
+          LOT.street * U,
+          14,
+        )
+        ctx.fill()
+      }
     }
     for (const n of streets) {
       ctx.globalAlpha = focusAlpha(scene, n, 0.45)
@@ -238,11 +239,14 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.beginPath()
       for (const a of env.avenues) {
         ctx.moveTo(a.col * U, a.row0 * U)
-        ctx.lineTo(a.col * U, front * U)
+        ctx.lineTo(a.col * U, a.row1 * U)
+      }
+      for (const r of env.roads) {
+        ctx.moveTo(r.col0 * U, r.row * U)
+        ctx.lineTo(r.col1 * U, r.row * U)
       }
       ctx.moveTo(gate[0] * U, gate[1] * U)
       ctx.lineTo(gate[0] * U, front * U)
-      ctx.lineTo(lastAvenue * U, front * U)
       ctx.stroke()
     }
     for (const n of streets) this.street(ctx, n)

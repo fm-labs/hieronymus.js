@@ -46,6 +46,9 @@ export const LOT = {
   front: 2.6,
   envGap: 5,
   districtGap: 2.2,
+  /** Between the spine and the districts, and between a road and the line behind it */
+  spineGap: 0.9,
+  lineGap: 0.9,
   margin: 4,
 }
 
@@ -225,6 +228,7 @@ function buildEnvironment(
     cols: 0,
     rows: 0,
     avenues: [],
+    roads: [],
     frontRow: 0,
     gate: [0, 0],
   }
@@ -557,12 +561,15 @@ function buildLinks(env: Environment, spec: EnvironmentSpec, all: Environment[])
 
 type Lot = { container?: Container; tanks: Volume[]; width: number }
 
-const lotWidth = (tanks: number, building = true) =>
-  (building ? LOT.w : -LOT.tankGap) + tanks * (LOT.tankR * 2 + LOT.tankGap) + (tanks ? 0.1 : 0)
+const lotWidth = (tanks: number) =>
+  LOT.w + tanks * (LOT.tankR * 2 + LOT.tankGap) + (tanks ? 0.1 : 0)
 
 /**
  * An environment: its networks grouped into districts (networks connected by shared containers),
- * side by side along the columns, their fronts on one road that leads to the host gate.
+ * side by side along the columns, their fronts on one road that leads to the host gate. When one line
+ * of districts would make a long thin plate (a host with many small compose projects), the districts
+ * wrap into several lines, each with a road in front, and a spine on the left joins the roads to the
+ * gate. The volumes nobody mounts are stored in a yard of their own.
  */
 function layoutEnvironment(env: Environment, col0: number, row0: number) {
   const streets = env.networks.filter((n) => n.members.length && n.driver !== 'null')
@@ -590,36 +597,130 @@ function layoutEnvironment(env: Environment, col0: number, row0: number) {
     districts.push(streets.filter((s) => found.has(s)))
   }
   const loose = env.containers.filter((c) => !c.attachments.some((a) => a.network.street))
-  const yard = env.volumes.filter((v) => !v.mounts.length)
-  if (loose.length || yard.length || !districts.length) districts.push([])
+  // named volumes first, the anonymous ones at the back
+  const yard = env.volumes
+    .filter((v) => !v.mounts.length)
+    .sort((a, b) => Number(a.anonymous) - Number(b.anonymous) || a.name.localeCompare(b.name))
+  if (loose.length || (!districts.length && !yard.length)) districts.push([])
 
-  const blocks: Block[] = []
-  let x = col0 + LOT.pad
-  for (const nets of districts) {
-    const containers = nets.length
-      ? env.containers.filter((c) => c.attachments.some((a) => nets.includes(a.network)))
-      : loose
-    const block = layoutBlock(nets, containers, nets.length ? [] : yard, x)
-    blocks.push(block)
-    x = block.right + LOT.districtGap
+  // each block is laid out at the origin, then moved into its line
+  const blocks = districts.map((nets) =>
+    layoutBlock(
+      nets,
+      nets.length
+        ? env.containers.filter((c) => c.attachments.some((a) => nets.includes(a.network)))
+        : loose,
+      0,
+    ),
+  )
+  if (yard.length) blocks.push(layoutYard(yard))
+  const lines = wrapLines(blocks)
+  const spine = lines.length > 1
+  const gateCol = spine ? col0 + LOT.pad + LOT.avenue / 2 : col0 + LOT.pad + blocks[0].avenueCol
+  const left = col0 + LOT.pad + (spine ? LOT.avenue + LOT.spineGap : 0)
+
+  const roads: Environment['roads'] = []
+  const avenues: Environment['avenues'] = []
+  let y = row0 + LOT.pad
+  let right = left
+  let front = y
+  for (const line of lines) {
+    // the fronts of the districts in line
+    const height = Math.max(...line.map((b) => b.bottom))
+    let x = left
+    for (const b of line) {
+      shiftBlock(b, x, y + height - b.bottom)
+      x += b.right + LOT.districtGap
+    }
+    right = Math.max(right, x - LOT.districtGap)
+    front = y + height + 0.4 + LOT.street / 2
+    const open = line.filter((b) => b.open)
+    for (const b of open) avenues.push({ col: b.avenueCol, row0: b.avenueRow0, row1: front })
+    if (open.length)
+      roads.push({ row: front, col0: gateCol, col1: Math.max(...open.map((b) => b.avenueCol)) })
+    y = front + LOT.street / 2 + LOT.lineGap
   }
-  // the fronts of the districts in line
-  const height = Math.max(...blocks.map((b) => b.bottom))
-  for (const b of blocks) {
-    shiftItems(b.containers, b.networks, b.volumes, 0, row0 + LOT.pad + height - b.bottom)
-    b.avenueRow0 += row0 + LOT.pad + height - b.bottom
-  }
-  const front = row0 + LOT.pad + height + 0.4 + LOT.street / 2
-  const open = blocks.filter((b) => b.open)
+  if (spine && roads.length) avenues.push({ col: gateCol, row0: roads[0].row, row1: front })
 
   env.col = col0
   env.row = row0
-  env.cols = x - LOT.districtGap + LOT.pad - col0
+  env.cols = right + LOT.pad - col0
   env.frontRow = front
-  env.avenues = open.map((b) => ({ col: b.avenueCol, row0: b.avenueRow0 }))
-  const gateCol = blocks[0].avenueCol
+  env.roads = roads
+  env.avenues = avenues
   env.gate = [gateCol, front + 1.3]
   env.rows = front + 0.7 + LOT.front - row0
+}
+
+/** Plates wider than this (columns over rows) wrap their districts into lines */
+const MAX_ASPECT = 2.2
+
+/**
+ * The districts in lines, back to front: one line, unless that makes the plate long and thin; then
+ * the number of lines that makes it closest to square. Each line is filled in order, up to the width.
+ */
+export function wrapLines<B extends { right: number; bottom: number }>(blocks: B[]): B[][] {
+  const gap = LOT.districtGap
+  const widthOf = (line: B[]) => line.reduce((w, b) => w + b.right, 0) + gap * (line.length - 1)
+  const aspect = (lines: B[][]) => {
+    const cols =
+      Math.max(...lines.map(widthOf)) +
+      2 * LOT.pad +
+      (lines.length > 1 ? LOT.avenue + LOT.spineGap : 0)
+    const rows =
+      lines.reduce(
+        (h, l) => h + Math.max(...l.map((b) => b.bottom)) + 0.4 + LOT.street + LOT.lineGap,
+        0,
+      ) +
+      LOT.pad +
+      LOT.front
+    return cols / rows
+  }
+  const one = [blocks]
+  if (blocks.length < 2 || aspect(one) <= MAX_ASPECT) return one
+  const total = widthOf(blocks)
+  let best = one
+  let score = Math.abs(Math.log(aspect(one)))
+  for (let k = 2; k <= blocks.length; k++) {
+    const target = total / k
+    const lines: B[][] = [[]]
+    for (const b of blocks) {
+      const line = lines[lines.length - 1]
+      if (line.length && widthOf([...line, b]) > target * 1.08) lines.push([b])
+      else line.push(b)
+    }
+    const s = Math.abs(Math.log(aspect(lines)))
+    if (s < score - 1e-6) [best, score] = [lines, s]
+  }
+  return best
+}
+
+/** The volumes nobody mounts: tanks in a yard, a little wider than deep */
+function layoutYard(volumes: Volume[]): Block {
+  const step = LOT.tankR * 2 + LOT.tankGap
+  const perRow = Math.max(3, Math.ceil(Math.sqrt(volumes.length * 1.5)))
+  const rows = Math.ceil(volumes.length / perRow)
+  volumes.forEach((v, i) => {
+    v.col = 0.3 + LOT.tankR + (i % perRow) * step
+    v.row = 0.3 + LOT.tankR + Math.floor(i / perRow) * step
+  })
+  const cols = Math.min(perRow, volumes.length)
+  return {
+    containers: [],
+    networks: [],
+    volumes,
+    avenueCol: 0,
+    avenueRow0: 0,
+    open: false,
+    right: 0.6 + cols * step - LOT.tankGap + 0.8,
+    bottom: 0.6 + rows * step - LOT.tankGap,
+  }
+}
+
+function shiftBlock(b: Block, dc: number, dr: number) {
+  shiftItems(b.containers, b.networks, b.volumes, dc, dr)
+  b.avenueCol += dc
+  b.avenueRow0 += dr
 }
 
 type Block = {
@@ -636,12 +737,7 @@ type Block = {
 }
 
 /** A district: its streets stacked along the rows, the lots between them, an avenue on its left */
-function layoutBlock(
-  streets: Network[],
-  containers: Container[],
-  yard: Volume[],
-  col0: number,
-): Block {
+function layoutBlock(streets: Network[], containers: Container[], col0: number): Block {
   const n = streets.length
   const index = new Map(streets.map((s, i) => [s, i]))
   const slots: Lot[][] = Array.from({ length: n + 1 }, () => [])
@@ -692,11 +788,6 @@ function layoutBlock(
   // along a street: the entrance first, the data at the end
   const rank = new Map(sorted.map((c, i) => [c, i]))
   for (const row of slots) row.sort((a, b) => rank.get(a.container!)! - rank.get(b.container!)!)
-  // volumes nobody mounts: a yard at the front
-  for (let i = 0; i < yard.length; i += 3) {
-    const tanks = yard.slice(i, i + 3)
-    slots[n].push({ tanks, width: lotWidth(tanks.length, false) })
-  }
 
   // rows, from the back: slot 0, street 0, slot 1, ..., street n-1, slot n
   const avenueCol = col0 + LOT.avenue / 2
@@ -761,9 +852,9 @@ function layoutBlock(
   }
 
   const open = streets.filter((s) => !s.internal)
-  const volumes = [
-    ...new Set([...containers.flatMap((c) => c.mounts.map((m) => m.volume)), ...yard]),
-  ].filter((v): v is Volume => !!v && (v.owner ? containers.includes(v.owner) : true))
+  const volumes = [...new Set(containers.flatMap((c) => c.mounts.map((m) => m.volume)))].filter(
+    (v): v is Volume => !!v && !!v.owner && containers.includes(v.owner),
+  )
   return {
     containers,
     networks: streets,
@@ -807,7 +898,8 @@ function shiftEnvironment(env: Environment, dc: number, dr: number) {
   env.col += dc
   env.row += dr
   env.frontRow += dr
-  env.avenues = env.avenues.map((a) => ({ col: a.col + dc, row0: a.row0 + dr }))
+  env.avenues = env.avenues.map((a) => ({ col: a.col + dc, row0: a.row0 + dr, row1: a.row1 + dr }))
+  env.roads = env.roads.map((r) => ({ row: r.row + dr, col0: r.col0 + dc, col1: r.col1 + dc }))
   env.gate = [env.gate[0] + dc, env.gate[1] + dr]
   shiftItems(
     env.containers,
@@ -842,12 +934,13 @@ function route(link: Link) {
     const d = to.driveways.find((x) => !x.network.internal)
     if (d) {
       link.network = d.network
-      // the gate, the front road, the district's avenue, the street, the driveway
+      // the gate, (up the spine to) the road of its line, the district's avenue, the street, the driveway
       const avenue = d.network.col0 + LOT.avenue / 2
+      const road = env.avenues.find((a) => Math.abs(a.col - avenue) < 1e-6)?.row1 ?? env.frontRow
       path = [
         env.gate,
-        [env.gate[0], env.frontRow],
-        [avenue, env.frontRow],
+        [env.gate[0], road],
+        [avenue, road],
         [avenue, d.to],
         [d.col, d.to],
         [d.col, d.from],

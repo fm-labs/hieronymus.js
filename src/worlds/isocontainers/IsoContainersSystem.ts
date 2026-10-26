@@ -48,10 +48,12 @@ import { IsoContainerBuildingComponent } from './IsoContainerBuildingComponent.t
 export type IsoContainersSystemOptions = {
   /** The stacks that can be opened from the explorer */
   samples: ContainersSpec[]
-  /** The id of the open stack ('custom' for one loaded from a URL) */
+  /** The id of the open stack ('custom' for one loaded from a URL, 'api' for the live one) */
   current: string
   /** Where a custom stack came from */
   source?: string
+  /** Why the stack asked for (API, files) didn't load: shown at the start */
+  error?: string
   /** Select and fly to a container (or network, volume) at the start */
   select?: string
   /** The zoom to fly in with */
@@ -66,6 +68,13 @@ export type IsoContainersSystemOptions = {
 
 /** Who a style change applies to */
 type StyleScope = 'image' | 'name' | 'kind'
+
+/** The stacks list entry of the live stack, before it is loaded */
+const LIVE_STACK: ContainersSpec = {
+  title: 'Live.',
+  subtitle: 'Your docker hosts, from the mc API',
+  environments: [],
+}
 
 const STYLE_STORAGE = 'isocontainers.styles.v1'
 /** The switches of the status bar: what they show, their key, and where the choice is kept */
@@ -248,6 +257,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.initialAdvice = new Set(this.advice.map((a) => a.id))
     this.renderExplorer()
     if (this.options.advisor) this.toggleAdvisor()
+    if (this.options.error) this.toast(this.options.error, { color: COLORS.red, seconds: 10 })
     this.fitView(true)
     this.updateView()
     this.updateBackground()
@@ -541,6 +551,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private handleKeyDown(e: KeyboardEvent) {
     if ((e.target as HTMLElement | null)?.closest?.('select, input, textarea')) return
     const index = Number(e.key)
+    if (e.key === '0') return this.open('api')
     if (index >= 1 && index <= this.options.samples.length)
       return this.open(this.options.samples[index - 1].id!)
     const selected = this.world.scene.selected
@@ -576,7 +587,13 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private open(id: string) {
     if (id === this.options.current) return
     const params = new URLSearchParams(window.location.search)
-    params.set('stack', id)
+    if (id === 'api') {
+      params.set('api', '')
+      params.delete('stack')
+    } else {
+      params.set('stack', id)
+      params.delete('api')
+    }
     params.delete('graph')
     params.delete('select')
     window.location.search = params.toString()
@@ -627,6 +644,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const { model } = this.world
     const items = this.options.samples.map((s, i) => ({ id: s.id!, key: String(i + 1), spec: s }))
     if (this.options.current === 'custom') items.push({ id: 'custom', key: '·', spec: model.spec })
+    // the live stack, from the mission-control API (through the dev proxy)
+    items.push({
+      id: 'api',
+      key: '0',
+      spec: this.options.current === 'api' ? model.spec : LIVE_STACK,
+    })
     const stacks = items
       .map(({ id, key, spec }) => {
         const active = id === this.options.current
@@ -1144,13 +1167,15 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.renderInfo()
   }
 
-  private toast(text: string) {
+  /** A short message under the status bar: a reward (amber, with a star) or a problem */
+  private toast(text: string, { color = COLORS.amber, seconds = 2.6 } = {}) {
     const $t = this.$toast
     if (!$t) return
-    $t.textContent = `★ ${text}`
+    $t.textContent = color === COLORS.amber ? `★ ${text}` : `! ${text}`
+    $t.style.color = color
     $t.style.opacity = '1'
     clearTimeout(Number($t.dataset.timer))
-    $t.dataset.timer = String(setTimeout(() => ($t.style.opacity = '0'), 2600))
+    $t.dataset.timer = String(setTimeout(() => ($t.style.opacity = '0'), seconds * 1000))
   }
 
   private updateRating() {
@@ -1533,7 +1558,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div style="display:flex;align-items:center;gap:16px;white-space:nowrap;overflow:hidden">` +
       `<div>${status}${paused} &nbsp;${label(`${sim.speed}×`)}</div>` +
       `<div style="margin-left:auto;color:${COLORS.faint};font-size:11.5px;overflow:hidden;text-overflow:ellipsis">` +
-      `click a building, street or tank · drag to pan · wheel pan · ctrl+wheel zoom · 1-${this.options.samples.length} stacks · ` +
+      `click a building, street or tank · drag to pan · wheel pan · ctrl+wheel zoom · 1-${this.options.samples.length} stacks · 0 live · ` +
       `A advisor · M flags · L host links · S stop/start · space pause · + / − speed · F fit · esc clear</div></div>`
   }
 }

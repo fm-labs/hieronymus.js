@@ -302,13 +302,19 @@ export type Environment = {
   containers: Container[]
   networks: Network[]
   volumes: Volume[]
-  // layout: the plate; the front road to the gate, with an avenue up into each district; the gate
+  // layout: the plate; its districts in lines, a road in front of each line (the last one is the
+  // front road), an avenue up into each district, a spine joining the roads (when there are several
+  // lines), and the gate in front of it all
   col: number
   row: number
   cols: number
   rows: number
+  /** The row of the front road */
   frontRow: number
-  avenues: Array<{ col: number; row0: number }>
+  /** The roads along the columns, in front of each line of districts; the last is the front road */
+  roads: Array<{ row: number; col0: number; col1: number }>
+  /** The roads along the rows: from a district (row0) to its line's road (row1), and the spine */
+  avenues: Array<{ col: number; row0: number; row1: number }>
   gate: GridPoint
 }
 
