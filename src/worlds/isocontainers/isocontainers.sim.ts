@@ -17,10 +17,12 @@ import type {
   Volume,
 } from './isocontainers.types.ts'
 
+/** How much of each link's rate is drawn: fewer flows keep the streets calm */
+export const TRAFFIC = 0.45
 /** Cells per second a flow travels */
-export const PULSE_SPEED = 5
+export const PULSE_SPEED = 3.2
 /** The length of a flow's glowing tail, in cells; it drains into the target before it is gone */
-export const TAIL = 1.6
+export const TAIL = 0.5
 const MAX_PULSES = 8
 /** How long a ripple or a spark burst lasts */
 export const EVENT_SECONDS = 1.2
@@ -79,7 +81,7 @@ export class ContainersSimulation {
     private readonly random: () => number = Math.random,
   ) {
     // spread the first flows out, so the links don't start in step
-    for (const l of model.links) l.timer = this.random() / l.rate
+    for (const l of model.links) l.timer = this.random() / (l.rate * TRAFFIC)
     for (const c of model.containers) {
       c.mem = isUp(c) ? BASE_MEM[c.kind] * (0.7 + this.random() * 0.6) : 0
       c.cpu = isUp(c) ? BASE_CPU[c.kind] : 0
@@ -107,7 +109,6 @@ export class ContainersSimulation {
     // a glow eases in (~0.2 s) and fades out slowly (~1.2 s), so it never blinks
     // ripples and sparks age in real time, also while paused, so they finish
     for (const c of model.containers) {
-      if (c.pings.length) c.pings = c.pings.map((a) => a + seconds).filter((a) => a < EVENT_SECONDS)
       if (c.sparks.length)
         c.sparks = c.sparks.map((a) => a + seconds).filter((a) => a < EVENT_SECONDS)
     }
@@ -167,7 +168,7 @@ export class ContainersSimulation {
     if (!active) return
     l.timer -= dt
     if (l.timer > 0) return
-    l.timer = (0.85 + this.random() * 0.3) / l.rate
+    l.timer = (0.85 + this.random() * 0.3) / (l.rate * TRAFFIC)
     if (l.pulses.length >= MAX_PULSES) return
     if (l.kind === 'mount') {
       // databases write more than they read
@@ -196,7 +197,6 @@ export class ContainersSimulation {
     this.totalRequests++
     this.arrivals++
     this.rising.add(l.to)
-    if (l.to.pings.length < 3) l.to.pings.push(0)
     if (l.network) l.network.packets++
   }
 }

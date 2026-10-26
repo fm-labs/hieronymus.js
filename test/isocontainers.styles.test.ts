@@ -7,8 +7,10 @@ import {
   tankHeight,
 } from '../src/worlds/isocontainers/isocontainers.layout'
 import {
+  STYLES,
   badgeOf,
   imageRepository,
+  imageStyle,
   labelOptions,
   lookToLabels,
   matchesImage,
@@ -42,8 +44,11 @@ describe('isocontainers styles', () => {
     expect(imageRepository('registry:5000/team/api')).toBe('registry:5000/team/api')
   })
 
-  it('takes the kind default, then rules by specificity, then labels', () => {
-    expect(resolveLook(base, []).style).toBe('vault')
+  it('takes the image or kind default, then rules by specificity, then labels', () => {
+    // a well known image has its own building; any other database is a vault
+    expect(resolveLook(base, []).style).toBe('datacenter')
+    expect(resolveLook(base, []).source).toBe('image')
+    expect(resolveLook({ ...base, image: 'company/ledger:2' }, []).style).toBe('vault')
     expect(resolveLook(base, []).badge).toBe('PG')
     const rules: StyleRule[] = [
       { name: 'db', style: 'tower' },
@@ -63,6 +68,30 @@ describe('isocontainers styles', () => {
     expect(labelled.style).toBe('shed')
     expect(labelled.badge).toBe('DB')
     expect(labelled.source).toBe('labels')
+  })
+
+  it('knows the buildings of common images', () => {
+    const cases: Array<[string, string]> = [
+      ['bitnami/postgresql:16', 'datacenter'],
+      ['mysql:8', 'datacenter'],
+      ['docker.elastic.co/elasticsearch/elasticsearch:8.15.0', 'library'],
+      ['mongo:7', 'hive'],
+      ['valkey/valkey:8', 'reactor'],
+      ['confluentinc/cp-kafka:7.6.0', 'exchange'],
+      ['minio/minio:latest', 'warehouse'],
+      ['quay.io/keycloak/keycloak:25.0', 'keep'],
+      ['ghcr.io/goauthentik/server:2024.6', 'keep'],
+      ['grafana/grafana:11.2.0', 'observatory'],
+      ['jenkins/jenkins:lts', 'workshop'],
+      ['dpage/pgadmin4', 'kiosk'],
+    ]
+    for (const [image, style] of cases) expect(imageStyle(image), image).toBe(style)
+    // a name that only looks alike is not matched
+    expect(imageStyle('company/postgres-exporter:1')).toBeUndefined()
+    expect(imageStyle('company/server:1')).toBeUndefined()
+    // every style can be drawn and has a label
+    for (const [id, d] of Object.entries(STYLES)) expect(d.label, id).toBeTruthy()
+    expect(Object.keys(STYLES)).toHaveLength(18)
   })
 
   it('brings the roof of a style, unless one is picked', () => {

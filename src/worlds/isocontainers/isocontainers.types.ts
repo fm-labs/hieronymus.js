@@ -20,9 +20,29 @@ export type BuildingStyle =
   | 'gatehouse'
   | 'lighthouse'
   | 'shed'
+  | 'datacenter'
+  | 'library'
+  | 'hive'
+  | 'reactor'
+  | 'exchange'
+  | 'warehouse'
+  | 'keep'
+  | 'observatory'
+  | 'workshop'
+  | 'kiosk'
 
 /** What stands on a roof; its top carries the status light */
-export type RoofProp = 'none' | 'antenna' | 'tank' | 'dome' | 'chimney' | 'beacon' | 'vents'
+export type RoofProp =
+  | 'none'
+  | 'antenna'
+  | 'tank'
+  | 'dome'
+  | 'chimney'
+  | 'beacon'
+  | 'vents'
+  | 'fans'
+  | 'crane'
+  | 'observatory'
 
 /** The resolved look of a building: its style, options, and where they came from */
 export type BuildingLook = {
@@ -223,8 +243,7 @@ export type Container = {
   errors: number
   /** Seconds left while starting or stopping */
   transition: number
-  /** Ages (seconds) of the recent arrivals: a ripple on the roof for each, sparks for the failed ones */
-  pings: number[]
+  /** Ages (seconds) of the recent failed requests: sparks fly off the roof for each */
   sparks: number[]
 }
 

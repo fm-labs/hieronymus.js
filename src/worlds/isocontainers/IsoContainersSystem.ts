@@ -33,8 +33,17 @@ import {
   type Network,
   type Volume,
 } from './isocontainers.types.ts'
-import { COLORS, FONT, PALETTE, stateColor, stateText } from './isocontainers.draw.ts'
+import {
+  COLORS,
+  FONT,
+  PALETTE,
+  hexAlpha,
+  stateColor,
+  stateText,
+  type ContainersScene,
+} from './isocontainers.draw.ts'
 import type { ContainersWorld } from './isocontainers.world.ts'
+import { IsoContainerBuildingComponent } from './IsoContainerBuildingComponent.ts'
 
 export type IsoContainersSystemOptions = {
   /** The stacks that can be opened from the explorer */
@@ -51,13 +60,39 @@ export type IsoContainersSystemOptions = {
   styleRules?: StyleRule[]
   /** Open the advisor at the start */
   advisor?: boolean
+  /** Open the building settings of the selected container at the start */
+  settings?: boolean
 }
 
 /** Who a style change applies to */
 type StyleScope = 'image' | 'name' | 'kind'
 
 const STYLE_STORAGE = 'isocontainers.styles.v1'
-const FLAGS_STORAGE = 'isocontainers.flags.v1'
+/** The switches of the status bar: what they show, their key, and where the choice is kept */
+type SwitchName = 'showAdvice' | 'showCrossHost'
+const SWITCHES: Record<
+  SwitchName,
+  { label: string; key: string; title: string; color: string; storage: string }
+> = {
+  showAdvice: {
+    label: '⚑ FLAGS',
+    key: 'M',
+    title: "Show or hide the advisor's flags",
+    color: COLORS.amber,
+    storage: 'isocontainers.flags.v1',
+  },
+  showCrossHost: {
+    label: '⇄ HOST LINKS',
+    key: 'L',
+    title: 'Show or hide the connections between hosts (the selection keeps its own)',
+    color: PALETTE.cross,
+    storage: 'isocontainers.links.v1',
+  },
+}
+
+/** The settings icon of the info pane */
+const GEAR =
+  '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 
 /** The groups of the health meter, in its order: what is fine first, what is gone last */
 const HEALTH_GROUPS: Array<{ label: string; color: string; moods: Mood[] }> = [
@@ -168,6 +203,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private $toast?: HTMLDivElement
   private $status?: HTMLDivElement
   private styleScope: StyleScope = 'image'
+  /** The info pane shows the container, or its building settings */
+  private paneView: 'info' | 'building' = 'info'
 
   constructor(game: IGame, world: ContainersWorld, options: IsoContainersSystemOptions) {
     super(game)
@@ -199,7 +236,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         'transform:translateX(110%);transition:transform 0.3s ease',
     )
     this.$hud = this.createPanel(`left:10px;bottom:10px;right:10px;padding:9px 14px`)
-    this.world.scene.showAdvice = this.loadFlags()
+    for (const name of Object.keys(SWITCHES) as SwitchName[])
+      this.world.scene[name] = this.loadSwitch(name)
     this.$status = this.createStatusBar()
     this.$toast = document.createElement('div')
     this.$toast.style.cssText =
@@ -218,6 +256,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (first) {
       this.select(first)
       this.focusOn(first, this.options.zoom)
+      if (this.options.settings && first.type === 'container') this.showPane('building')
     }
   }
 
@@ -251,7 +290,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       this.updateStatus()
       this.updateExplorerStates()
       // live values, but not under the pointer: a rebuilt button would swallow the click
-      if ((this.world.scene.selected || this.advisorOpen) && !this.$info?.matches(':hover'))
+      // (the building settings have nothing live: they stay as they are)
+      if (
+        (this.world.scene.selected || this.advisorOpen) &&
+        this.paneView === 'info' &&
+        !this.$info?.matches(':hover')
+      )
         this.renderInfo()
     }
   }
@@ -510,9 +554,11 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     else if ((e.key === 's' || e.key === 'S') && selected?.type === 'container')
       this.toggle(selected)
     else if (e.key === 'a' || e.key === 'A') this.toggleAdvisor()
-    else if (e.key === 'm' || e.key === 'M') this.toggleFlags()
+    else if (e.key === 'm' || e.key === 'M') this.toggleSwitch('showAdvice')
+    else if (e.key === 'l' || e.key === 'L') this.toggleSwitch('showCrossHost')
     else if (e.key === 'Escape') {
-      if (this.world.scene.selected) this.select(undefined)
+      if (this.paneView === 'building') this.showPane('info')
+      else if (this.world.scene.selected) this.select(undefined)
       else if (this.advisorOpen) this.toggleAdvisor()
     } else return
     this.sim.speed = SPEEDS[this.speedIndex]
@@ -538,6 +584,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
 
   private select(thing: Entity | undefined, fly = false) {
     const scene = this.world.scene
+    if (thing !== scene.selected) this.paneView = 'info'
     scene.selected = thing
     scene.focus = thing ? neighborhood(thing, this.world.model) : undefined
     this.updatePane()
@@ -754,6 +801,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       this.bindInfo($info)
       return
     }
+    if (e.type === 'container' && this.paneView === 'building') {
+      $info.innerHTML = this.buildingSettings(e)
+      this.bindStyleEditor($info, e)
+      this.drawPreviews($info, e)
+      return
+    }
     let html =
       e.type === 'container'
         ? this.containerInfo(e)
@@ -765,7 +818,14 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.bindInfo($info)
     const $toggle = $info.querySelector<HTMLButtonElement>('.isocontainers-toggle')
     if ($toggle && e.type === 'container') $toggle.onclick = () => this.toggle(e)
-    if (e.type === 'container') this.bindStyleEditor($info, e)
+    const $settings = $info.querySelector<HTMLButtonElement>('.isocontainers-settings')
+    if ($settings) $settings.onclick = () => this.showPane('building')
+  }
+
+  private showPane(view: 'info' | 'building') {
+    this.paneView = view
+    if (this.$info) this.$info.scrollTop = 0
+    this.renderInfo()
   }
 
   private containerInfo(c: Container): string {
@@ -798,7 +858,11 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (c.errors) live.push(['Failed', String(c.errors)])
 
     let html =
-      `<div style="${MONO_LABEL}">${escapeHtml(KIND_LABELS[c.kind])} · container</div>` +
+      `<div style="display:flex;align-items:center"><div style="${MONO_LABEL}">${escapeHtml(KIND_LABELS[c.kind])} · container</div>` +
+      `<button class="isocontainers-settings" title="Building settings: style, roof, accent, height, sign" ` +
+      `style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:7px;cursor:pointer;` +
+      `font:600 9.5px ${FONT.mono};letter-spacing:1px;color:${COLORS.muted};background:rgba(255,255,255,0.04);` +
+      `border:1px solid rgba(255,255,255,0.12)">${GEAR}${escapeHtml(STYLES[c.look.style].label.toUpperCase())}</button></div>` +
       `<div style="font:600 19px/1.3 ${FONT.ui};margin-top:4px;word-break:break-word">${escapeHtml(c.name)}</div>` +
       `<div style="display:flex;align-items:center;gap:8px">${this.chip(stateText(c), color, c.state === 'running')}` +
       `<button class="isocontainers-toggle" style="margin:8px 0 0 auto;padding:3px 12px;border-radius:6px;cursor:pointer;` +
@@ -808,7 +872,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (c.note) html += `<div style="margin-top:10px;color:#c5cfcc">${escapeHtml(c.note)}</div>`
     html += this.section('Live') + this.facts(live)
     html += this.adviceSection(c)
-    html += this.styleEditor(c)
     if (c.command)
       html +=
         this.section('Command') +
@@ -925,12 +988,18 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-rps" style="${value}"></span><span style="${label}">REQ/S</span></div>` +
       `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-errors" style="${value}"></span><span style="${label}">ERRORS</span></div>` +
       `<div class="isocontainers-status-rating" title="The advisor (A)" style="display:flex;align-items:center;gap:6px;cursor:pointer"></div>` +
-      `<button class="isocontainers-flags" title="Show or hide the advisor's flags (M)" style="padding:4px 10px;border-radius:14px;cursor:pointer;` +
-      `font:600 10px ${FONT.mono};letter-spacing:1px"></button>`
+      (Object.keys(SWITCHES) as SwitchName[])
+        .map(
+          (name) =>
+            `<button class="isocontainers-switch" data-switch="${name}" title="${SWITCHES[name].title} (${SWITCHES[name].key})" ` +
+            `style="padding:4px 10px;border-radius:14px;cursor:pointer;font:600 10px ${FONT.mono};letter-spacing:1px"></button>`,
+        )
+        .join('')
     $bar.querySelector<HTMLDivElement>('.isocontainers-status-rating')!.onclick = () =>
       this.toggleAdvisor()
-    $bar.querySelector<HTMLButtonElement>('.isocontainers-flags')!.onclick = () =>
-      this.toggleFlags()
+    $bar.querySelectorAll<HTMLButtonElement>('.isocontainers-switch').forEach(($b) => {
+      $b.onclick = () => this.toggleSwitch($b.dataset.switch as SwitchName)
+    })
     return $bar
   }
 
@@ -976,28 +1045,31 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     $bar.querySelector<HTMLDivElement>('.isocontainers-status-rating')!.innerHTML =
       `${stars(r.stars, 13)}<span style="font:600 13px ${FONT.ui};color:${COLORS.text}">${r.score}</span>`
 
-    const on = this.world.scene.showAdvice
-    const $flags = $bar.querySelector<HTMLButtonElement>('.isocontainers-flags')!
-    $flags.textContent = `⚑ FLAGS ${on ? 'ON' : 'OFF'}`
-    $flags.style.color = on ? COLORS.amber : COLORS.muted
-    $flags.style.background = on ? 'rgba(255,192,77,0.1)' : 'rgba(255,255,255,0.04)'
-    $flags.style.border = `1px solid ${on ? 'rgba(255,192,77,0.45)' : 'rgba(255,255,255,0.12)'}`
+    $bar.querySelectorAll<HTMLButtonElement>('.isocontainers-switch').forEach(($b) => {
+      const name = $b.dataset.switch as SwitchName
+      const { label, color } = SWITCHES[name]
+      const on = this.world.scene[name]
+      $b.textContent = `${label} ${on ? 'ON' : 'OFF'}`
+      $b.style.color = on ? color : COLORS.muted
+      $b.style.background = on ? hexAlpha(color, 0.1) : 'rgba(255,255,255,0.04)'
+      $b.style.border = `1px solid ${on ? hexAlpha(color, 0.45) : 'rgba(255,255,255,0.12)'}`
+    })
   }
 
-  private loadFlags(): boolean {
+  private loadSwitch(name: SwitchName): boolean {
     try {
-      return localStorage.getItem(FLAGS_STORAGE) !== 'off'
+      return localStorage.getItem(SWITCHES[name].storage) !== 'off'
     } catch {
       return true
     }
   }
 
-  /** Show or hide the advisor's flags over the buildings */
-  private toggleFlags() {
+  /** Turn a switch of the status bar on or off; the choice is kept in this browser */
+  private toggleSwitch(name: SwitchName) {
     const scene = this.world.scene
-    scene.showAdvice = !scene.showAdvice
+    scene[name] = !scene[name]
     try {
-      localStorage.setItem(FLAGS_STORAGE, scene.showAdvice ? 'on' : 'off')
+      localStorage.setItem(SWITCHES[name].storage, scene[name] ? 'on' : 'off')
     } catch {
       // private mode: the choice lasts until the page reloads
     }
@@ -1217,7 +1289,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.renderInfo()
   }
 
-  private styleEditor(c: Container): string {
+  /** The building settings of a container: a separate view of the info pane */
+  private buildingSettings(c: Container): string {
     const look = c.look
     const button = (option: string, value: string, label: string, active: boolean, title = '') =>
       `<button class="isocontainers-style" data-option="${option}" data-value="${escapeHtml(value)}" title="${escapeHtml(title)}" ` +
@@ -1225,11 +1298,22 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `color:${active ? COLORS.text : COLORS.muted};background:${active ? 'rgba(62,224,127,0.14)' : 'rgba(255,255,255,0.04)'};` +
       `border:1px solid ${active ? 'rgba(62,224,127,0.55)' : 'rgba(255,255,255,0.1)'}">${escapeHtml(label)}</button>`
     const row = (label: string, content: string) =>
-      `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:7px">` +
+      `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:9px">` +
       `<div style="width:46px;flex:none;padding-top:3px;color:${COLORS.muted};font-size:11.5px">${label}</div>` +
       `<div style="display:flex;flex-wrap:wrap;gap:4px;min-width:0">${content}</div></div>`
-    const styles = Object.entries(STYLES)
-      .map(([id, d]) => button('style', id, d.label, look.style === id, d.description))
+    // the styles as tiles, each with a small drawing of this container in that style
+    const tiles = Object.entries(STYLES)
+      .map(([id, d]) => {
+        const active = look.style === id
+        return (
+          `<button class="isocontainers-style" data-option="style" data-value="${id}" title="${escapeHtml(d.description)}" ` +
+          `style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px 5px;border-radius:8px;cursor:pointer;` +
+          `background:${active ? 'rgba(62,224,127,0.1)' : 'rgba(255,255,255,0.025)'};` +
+          `border:1px solid ${active ? 'rgba(62,224,127,0.6)' : 'rgba(255,255,255,0.07)'}">` +
+          `<canvas class="isocontainers-preview" data-style="${id}" style="position:static;display:block;width:86px;height:64px"></canvas>` +
+          `<span style="font:600 9.5px ${FONT.mono};letter-spacing:0.5px;color:${active ? COLORS.text : COLORS.muted}">${escapeHtml(d.label.toUpperCase())}</span></button>`
+        )
+      })
       .join('')
     const roofs = Object.entries(ROOFS)
       .map(([id, label]) => button('roof', id, label, look.roof === id))
@@ -1264,23 +1348,82 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const source =
       look.source === 'kind'
         ? `default for ${KIND_LABELS[c.kind].toLowerCase()}s`
-        : look.source === 'labels'
-          ? 'from its labels (they win over rules)'
-          : `from ${look.source}`
+        : look.source === 'image'
+          ? `default for ${imageRepository(c.image).split('/').pop()} images`
+          : look.source === 'labels'
+            ? 'from its labels (they win over rules)'
+            : `from ${look.source}`
     return (
-      `<div style="display:flex;align-items:baseline;margin-top:14px"><div style="${MONO_LABEL}">Building</div>` +
-      `<div style="margin-left:auto;color:${COLORS.faint};font-size:11px">${escapeHtml(source)}</div></div>` +
-      row('Style', styles) +
+      `<div class="isocontainers-back" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:${COLORS.muted};font-size:12px">` +
+      `‹ <span style="color:${COLORS.text}">${escapeHtml(c.name)}</span></div>` +
+      `<div style="display:flex;align-items:center;gap:8px;margin-top:10px">${GEAR.replace('width="15" height="15"', 'width="17" height="17"')}` +
+      `<div style="font:600 17px ${FONT.ui}">Building</div></div>` +
+      `<div style="color:${COLORS.muted};margin-top:2px">${escapeHtml(STYLES[look.style].description)} · ${escapeHtml(source)}</div>` +
+      row('For', scope) +
+      `<div style="${MONO_LABEL};margin-top:14px">Style</div>` +
+      `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px">${tiles}</div>` +
+      `<div style="${MONO_LABEL};margin-top:14px">Details</div>` +
       row('Roof', roofs) +
       row('Accent', accents) +
       row('Height', height) +
       row('Sign', sign) +
-      row('For', scope) +
-      `<div style="display:flex;gap:6px;margin-top:10px">${action('reset', 'RESET')}${action('labels', 'COPY LABELS')}${action('rules', 'COPY RULES')}</div>`
+      `<div style="display:flex;gap:6px;margin-top:14px">${action('reset', 'RESET')}${action('labels', 'COPY LABELS')}${action('rules', 'COPY RULES')}</div>` +
+      `<div style="margin-top:12px;color:${COLORS.faint};font-size:11px">Changes apply to ${escapeHtml(scopes.find(([id]) => id === this.styleScope)![1])} and are kept in this browser · esc to go back</div>`
     )
   }
 
+  /** Draw each style's tile: this container, in its state, in that style */
+  private drawPreviews($info: HTMLDivElement, c: Container) {
+    const P = this.world.scene.projection
+    const ratio = Math.min(2, window.devicePixelRatio || 1)
+    const scene: ContainersScene = {
+      ...this.world.scene,
+      view: { x0: -1e6, y0: -1e6, x1: 1e6, y1: 1e6 },
+      hovered: undefined,
+      selected: undefined,
+      focus: undefined,
+      zoom: 1,
+    }
+    $info.querySelectorAll<HTMLCanvasElement>('.isocontainers-preview').forEach(($canvas) => {
+      const style = $canvas.dataset.style as Container['look']['style']
+      const definition = STYLES[style]
+      const scale = definition.scale * (c.look.scale / STYLES[c.look.style].scale)
+      const model: Container = {
+        ...c,
+        col: 0,
+        row: 0,
+        // one tower shows the style best
+        replicas: 1,
+        look: { ...c.look, style, roof: definition.roof, scale },
+        height: Math.round(c.baseHeight * scale),
+        sparks: [],
+      }
+      const [w, h] = [86, 64]
+      $canvas.width = w * ratio
+      $canvas.height = h * ratio
+      const ctx = $canvas.getContext('2d')
+      if (!ctx) return
+      // the box around the building and what may stand on its roof
+      const corners = [
+        P.at(0, 0, model.height + 46),
+        P.at(model.w, 0, model.height),
+        P.at(0, model.d, 0),
+        P.at(model.w, model.d, 0),
+      ]
+      const xs = corners.map((p) => p[0])
+      const ys = corners.map((p) => p[1])
+      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+      const k = Math.min((w - 6) / (x1 - x0), (h - 4) / (y1 - y0))
+      ctx.scale(ratio, ratio)
+      ctx.translate(w / 2 - ((x0 + x1) / 2) * k, h / 2 - ((y0 + y1) / 2) * k)
+      ctx.scale(k, k)
+      new IsoContainerBuildingComponent({ container: model, scene }).draw(ctx)
+    })
+  }
+
   private bindStyleEditor($info: HTMLDivElement, c: Container) {
+    const $back = $info.querySelector<HTMLDivElement>('.isocontainers-back')
+    if ($back) $back.onclick = () => this.showPane('info')
     $info.querySelectorAll<HTMLButtonElement>('.isocontainers-style').forEach(($b) => {
       $b.onclick = () => {
         const { option, value = '' } = $b.dataset
@@ -1391,6 +1534,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div>${status}${paused} &nbsp;${label(`${sim.speed}×`)}</div>` +
       `<div style="margin-left:auto;color:${COLORS.faint};font-size:11.5px;overflow:hidden;text-overflow:ellipsis">` +
       `click a building, street or tank · drag to pan · wheel pan · ctrl+wheel zoom · 1-${this.options.samples.length} stacks · ` +
-      `A advisor · M flags · S stop/start · space pause · + / − speed · F fit · esc clear</div></div>`
+      `A advisor · M flags · L host links · S stop/start · space pause · + / − speed · F fit · esc clear</div></div>`
   }
 }

@@ -40,6 +40,7 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
     advice: new Map(),
     allAdvice: false,
     showAdvice: true,
+    showCrossHost: true,
     popups: [],
   }
 

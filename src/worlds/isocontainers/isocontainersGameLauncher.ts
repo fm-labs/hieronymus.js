@@ -34,7 +34,7 @@ async function loadFonts() {
 /**
  * The environments named by the URL:
  * ?graph=<url>[,<url>…] JSON files, one host each: docker inspect output, docker compose config output,
- * or a ContainersSpec; ?stack=<id> one of the samples (shop, fleet, states, devbox).
+ * or a ContainersSpec; ?stack=<id> one of the samples (shop, fleet, states, devbox, gallery, massive).
  */
 async function loadSpec(
   params: URLSearchParams,
@@ -114,6 +114,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
       zoom: Number(params.get('zoom')) || undefined,
       styleRules,
       advisor: params.has('advisor'),
+      settings: params.has('settings'),
     }),
   )
   game.addSystem(new TileMapSystem(game, world.tileMap))

@@ -1,5 +1,6 @@
 import devServerInspect from '../container/container.json'
 import { fromInspect } from './isocontainers.import.ts'
+import { massiveFleet } from './isocontainers.massive.ts'
 import type { ContainerSpec, ContainersSpec } from './isocontainers.types.ts'
 
 /** What every container of a host gets unless it says otherwise (like an x- anchor in compose) */
@@ -482,4 +483,126 @@ const devServer: ContainersSpec = {
   ],
 }
 
-export const SAMPLES: ContainersSpec[] = [shop, fleet, states, devServer]
+/** One container of each building style, by image and by kind */
+const gallery: ContainersSpec = {
+  id: 'gallery',
+  title: 'Every building.',
+  subtitle: 'One container of each style, picked by its image or its kind.',
+  description:
+    'Well known images get their own building: postgres a datacenter, mongo a hive, ' +
+    'elasticsearch a library, redis a reactor, rabbitmq an exchange, minio a warehouse, keycloak a keep, ' +
+    'grafana an observatory, jenkins a workshop, adminer a kiosk. Everything else is styled by its kind.',
+  environments: [
+    {
+      name: 'gallery',
+      caption: 'docker 27.3 · 18 styles',
+      networks: [{ name: 'web' }, { name: 'data', internal: true }, { name: 'ops' }],
+      volumes: [
+        { name: 'pgdata', size: '24 GB' },
+        { name: 'mongodata', size: '6.1 GB' },
+        { name: 'esdata', size: '11 GB' },
+        { name: 'objects', size: '420 GB' },
+        { name: 'jenkins_home', size: '3.2 GB' },
+        { name: 'tsdb', size: '38 GB' },
+        { name: 'rabbitdata', size: '820 MB' },
+        { name: 'blobdata', size: '96 GB' },
+      ],
+      containers: withDefaults({ ...PRODUCTION, health: 'healthy' }, [
+        {
+          name: 'traefik',
+          image: 'traefik:v3.1',
+          ports: ['443:443'],
+          networks: ['web'],
+          calls: ['web', 'api', 'keycloak'],
+        },
+        { name: 'web', image: 'company/web:4.2.0', kind: 'web', networks: ['web'], calls: ['api'] },
+        {
+          name: 'api',
+          image: 'company/api:4.2.0',
+          kind: 'app',
+          networks: ['web', 'data'],
+          calls: ['postgres', 'redis', 'mongo', 'elasticsearch', 'rabbitmq', 'keycloak'],
+        },
+        {
+          name: 'keycloak',
+          image: 'quay.io/keycloak/keycloak:25.0',
+          kind: 'app',
+          networks: ['web', 'data'],
+          calls: ['postgres'],
+        },
+        {
+          name: 'worker',
+          image: 'company/worker:4.2.0',
+          kind: 'worker',
+          networks: ['data'],
+          calls: ['rabbitmq', 'minio', 'cache'],
+        },
+        {
+          name: 'postgres',
+          image: 'postgres:16',
+          networks: ['data'],
+          mounts: ['pgdata:/var/lib/postgresql/data'],
+        },
+        { name: 'mongo', image: 'mongo:7', networks: ['data'], mounts: ['mongodata:/data/db'] },
+        {
+          name: 'elasticsearch',
+          image: 'elasticsearch:8.15.0',
+          networks: ['data'],
+          mounts: ['esdata:/usr/share/elasticsearch/data'],
+        },
+        { name: 'redis', image: 'redis:7-alpine', networks: ['data'] },
+        { name: 'cache', image: 'company/edge-cache:1.0', kind: 'cache', networks: ['data'] },
+        {
+          name: 'rabbitmq',
+          image: 'rabbitmq:3.13-management',
+          networks: ['data'],
+          mounts: ['rabbitdata:/var/lib/rabbitmq'],
+        },
+        {
+          name: 'minio',
+          image: 'minio/minio:RELEASE.2024-08-03',
+          networks: ['data'],
+          mounts: ['objects:/data'],
+        },
+        {
+          name: 'blobs',
+          image: 'company/blobs:2.0',
+          kind: 'storage',
+          networks: ['data'],
+          mounts: ['blobdata:/data'],
+        },
+        {
+          name: 'grafana',
+          image: 'grafana/grafana:11.2.0',
+          networks: ['ops'],
+          calls: ['prometheus'],
+        },
+        {
+          name: 'prometheus',
+          image: 'prom/prometheus:v2.54',
+          kind: 'monitor',
+          networks: ['ops', 'data'],
+          mounts: ['tsdb:/prometheus'],
+        },
+        {
+          name: 'jenkins',
+          image: 'jenkins/jenkins:lts-jdk17',
+          networks: ['ops'],
+          mounts: ['jenkins_home:/var/jenkins_home'],
+        },
+        { name: 'adminer', image: 'adminer:4', networks: ['data'], calls: ['postgres'] },
+        {
+          name: 'migrate',
+          image: 'company/api:4.2.0',
+          kind: 'tool',
+          networks: ['data'],
+          state: 'exited',
+          exitCode: 0,
+          calls: ['postgres'],
+        },
+      ]),
+    },
+  ],
+}
+
+export const SAMPLES: ContainersSpec[] = [shop, fleet, states, devServer, gallery, massiveFleet()]

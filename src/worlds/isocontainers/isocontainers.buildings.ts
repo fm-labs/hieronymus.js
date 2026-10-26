@@ -1,6 +1,7 @@
 /**
- * The architecture of the 'isocontainers' buildings: a footprint (a box, or an octagon for silos and
- * lighthouses) extruded to its height, its visible faces with a facade (windows, glass, slits, rings),
+ * The architecture of the 'isocontainers' buildings: a footprint (a box, an octagon, a hexagon or a
+ * round core) extruded to its height, its visible faces with a facade (windows, glass, slits, racks,
+ * columns, honeycomb, rings, arches, loading bays),
  * a door or a gate, a sign, and what stands on the roof. The windows take their colors from the
  * effects (isocontainers.fx.ts), so every style shows the state the same way.
  */
@@ -38,6 +39,26 @@ export function footprint(
       [c1, r1],
       [c0, r1],
     ]
+  if (shape === 'hexagon') {
+    const k = w * 0.25
+    const rm = r0 + d / 2
+    return [
+      [c0 + k, r0],
+      [c1 - k, r0],
+      [c1, rm],
+      [c1 - k, r1],
+      [c0 + k, r1],
+      [c0, rm],
+    ]
+  }
+  if (shape === 'round') {
+    // sixteen sides, from the back, clockwise
+    const [cc, rc] = [c0 + w / 2, r0 + d / 2]
+    return Array.from({ length: 16 }, (_, i) => {
+      const t = (-3 * Math.PI) / 4 + (i * Math.PI) / 8
+      return [cc + (Math.cos(t) * w) / 2, rc + (Math.sin(t) * d) / 2] as GridPoint
+    })
+  }
   const k = Math.min(w, d) * 0.24
   return [
     [c0 + k, r0],
@@ -79,6 +100,11 @@ export function faceQuad(
   const at = (t: number, z: number) =>
     P.at(f.a[0] + ((f.b[0] - f.a[0]) * t) / f.len, f.a[1] + ((f.b[1] - f.a[1]) * t) / f.len, z)
   return [at(t0, z0), at(t1, z0), at(t1, z1), at(t0, z1)]
+}
+
+/** A point on a face: t cells along it, at height z */
+export function faceAt(P: FlowProjection, f: Face, t: number, z: number): GridPoint {
+  return P.at(f.a[0] + ((f.b[0] - f.a[0]) * t) / f.len, f.a[1] + ((f.b[1] - f.a[1]) * t) / f.len, z)
 }
 
 /**
@@ -272,6 +298,199 @@ export function facade(
       }
       break
     }
+    case 'racks': {
+      // dark server racks, each with two columns of status lights blinking at their own pace
+      const step = 0.24
+      const count = Math.max(1, Math.floor((f.len - 0.06) / step))
+      const offset = (f.len - count * step) / 2
+      const top = h - 5
+      const rows = Math.max(1, Math.floor((top - 9) / 4))
+      for (let i = 0; i < count; i++) {
+        const t0 = offset + i * step + 0.035
+        const t1 = t0 + step - 0.07
+        pane(faceQuad(P, f, t0, t1, 4, top), 'rgba(0,0,0,0.4)')
+        for (let k = 0; k < rows; k++) {
+          const z = 7 + k * 4
+          for (const [dt, seed] of [
+            [0.025, 1],
+            [0.085, 2],
+          ]) {
+            const n = noise(i + index * 13 + seed * 31, k, salt)
+            const blink = 0.5 + 0.5 * Math.sin(time * (1.5 + n * 7) + n * 40)
+            const level = load > n * 0.85 ? blink : 0
+            const lit = windowColor(c, mood, level, i * 2 + seed, k, rows, time, phase)
+            if (lit) pane(faceQuad(P, f, t0 + dt, t0 + dt + 0.035, z, z + 1.6), lit)
+          }
+        }
+      }
+      break
+    }
+    case 'columns': {
+      // a plinth, pilasters, tall windows between them, and a frieze
+      const count = Math.max(1, Math.round(f.len / 0.42))
+      const span = f.len / count
+      pane(faceQuad(P, f, 0, f.len, 0, 3), 'rgba(233,239,236,0.06)')
+      pane(faceQuad(P, f, 0, f.len, h - 6, h - 2), 'rgba(233,239,236,0.07)')
+      const floors = Math.max(1, Math.floor((h - 10) / 17))
+      for (let i = 0; i < count; i++) {
+        const t = (i + 0.5) * span
+        for (let floor = 0; floor < floors; floor++) {
+          const z = 6 + floor * 17
+          if (z + 11 > h - 7) break
+          pane(faceQuad(P, f, t - 0.08, t + 0.08, z, z + 11), color(i, floor, floors) ?? dark)
+        }
+      }
+      for (let i = 0; i <= count; i++) {
+        const t = Math.min(f.len - 0.035, Math.max(0.035, i * span))
+        pane(faceQuad(P, f, t - 0.035, t + 0.035, 3, h - 6), 'rgba(233,239,236,0.1)')
+      }
+      break
+    }
+    case 'honeycomb': {
+      // small hexagons, every other floor shifted by half a cell
+      const floors = Math.max(1, Math.floor((h - 6) / 7))
+      const count = Math.max(1, Math.round(f.len / 0.26))
+      const step = f.len / count
+      for (let floor = 0; floor < floors; floor++) {
+        const z0 = 4 + floor * 7
+        if (z0 + 5 > h - 2) break
+        const shift = floor % 2 ? step / 2 : 0
+        for (let i = 0; i < count; i++) {
+          const t0 = shift + i * step + 0.03
+          const t1 = t0 + step - 0.06
+          if (t1 > f.len - 0.02) continue
+          const q = (t1 - t0) * 0.25
+          const zm = z0 + 2.5
+          poly(ctx, [
+            faceAt(P, f, t0, zm),
+            faceAt(P, f, t0 + q, z0),
+            faceAt(P, f, t1 - q, z0),
+            faceAt(P, f, t1, zm),
+            faceAt(P, f, t1 - q, z0 + 5),
+            faceAt(P, f, t0 + q, z0 + 5),
+          ])
+          ctx.fillStyle = color(i, floor, floors) ?? dark
+          ctx.fill()
+        }
+      }
+      break
+    }
+    case 'rings': {
+      // glowing rings; while it runs a pulse climbs the core, faster the busier it is
+      const rings = Math.max(2, Math.floor((h - 6) / 7))
+      ctx.save()
+      ctx.lineWidth = 2.2
+      ctx.lineCap = 'butt'
+      for (let k = 0; k < rings; k++) {
+        const z = 5 + k * 7
+        const pulse = 0.5 + 0.5 * Math.sin(time * (2 + load * 5) - k * 0.9 + phase * 6)
+        const level = load > 0 ? Math.min(1, 0.25 + pulse * (0.4 + load)) : 0
+        ctx.strokeStyle = windowColor(c, mood, level, k, k, rings, time, phase) ?? dark
+        const [p, q] = faceQuad(P, f, 0, f.len, z, z)
+        ctx.beginPath()
+        ctx.moveTo(...p)
+        ctx.lineTo(...q)
+        ctx.stroke()
+      }
+      ctx.restore()
+      break
+    }
+    case 'arcade': {
+      // rows of arched windows
+      const floors = Math.max(1, Math.floor((h - 4) / 15))
+      const count = Math.max(1, Math.round(f.len / 0.45))
+      const span = (f.len * U) / count
+      const half = span * 0.27
+      onFace(ctx, P, f, () => {
+        for (let floor = 0; floor < floors; floor++) {
+          const z0 = 4 + floor * 15
+          const z1 = z0 + 10
+          if (z1 > h - 3) break
+          for (let i = 0; i < count; i++) {
+            const cx = (i + 0.5) * span
+            const ry = Math.min(half * 0.7, 4)
+            ctx.beginPath()
+            ctx.moveTo(cx - half, -z0)
+            ctx.lineTo(cx - half, -(z1 - ry))
+            ctx.ellipse(cx, -(z1 - ry), half, ry, 0, Math.PI, 0)
+            ctx.lineTo(cx + half, -z0)
+            ctx.closePath()
+            ctx.fillStyle = color(i, floor, floors) ?? dark
+            ctx.fill()
+          }
+        }
+      })
+      break
+    }
+    case 'bays': {
+      // loading bays with roller doors, and a band of high windows
+      const count = Math.max(1, Math.round(f.len / 0.55))
+      const span = f.len / count
+      const top = Math.min(13, h * 0.55)
+      ctx.strokeStyle = 'rgba(200,220,212,0.12)'
+      ctx.lineWidth = 1
+      for (let i = 0; i < count; i++) {
+        const t0 = i * span + 0.07
+        const t1 = (i + 1) * span - 0.07
+        pane(faceQuad(P, f, t0, t1, 0, top), '#070b0c')
+        ctx.beginPath()
+        for (let z = 3; z < top; z += 3) {
+          const [p, q] = faceQuad(P, f, t0, t1, z, z)
+          ctx.moveTo(...p)
+          ctx.lineTo(...q)
+        }
+        ctx.stroke()
+        pane(faceQuad(P, f, t0, t1, top, top + 1.5), color(i, 0, 2) ?? dark)
+        if (h - top > 12) pane(faceQuad(P, f, t0, t1, h - 7, h - 4), color(i, 1, 2) ?? dark)
+      }
+      break
+    }
+  }
+}
+
+/** A classical gable over the front, standing above the roof line */
+export function pediment(
+  ctx: CanvasRenderingContext2D,
+  P: FlowProjection,
+  f: Face,
+  h: number,
+  charred: boolean,
+) {
+  const rise = Math.min(16, f.len * 9)
+  const points = [faceAt(P, f, 0, h), faceAt(P, f, f.len, h), faceAt(P, f, f.len / 2, h + rise)]
+  poly(ctx, points)
+  ctx.fillStyle = charred ? '#0d0c0c' : '#16242a'
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(233,239,236,0.22)'
+  ctx.lineWidth = 1.2
+  ctx.stroke()
+  // the tympanum
+  const inner = [
+    faceAt(P, f, f.len * 0.16, h + 2),
+    faceAt(P, f, f.len * 0.84, h + 2),
+    faceAt(P, f, f.len / 2, h + rise * 0.7),
+  ]
+  poly(ctx, inner)
+  ctx.strokeStyle = 'rgba(233,239,236,0.1)'
+  ctx.stroke()
+}
+
+/** A striped awning over the door, sloping out from the front */
+export function awning(ctx: CanvasRenderingContext2D, P: FlowProjection, f: Face, accent: string) {
+  const width = Math.min(f.len * 0.8, 0.9)
+  const t0 = (f.len - width) / 2
+  const strips = 6
+  const out = (p: GridPoint, z: number): GridPoint => {
+    const [ox, oy] = P.at(f.nc * 0.24, f.nr * 0.24, 0)
+    return [p[0] + ox, p[1] + oy + (17 - z) * P.zScale]
+  }
+  for (let i = 0; i < strips; i++) {
+    const a = t0 + (width * i) / strips
+    const b = t0 + (width * (i + 1)) / strips
+    const [pa, pb] = [faceAt(P, f, a, 17), faceAt(P, f, b, 17)]
+    poly(ctx, [pa, pb, out(pb, 12), out(pa, 12)])
+    ctx.fillStyle = i % 2 ? 'rgba(233,239,236,0.75)' : accent
+    ctx.fill()
   }
 }
 
@@ -620,6 +839,128 @@ export function roofProp(
       block(ctx, P, col - 0.06, row + 0.12, 0.2, 0.16, h, h + 6, metal)
       block(ctx, P, col + 0.12, row - 0.06, 0.16, 0.2, h, h + 9, metal)
       return P.at(col + 0.12, row - 0.06, h + 10)
+    }
+    case 'fans': {
+      // two cooling fans, turning faster the busier it is
+      const spin = x.running ? x.time * (2 + x.load * 14) : x.phase * 6
+      for (const [dc, dr] of [
+        [0, 0],
+        [0, 0.36],
+      ]) {
+        const [fc, fr] = [col + dc, row + dr]
+        block(ctx, P, fc, fr, 0.3, 0.3, h, h + 3, metal)
+        P.plane(ctx, h + 3, () => {
+          const [cx, cy] = [fc * U, fr * U]
+          ctx.fillStyle = '#05090a'
+          ctx.beginPath()
+          ctx.arc(cx, cy, 0.12 * U, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.strokeStyle = x.charred ? 'rgba(120,110,100,0.5)' : 'rgba(200,220,212,0.5)'
+          ctx.lineWidth = 2.5
+          ctx.beginPath()
+          for (let k = 0; k < 3; k++) {
+            const a = spin + (k * Math.PI * 2) / 3
+            ctx.moveTo(cx, cy)
+            ctx.lineTo(cx + Math.cos(a) * 0.1 * U, cy + Math.sin(a) * 0.1 * U)
+          }
+          ctx.stroke()
+        })
+      }
+      ctx.strokeStyle = line
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.moveTo(...P.at(col + 0.15, row - 0.15, h))
+      ctx.lineTo(...P.at(col + 0.15, row - 0.15, h + 9))
+      ctx.stroke()
+      return P.at(col + 0.15, row - 0.15, h + 10)
+    }
+    case 'crane': {
+      // a tower crane: a lattice mast, a turning jib with its hook, a counterweight
+      const top = h + 42
+      ctx.strokeStyle = x.charred ? 'rgba(120,110,100,0.5)' : 'rgba(255,192,77,0.75)'
+      ctx.lineWidth = 1.3
+      ctx.beginPath()
+      const [m0, m1] = [-0.05, 0.05]
+      ctx.moveTo(...P.at(col + m0, row, h))
+      ctx.lineTo(...P.at(col + m0, row, top))
+      ctx.moveTo(...P.at(col + m1, row, h))
+      ctx.lineTo(...P.at(col + m1, row, top))
+      for (let z = h; z < top - 4; z += 6) {
+        ctx.moveTo(...P.at(col + m0, row, z))
+        ctx.lineTo(...P.at(col + m1, row, z + 6))
+      }
+      const turn = x.running ? x.time * 0.3 + x.phase * 6 : x.phase * 6
+      const [dc, dr] = [Math.cos(turn), Math.sin(turn)]
+      const tip = P.at(col + dc * 1.1, row + dr * 1.1, top)
+      ctx.moveTo(...P.at(col - dc * 0.35, row - dr * 0.35, top))
+      ctx.lineTo(...tip)
+      // the tie from the peak to the jib
+      ctx.moveTo(...P.at(col, row, top + 8))
+      ctx.lineTo(...P.at(col + dc * 0.7, row + dr * 0.7, top))
+      ctx.moveTo(...P.at(col, row, top + 8))
+      ctx.lineTo(...P.at(col - dc * 0.3, row - dr * 0.3, top))
+      ctx.moveTo(...P.at(col, row, top))
+      ctx.lineTo(...P.at(col, row, top + 8))
+      ctx.stroke()
+      // the hook, going up and down
+      const hook = 14 + 10 * Math.sin(x.time * (x.running ? 0.8 : 0) + x.phase * 9)
+      const [hx, hy] = P.at(col + dc * 0.8, row + dr * 0.8, top)
+      ctx.strokeStyle = line
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(hx, hy)
+      ctx.lineTo(hx, hy + hook)
+      ctx.stroke()
+      ctx.fillStyle = metal[2]
+      ctx.fillRect(hx - 3, hy + hook, 6, 4)
+      block(ctx, P, col - dc * 0.32, row - dr * 0.32, 0.14, 0.14, top - 4, top, metal)
+      return P.at(col, row, top + 9)
+    }
+    case 'observatory': {
+      // a large dome whose slit turns slowly, a telescope looking out of it
+      const r = 0.42
+      const [oc, or] = [col - 0.12, row + 0.12]
+      const [rx, ry] = circleRadii(P, r)
+      const [cx, cy] = P.at(oc, or, h)
+      const up = rx * 0.85
+      const g = ctx.createLinearGradient(cx - rx, cy - up, cx + rx * 0.6, cy)
+      g.addColorStop(0, x.charred ? '#1e1c1b' : '#41595e')
+      g.addColorStop(0.55, x.charred ? '#141313' : '#22343a')
+      g.addColorStop(1, metal[1])
+      ctx.beginPath()
+      ctx.ellipse(cx, cy, rx, up, 0, Math.PI, 0)
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI)
+      ctx.fillStyle = g
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(200,220,212,0.3)'
+      ctx.lineWidth = 1
+      ctx.stroke()
+      // the slit: a dark band over the dome, moving as it turns
+      const turn = Math.sin((x.running ? x.time * 0.25 : 0) + x.phase * 6) * 0.55
+      const sx = cx + turn * rx
+      const width = rx * 0.16 * Math.cos(turn)
+      const height = up * Math.sqrt(Math.max(0, 1 - turn * turn))
+      ctx.fillStyle = '#030606'
+      ctx.beginPath()
+      ctx.moveTo(sx - width, cy - 2)
+      ctx.lineTo(sx - width * 0.6, cy - height)
+      ctx.lineTo(sx + width * 0.6, cy - height)
+      ctx.lineTo(sx + width, cy - 2)
+      ctx.closePath()
+      ctx.fill()
+      if (x.lit) {
+        // starlight caught in the slit
+        ctx.fillStyle = hexAlpha(x.light, 0.35)
+        ctx.fill()
+      }
+      // the telescope
+      ctx.strokeStyle = 'rgba(200,220,212,0.7)'
+      ctx.lineWidth = 2.5
+      ctx.beginPath()
+      ctx.moveTo(sx, cy - height * 0.45)
+      ctx.lineTo(sx + 8 + turn * 6, cy - height - 6)
+      ctx.stroke()
+      return [cx, cy - up - 3]
     }
     default:
       return undefined

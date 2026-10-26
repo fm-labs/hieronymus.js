@@ -2,6 +2,7 @@ import type { GameComponentProperties, IGameComponent } from '../../../lib/game.
 import { AbstractGameComponent } from '../../../lib'
 import type { Volume } from './isocontainers.types.ts'
 import {
+  blur,
   COLORS,
   FONT,
   PALETTE,
@@ -65,7 +66,7 @@ export class IsoContainerVolumeComponent extends AbstractGameComponent implement
       ctx.fill()
       ctx.save()
       ctx.shadowColor = PALETTE.volume
-      ctx.shadowBlur = 4 + 10 * v.flash
+      ctx.shadowBlur = blur(scene.zoom, 4 + 10 * v.flash)
       ctx.strokeStyle = `rgba(76,201,240,${0.5 + 0.5 * v.flash})`
       ctx.lineWidth = 2.5
       ctx.stroke()

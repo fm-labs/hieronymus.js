@@ -44,8 +44,20 @@ export type ContainersScene = {
   allAdvice: boolean
   /** The advisor's flags are switched on */
   showAdvice: boolean
+  /** The connections between hosts are switched on (the selection's own show anyway) */
+  showCrossHost: boolean
   /** Text rising from a building, e.g. the points of a fix */
   popups: Array<{ col: number; row: number; z: number; text: string; color: string; born: number }>
+}
+
+/**
+ * A glow's blur at a zoom: canvas blur is in screen pixels, so it shrinks as the city does (up close
+ * it is unchanged), and under three pixels it is dropped. Blur is the costliest thing on the canvas: a
+ * zoomed out fleet with full blur draws at half the frame rate.
+ */
+export const blur = (zoom: number, px: number) => {
+  const b = px * Math.min(1, zoom / 0.5)
+  return b < 3 ? 0 : b
 }
 
 export const isVisible = (scene: ContainersScene, x: number, y: number, margin = 200) =>

@@ -2,7 +2,8 @@
  * Building styles of the 'isocontainers' world: which architecture a container gets. A look is
  * merged from, weakest first:
  *
- * 1. the default of its kind (databases are vaults, caches silos, …),
+ * 1. the default of a well known image (postgres is a datacenter, grafana an observatory, …), or
+ *    else of its kind (databases are vaults, caches silos, …),
  * 2. user rules, from the least to the most specific: by kind, by image, by name,
  * 3. its docker labels, e.g. `isocontainers.style: silo` in a compose file.
  *
@@ -34,12 +35,24 @@ export type StyleRule = StyleOptions & {
   name?: string
 }
 
-export type Facade = 'grid' | 'glass' | 'slits' | 'bands' | 'ribbon' | 'sparse'
+export type Facade =
+  | 'grid'
+  | 'glass'
+  | 'slits'
+  | 'bands'
+  | 'ribbon'
+  | 'sparse'
+  | 'racks'
+  | 'columns'
+  | 'honeycomb'
+  | 'rings'
+  | 'arcade'
+  | 'bays'
 
 export type StyleDefinition = {
   label: string
   description: string
-  shape: 'box' | 'octagon'
+  shape: 'box' | 'octagon' | 'hexagon' | 'round'
   facade: Facade
   /** Times the height of the kind */
   scale: number
@@ -52,6 +65,10 @@ export type StyleDefinition = {
   crenels?: boolean
   /** Light and dark rings */
   stripes?: boolean
+  /** A classical gable over the front */
+  pediment?: boolean
+  /** A striped awning over the front door */
+  awning?: boolean
 }
 
 export const STYLES: Record<BuildingStyle, StyleDefinition> = {
@@ -125,6 +142,141 @@ export const STYLES: Record<BuildingStyle, StyleDefinition> = {
     roof: 'none',
     door: true,
   },
+  datacenter: {
+    label: 'Datacenter',
+    description: 'Server racks with blinking lights, cooling fans on the roof',
+    shape: 'box',
+    facade: 'racks',
+    scale: 0.75,
+    roof: 'fans',
+    door: true,
+  },
+  library: {
+    label: 'Library',
+    description: 'Columns and a gable: where everything is indexed',
+    shape: 'box',
+    facade: 'columns',
+    scale: 0.9,
+    roof: 'none',
+    door: true,
+    pediment: true,
+  },
+  hive: {
+    label: 'Hive',
+    description: 'A hexagon with honeycomb windows, for documents',
+    shape: 'hexagon',
+    facade: 'honeycomb',
+    scale: 1,
+    roof: 'vents',
+  },
+  reactor: {
+    label: 'Reactor',
+    description: 'A round core with glowing rings, fast and hot',
+    shape: 'round',
+    facade: 'rings',
+    scale: 0.9,
+    roof: 'fans',
+  },
+  exchange: {
+    label: 'Exchange',
+    description: 'A hall of arched windows, where messages change hands',
+    shape: 'box',
+    facade: 'arcade',
+    scale: 1,
+    roof: 'tank',
+    door: true,
+  },
+  warehouse: {
+    label: 'Warehouse',
+    description: 'A wide hall with loading bays',
+    shape: 'box',
+    facade: 'bays',
+    scale: 0.7,
+    roof: 'vents',
+  },
+  keep: {
+    label: 'Keep',
+    description: 'A castle keep with arrow slits, guarding the keys',
+    shape: 'octagon',
+    facade: 'slits',
+    scale: 1.45,
+    roof: 'none',
+    crenels: true,
+    door: true,
+  },
+  observatory: {
+    label: 'Observatory',
+    description: 'A round hall under a turning dome, watching everything',
+    shape: 'round',
+    facade: 'ribbon',
+    scale: 0.75,
+    roof: 'observatory',
+  },
+  workshop: {
+    label: 'Workshop',
+    description: 'A construction yard with a crane, for builds',
+    shape: 'box',
+    facade: 'bays',
+    scale: 0.85,
+    roof: 'crane',
+  },
+  kiosk: {
+    label: 'Kiosk',
+    description: 'A small glass booth with an awning, for admin tools',
+    shape: 'box',
+    facade: 'glass',
+    scale: 0.6,
+    roof: 'none',
+    door: true,
+    awning: true,
+  },
+}
+
+/**
+ * The style of well known images, by the last part of the image name: postgres is a datacenter
+ * wherever it comes from (bitnami/postgresql, postgis/postgis, …). Before the kind, after rules.
+ */
+export const IMAGE_STYLES: Array<[RegExp, BuildingStyle]> = [
+  [
+    /^(postgres(ql)?|postgis|timescaledb(-ha)?|mysql|mariadb|percona(-server)?|cockroach|clickhouse(-server)?|mssql-server|yugabyte)$/,
+    'datacenter',
+  ],
+  [
+    /^(elasticsearch|opensearch|meilisearch|typesense|solr|manticore(search)?|zincsearch)$/,
+    'library',
+  ],
+  [/^(mongo(db)?|couchdb|couchbase|cassandra|scylla|arangodb|neo4j|ravendb|rethinkdb)$/, 'hive'],
+  [/^(redis(-stack)?|valkey|memcached|dragonfly|keydb|hazelcast|garnet)$/, 'reactor'],
+  [
+    /^(rabbitmq|kafka|cp-kafka|redpanda|nats|activemq(-artemis)?|pulsar|mosquitto|emqx|eclipse-mosquitto)$/,
+    'exchange',
+  ],
+  [
+    /^(minio|seaweedfs|garage|registry|nexus3|artifactory-oss|harbor-core|localstack)$/,
+    'warehouse',
+  ],
+  [
+    /^(keycloak|authelia|authentik|server|vault|dex|zitadel|oauth2-proxy|openldap|lldap|kanidm)$/,
+    'keep',
+  ],
+  [/^(grafana|kibana|metabase|superset|redash|uptime-kuma|netdata|graylog)$/, 'observatory'],
+  [
+    /^(jenkins|gitlab-runner|drone(-runner-docker)?|woodpecker-(server|agent)|act_runner|buildkit|concourse|teamcity-agent)$/,
+    'workshop',
+  ],
+  [
+    /^(adminer|pgadmin4|phpmyadmin|portainer(-ce)?|mailhog|mailpit|swagger-ui|redis-commander|mongo-express|dozzle|whoami)$/,
+    'kiosk',
+  ],
+]
+
+/** The style of a well known image, if it is one */
+export function imageStyle(image: string): BuildingStyle | undefined {
+  const repository = imageRepository(image)
+  const last = repository.split('/').pop() ?? repository
+  // 'authentik/server' and 'goauthentik/server' are authentik; a plain 'server' is not
+  if (last === 'server' && !/authentik/.test(repository)) return undefined
+  return IMAGE_STYLES.find(([re]) => re.test(last))?.[1]
 }
 
 export const ROOFS: Record<RoofProp, string> = {
@@ -135,6 +287,9 @@ export const ROOFS: Record<RoofProp, string> = {
   chimney: 'Chimney',
   beacon: 'Beacon',
   vents: 'Vents',
+  fans: 'Fans',
+  crane: 'Crane',
+  observatory: 'Telescope',
 }
 
 export const KIND_STYLES: Record<ContainerKind, BuildingStyle> = {
@@ -191,6 +346,14 @@ const BADGES: Array<[RegExp, string]> = [
   [/elasticsearch|opensearch/, 'ES'],
   [/^grafana/, 'GRF'],
   [/^prom\/prometheus|^prometheus/, 'PRM'],
+  [/keycloak/, 'KC'],
+  [/^vault|hashicorp\/vault/, 'VLT'],
+  [/jenkins/, 'JNK'],
+  [/^kibana/, 'KIB'],
+  [/clickhouse/, 'CH'],
+  [/cassandra|scylla/, 'CAS'],
+  [/^registry/, 'REG'],
+  [/portainer/, 'PTR'],
 ]
 
 const isStyle = (v: unknown): v is BuildingStyle => typeof v === 'string' && v in STYLES
@@ -283,9 +446,10 @@ export function badgeOf(image: string): string | undefined {
 
 /** The look of a container */
 export function resolveLook(c: Matchable & { labels: Record<string, string> }, rules: StyleRule[]) {
-  const base = KIND_STYLES[c.kind]
+  const byImage = imageStyle(c.image)
+  const base = byImage ?? KIND_STYLES[c.kind]
   let options: StyleOptions = {}
-  let source = 'kind'
+  let source = byImage ? 'image' : 'kind'
   const matching = rules
     .map((rule, i) => ({ rule, i }))
     .filter(({ rule }) => ruleMatches(rule, c))

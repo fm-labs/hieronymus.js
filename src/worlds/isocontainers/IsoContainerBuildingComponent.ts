@@ -6,10 +6,12 @@ import { KIND_LABELS, type Container, type GridPoint } from './isocontainers.typ
 import { STYLES } from './isocontainers.styles.ts'
 import {
   arch,
+  awning,
   badge,
   cornice,
   crenels,
   door,
+  pediment,
   facade,
   faceQuad,
   footprint,
@@ -21,6 +23,7 @@ import {
   type Face,
 } from './isocontainers.buildings.ts'
 import {
+  blur,
   COLORS,
   FONT,
   PALETTE,
@@ -36,13 +39,14 @@ import {
 import {
   FIRE,
   ICE,
-  arrivals,
   faceColors,
   flames,
   heightOf,
   icicles,
   moodOf,
   phaseOf,
+  sparks,
+  windowColor,
   type Mood,
 } from './isocontainers.fx.ts'
 
@@ -52,6 +56,16 @@ export interface IsoContainerBuildingComponentProps extends GameComponentPropert
 }
 
 /** How visible a building is, by mood: what is gone steps back, what burns does not */
+/** Below this zoom, the details are too small to see: they are not drawn */
+const FAR_ZOOM = 0.3
+
+/** How much of the name line a roof prop takes, in pixels */
+const ROOF_ROOM: Partial<Record<Container['look']['roof'], number>> = {
+  none: 18,
+  fans: 44,
+  observatory: 64,
+}
+
 const MOOD_ALPHA: Partial<Record<Mood, number>> = { stopped: 0.72, dead: 0.85, created: 0.9 }
 
 /**
@@ -95,9 +109,18 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       this.tower(ctx, col, tw, h * (i === 0 ? 1 : 0.86), mood, i)
     }
     this.roof(ctx, n > 1 ? tw : c.w, h, mood)
+    // a gable stands in front of the roof, so it comes after the roof text
+    const style = STYLES[c.look.style]
+    if (style.pediment && mood !== 'created')
+      for (let i = 0; i < n; i++) {
+        const col = c.col + i * (tw + gap)
+        const front = frontOf(visibleFaces(footprint(style.shape, col, c.row, tw, c.d)))
+        const th = h * (i === 0 ? 1 : 0.86)
+        if (front) pediment(ctx, P, front, th, mood === 'burning' || mood === 'dead')
+      }
     if (mood === 'paused') icicles(ctx, P, c, h)
     if (mood === 'burning') flames(ctx, P, c, h, scene.time + phaseOf(c) * 10)
-    arrivals(ctx, P, c, h)
+    sparks(ctx, P, c, h)
     this.outline(ctx, h)
     ctx.globalAlpha = 1
   }
@@ -123,44 +146,16 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     const up = c.state === 'running'
     const load = up ? Math.min(0.9, 0.18 + c.cpu / 60 + c.flash * 0.35) : 0
     const x = { c, mood, load, h, index, time: scene.time }
-    faces.forEach((f, i) => facade(ctx, P, style, f, i + 1, x))
-    const front = frontOf(faces)
-    const light = up ? stateColor(c) : undefined
-    if (front && style.arch) arch(ctx, P, front, h, light)
-    else if (front && style.door) door(ctx, P, front, h, style.facade === 'ribbon', light)
-    if (front && index === 0 && c.look.badge && mood !== 'created')
-      badge(ctx, P, front, h, c.look.badge, c.look.accent)
-    if (c.look.accent && mood !== 'created') cornice(ctx, P, faces, h, c.look.accent)
-
-    // the edges: catching the light, or dashed lines of a blueprint
-    ctx.save()
-    if (mood === 'created') {
-      ctx.strokeStyle = 'rgba(111,182,214,0.55)'
-      ctx.setLineDash([4, 4])
-      ctx.lineWidth = 1.2
-      ctx.beginPath()
-      for (const f of faces) {
-        const q = faceQuad(P, f, 0, f.len, 0, h)
-        ctx.moveTo(...q[0])
-        ctx.lineTo(...q[1])
-        ctx.lineTo(...q[2])
-        ctx.moveTo(...q[0])
-        ctx.lineTo(...q[3])
-      }
-      ctx.stroke()
-    } else {
-      ctx.strokeStyle = 'rgba(200,220,212,0.16)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      // between two faces that both show
-      for (let i = 1; i < faces.length; i++) {
-        const q = faceQuad(P, faces[i], 0, faces[i].len, 0, h)
-        ctx.moveTo(...q[0])
-        ctx.lineTo(...q[3])
-      }
-      ctx.stroke()
-    }
-    ctx.restore()
+    if (scene.zoom < FAR_ZOOM) {
+      // far away: no windows, only a wash of their color, so the state still shows
+      const wash = windowColor(c, mood, 0.7, 0, 0, 1, scene.time, phaseOf(c))
+      if (wash)
+        for (const f of faces) {
+          poly(ctx, faceQuad(P, f, 0, f.len, 3, h - 3))
+          ctx.fillStyle = wash
+          ctx.fill()
+        }
+    } else this.details(ctx, faces, style, h, mood, index, x)
 
     // the top of a tower; the roof text goes on the first one
     P.plane(ctx, h, () => {
@@ -205,10 +200,65 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
       }
       this.rim(ctx, points, mood)
     })
-    if (style.crenels && mood !== 'created') {
+    if (style.crenels && mood !== 'created' && scene.zoom >= FAR_ZOOM) {
       const [l, r] = faceColors(mood)
       crenels(ctx, P, faces, h, [l === '#0f181a' ? '#1a2a2d' : l, r, '#2c3f43'])
     }
+  }
+
+  /** What is only worth drawing up close: windows, doors, signs, trim and the lit edges */
+  private details(
+    ctx: CanvasRenderingContext2D,
+    faces: Face[],
+    style: (typeof STYLES)[keyof typeof STYLES],
+    h: number,
+    mood: Mood,
+    index: number,
+    x: Parameters<typeof facade>[5],
+  ) {
+    const { container: c, scene } = this.properties
+    const P = scene.projection
+    const up = c.state === 'running'
+    faces.forEach((f, i) => facade(ctx, P, style, f, i + 1, x))
+    const front = frontOf(faces)
+    const light = up ? stateColor(c) : undefined
+    if (front && style.arch) arch(ctx, P, front, h, light)
+    else if (front && style.door) door(ctx, P, front, h, style.facade === 'ribbon', light)
+    if (front && style.awning && mood !== 'created')
+      awning(ctx, P, front, c.look.accent ?? '#2bb673')
+    if (front && index === 0 && c.look.badge && mood !== 'created')
+      badge(ctx, P, front, h, c.look.badge, c.look.accent)
+    if (c.look.accent && mood !== 'created') cornice(ctx, P, faces, h, c.look.accent)
+
+    // the edges: catching the light, or dashed lines of a blueprint
+    ctx.save()
+    if (mood === 'created') {
+      ctx.strokeStyle = 'rgba(111,182,214,0.55)'
+      ctx.setLineDash([4, 4])
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      for (const f of faces) {
+        const q = faceQuad(P, f, 0, f.len, 0, h)
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[1])
+        ctx.lineTo(...q[2])
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[3])
+      }
+      ctx.stroke()
+    } else {
+      ctx.strokeStyle = 'rgba(200,220,212,0.16)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      // between two faces that both show
+      for (let i = 1; i < faces.length; i++) {
+        const q = faceQuad(P, faces[i], 0, faces[i].len, 0, h)
+        ctx.moveTo(...q[0])
+        ctx.lineTo(...q[3])
+      }
+      ctx.stroke()
+    }
+    ctx.restore()
   }
 
   /** Soot climbing up the sides of a burnt building, from the windows to the roof */
@@ -236,7 +286,7 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     switch (mood) {
       case 'ok':
         ctx.shadowColor = COLORS.green
-        ctx.shadowBlur = 6 + 10 * c.flash
+        ctx.shadowBlur = blur(scene.zoom, 6 + 10 * c.flash)
         ctx.strokeStyle = `rgba(62,224,127,${0.45 + 0.45 * c.flash})`
         break
       case 'crashloop':
@@ -250,19 +300,19 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
         // the same dash, frozen
         ctx.strokeStyle = ICE
         ctx.shadowColor = ICE
-        ctx.shadowBlur = 6
+        ctx.shadowBlur = blur(scene.zoom, 6)
         ctx.setLineDash([18, 12])
         break
       case 'unhealthy':
       case 'starting':
         // a slow breathing glow
         ctx.shadowColor = color
-        ctx.shadowBlur = 8 + 8 * Math.sin(scene.time * 2)
+        ctx.shadowBlur = blur(scene.zoom, 8 + 8 * Math.sin(scene.time * 2))
         ctx.strokeStyle = color
         break
       case 'burning':
         ctx.shadowColor = FIRE
-        ctx.shadowBlur = 12
+        ctx.shadowBlur = blur(scene.zoom, 12)
         ctx.strokeStyle = hexAlpha(FIRE, 0.8)
         break
       case 'created':
@@ -287,13 +337,16 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     const lit = mood === 'ok' || mood === 'unhealthy' || mood === 'starting' || mood === 'burning'
     const style = STYLES[c.look.style]
     // nothing stands on a blueprint
-    const prop = mood === 'created' ? 'none' : c.look.roof
+    const far = scene.zoom < FAR_ZOOM
+    const prop = mood === 'created' || far ? 'none' : c.look.roof
     // the corners of an octagon are cut: the text moves in
     const inset = style.shape === 'octagon' ? Math.min(width, c.d) * 0.12 * U : 0
-    const reserve = prop === 'none' ? 18 : 34
+    // room for what stands at the back corner of the roof
+    const reserve = ROOF_ROOM[prop] ?? 34
     P.plane(ctx, h, () => {
       const [u0, v0, W, D] = [c.col * U + inset, c.row * U, width * U - inset * 2, c.d * U]
       const pad = 14
+      if (far) return this.light(ctx, u0 + W - pad - 4, v0 + 26, color, lit)
       ctx.textBaseline = 'middle'
       ctx.font = `600 ${width < 1.6 ? 16 : 22}px ${FONT.ui}`
       ctx.fillStyle = dark ? COLORS.muted : COLORS.text
@@ -334,18 +387,8 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
         x += w + 5
       }
 
-      if (prop !== 'none') return
-      // the status light, top right
-      ctx.save()
-      if (lit) {
-        ctx.shadowColor = color
-        ctx.shadowBlur = 10
-      }
-      ctx.fillStyle = color
-      ctx.beginPath()
-      ctx.arc(u0 + W - pad - 4, v0 + 26, 6, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
+      // the status light, top right, unless a roof prop carries it
+      if (prop === 'none') this.light(ctx, u0 + W - pad - 4, v0 + 26, color, lit)
     })
     if (prop === 'none') return
 
@@ -363,11 +406,25 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     ctx.save()
     if (lit) {
       ctx.shadowColor = color
-      ctx.shadowBlur = 10
+      ctx.shadowBlur = blur(scene.zoom, 10)
     }
     ctx.fillStyle = color
     ctx.beginPath()
     ctx.arc(top[0], top[1], 3.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+
+  /** The status light on the roof (in plane units) */
+  private light(ctx: CanvasRenderingContext2D, u: number, v: number, color: string, lit: boolean) {
+    ctx.save()
+    if (lit) {
+      ctx.shadowColor = color
+      ctx.shadowBlur = blur(this.properties.scene.zoom, 10)
+    }
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.arc(u, v, 6, 0, Math.PI * 2)
     ctx.fill()
     ctx.restore()
   }
@@ -380,7 +437,7 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
     ctx.save()
     ctx.strokeStyle = selected ? '#ffffff' : 'rgba(255,255,255,0.6)'
     ctx.shadowColor = 'rgba(255,255,255,0.5)'
-    ctx.shadowBlur = selected ? 10 : 0
+    ctx.shadowBlur = blur(scene.zoom, selected ? 10 : 0)
     if (!selected) ctx.setLineDash([8, 6])
     P.plane(ctx, h, () => {
       ctx.lineWidth = selected ? 3.5 : 2.5

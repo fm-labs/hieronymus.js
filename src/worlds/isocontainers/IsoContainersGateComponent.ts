@@ -3,6 +3,7 @@ import { AbstractGameComponent } from '../../../lib'
 import { LOT, isPublished } from './isocontainers.layout.ts'
 import type { Environment } from './isocontainers.types.ts'
 import {
+  blur,
   COLORS,
   FONT,
   PALETTE,
@@ -79,7 +80,7 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
     poly(ctx, leftQuad(P, r0 + PILLAR, b0 + 0.08, b0 + bw - 0.08, HEIGHT - 9, HEIGHT - 7.5))
     ctx.save()
     ctx.shadowColor = COLORS.green
-    ctx.shadowBlur = 8
+    ctx.shadowBlur = blur(scene.zoom, 8)
     ctx.fillStyle = `rgba(141,255,185,${0.6 + 0.4 * pulse})`
     ctx.fill()
     ctx.restore()

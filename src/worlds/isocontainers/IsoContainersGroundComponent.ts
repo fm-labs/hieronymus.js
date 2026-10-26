@@ -12,6 +12,7 @@ import type {
   Network,
 } from './isocontainers.types.ts'
 import {
+  blur,
   COLORS,
   FONT,
   PALETTE,
@@ -34,13 +35,16 @@ const HALF = LOT.street / 2
 const BAND = 'rgba(255,255,255,0.022)'
 const LINE = 'rgba(200,220,212,0.32)'
 
-/** The colors of a flow: the glow and its gradient head, and the bright core */
+/** The colors of a flow: the glow and its gradient head, and the core; soft, so many don't flicker */
 export const FLOW_COLORS = {
-  call: { glow: COLORS.green, head: 'rgba(120,255,170,1)', core: 'rgba(220,255,232,0.9)' },
-  read: { glow: PALETTE.volume, head: 'rgba(168,236,255,1)', core: 'rgba(225,248,255,0.9)' },
-  write: { glow: PALETTE.volume, head: 'rgba(110,214,245,1)', core: 'rgba(225,248,255,0.9)' },
-  failed: { glow: COLORS.red, head: 'rgba(255,120,124,1)', core: 'rgba(255,225,226,0.9)' },
+  call: { glow: COLORS.green, head: 'rgba(120,255,170,0.7)', core: 'rgba(220,255,232,0.55)' },
+  read: { glow: PALETTE.volume, head: 'rgba(168,236,255,0.7)', core: 'rgba(225,248,255,0.55)' },
+  write: { glow: PALETTE.volume, head: 'rgba(110,214,245,0.7)', core: 'rgba(225,248,255,0.55)' },
+  failed: { glow: COLORS.red, head: 'rgba(255,120,124,0.8)', core: 'rgba(255,225,226,0.6)' },
 }
+
+/** How a flow is drawn: a thin streak with a faint glow, and a fine core */
+export const FLOW_STYLE = { blur: 6, width: 2.6, core: 1 }
 
 /**
  * Everything flat: the plates of the environments with their names, the lots, the avenue and the
@@ -123,7 +127,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.fill()
       ctx.save()
       ctx.shadowColor = 'rgba(230,255,240,0.35)'
-      ctx.shadowBlur = 8
+      ctx.shadowBlur = blur(this.properties.scene.zoom, 8)
       ctx.strokeStyle = COLORS.frame
       ctx.lineWidth = 3.5
       ctx.stroke()
@@ -150,7 +154,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       const ly = v0 + h - 30 - 28 * k
       ctx.save()
       ctx.shadowColor = 'rgba(255,255,255,0.35)'
-      ctx.shadowBlur = 6
+      ctx.shadowBlur = blur(this.properties.scene.zoom, 6)
       ctx.fillStyle = COLORS.text
       ctx.font = `700 ${58 * k}px ${FONT.ui}`
       ctx.textBaseline = 'middle'
@@ -359,7 +363,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.save()
       ctx.globalAlpha = focusAlpha(scene, c, 0.4)
       ctx.shadowColor = 'rgba(0,0,0,0.7)'
-      ctx.shadowBlur = 16
+      ctx.shadowBlur = blur(scene.zoom, 16)
       ctx.fillStyle = 'rgba(0,0,0,0.45)'
       const s = c.height * 0.55
       ctx.beginPath()
@@ -391,7 +395,7 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       ctx.save()
       ctx.globalAlpha = focusAlpha(scene, v, 0.4)
       ctx.shadowColor = 'rgba(0,0,0,0.7)'
-      ctx.shadowBlur = 10
+      ctx.shadowBlur = blur(scene.zoom, 10)
       ctx.fillStyle = 'rgba(0,0,0,0.45)'
       ctx.beginPath()
       // taller tanks throw longer shadows
@@ -435,14 +439,14 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
     gradient.addColorStop(1, colors.head)
     ctx.save()
     ctx.shadowColor = colors.glow
-    ctx.shadowBlur = 14
+    ctx.shadowBlur = blur(this.properties.scene.zoom, FLOW_STYLE.blur)
     ctx.strokeStyle = gradient
-    ctx.lineWidth = 4
+    ctx.lineWidth = FLOW_STYLE.width
     trace(ctx, points, 8)
     ctx.stroke()
     ctx.shadowBlur = 0
     ctx.strokeStyle = colors.core
-    ctx.lineWidth = 1.4
+    ctx.lineWidth = FLOW_STYLE.core
     ctx.stroke()
     ctx.restore()
   }

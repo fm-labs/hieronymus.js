@@ -2,7 +2,7 @@ import type { GameComponentProperties, IGameComponent } from '../../../lib/game.
 import { AbstractGameComponent } from '../../../lib'
 import { linkLength } from './isocontainers.layout.ts'
 import { TAIL } from './isocontainers.sim.ts'
-import { FLOW_COLORS } from './IsoContainersGroundComponent.ts'
+import { FLOW_COLORS, FLOW_STYLE } from './IsoContainersGroundComponent.ts'
 import {
   POPUP_SECONDS,
   adviceChip,
@@ -17,6 +17,7 @@ import {
 } from './isocontainers.fx.ts'
 import type { ContainersModel, Entity, GridPoint, Link } from './isocontainers.types.ts'
 import {
+  blur,
   COLORS,
   PALETTE,
   arcControl,
@@ -78,6 +79,14 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
 
     for (const l of model.links) {
       if (!l.arc) continue
+      // between hosts: only when switched on, or when it belongs to the selection
+      if (
+        !scene.showCrossHost &&
+        l.from &&
+        l.from.env !== l.to.env &&
+        !(scene.selected && scene.focus?.has(l))
+      )
+        continue
       const a = P.at(...l.arc.a)
       const b = P.at(...l.arc.b)
       const c = arcControl(a, b)
@@ -173,16 +182,16 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
     gradient.addColorStop(1, colors.head)
     ctx.save()
     ctx.shadowColor = colors.glow
-    ctx.shadowBlur = 14
+    ctx.shadowBlur = blur(this.properties.scene.zoom, FLOW_STYLE.blur)
     ctx.strokeStyle = gradient
-    ctx.lineWidth = 4
+    ctx.lineWidth = FLOW_STYLE.width
     ctx.beginPath()
     ctx.moveTo(...points[0])
     for (const p of points.slice(1)) ctx.lineTo(...p)
     ctx.stroke()
     ctx.shadowBlur = 0
     ctx.strokeStyle = colors.core
-    ctx.lineWidth = 1.4
+    ctx.lineWidth = FLOW_STYLE.core
     ctx.stroke()
     ctx.restore()
   }

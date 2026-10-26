@@ -384,7 +384,6 @@ function buildContainer(s: ContainerSpec, env: Environment): Container {
     requests: 0,
     errors: 0,
     transition: 0,
-    pings: [],
     sparks: [],
   }
 }

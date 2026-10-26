@@ -8,7 +8,7 @@
 import { noise } from '../isovegas/isovegas.draw.ts'
 import { EVENT_SECONDS, START_SECONDS } from './isocontainers.sim.ts'
 import type { Container, GridPoint } from './isocontainers.types.ts'
-import { COLORS, FONT, U, hexAlpha, type FlowProjection } from './isocontainers.draw.ts'
+import { COLORS, FONT, hexAlpha, type FlowProjection } from './isocontainers.draw.ts'
 
 export type Mood =
   | 'ok'
@@ -252,26 +252,8 @@ export function icicles(ctx: CanvasRenderingContext2D, P: FlowProjection, c: Con
   ctx.restore()
 }
 
-/** Ripples on the roof for each request that arrived, red sparks for each that failed */
-export function arrivals(
-  ctx: CanvasRenderingContext2D,
-  P: FlowProjection,
-  c: Container,
-  h: number,
-) {
-  const [cu, cv] = [(c.col + c.w / 2) * U, (c.row + c.d / 2) * U]
-  if (c.pings.length) {
-    P.plane(ctx, h, () => {
-      for (const age of c.pings) {
-        const t = age / EVENT_SECONDS
-        ctx.strokeStyle = `rgba(141,255,185,${0.55 * (1 - t) * (1 - t)})`
-        ctx.lineWidth = 3 * (1 - t) + 1
-        ctx.beginPath()
-        ctx.arc(cu, cv, 24 + t * 110, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-    })
-  }
+/** Red sparks flying off the roof for each request that failed */
+export function sparks(ctx: CanvasRenderingContext2D, P: FlowProjection, c: Container, h: number) {
   if (c.sparks.length) {
     const [x0, y0] = P.at(c.col + c.w / 2, c.row + c.d / 2, h)
     ctx.save()
@@ -279,14 +261,6 @@ export function arrivals(
     ctx.lineCap = 'round'
     for (const age of c.sparks) {
       const t = age / EVENT_SECONDS
-      // a red shock ring on the roof
-      P.plane(ctx, h, () => {
-        ctx.strokeStyle = `rgba(255,90,95,${0.6 * (1 - t)})`
-        ctx.lineWidth = 3
-        ctx.beginPath()
-        ctx.arc(cu, cv, 20 + t * 70, 0, Math.PI * 2)
-        ctx.stroke()
-      })
       // sparks flying out and falling
       for (let i = 0; i < 9; i++) {
         const a = (i / 9) * Math.PI * 2 + noise(i, 1, c.name.length) * 0.6
