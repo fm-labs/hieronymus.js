@@ -232,7 +232,7 @@ function buildRegions(environments: Environment[], specs: EnvironmentSpec[]): Re
 }
 
 /** Room around the plates of a region, in cells: its outline on the floor */
-const REGION_PAD = 3
+const REGION_PAD = 6
 /** Room under a region for its name, in pixels: the name at its largest (zoomed far out) fits */
 export const REGION_LABEL_ROOM = 640
 
