@@ -1,20 +1,24 @@
 import type { IGame, IGameSystem } from '../game.types'
 import { AbstractGameSystem } from './AbstractGameSystem'
 
+const canScroll = (el: HTMLElement) => {
+  const { overflowX, overflowY } = getComputedStyle(el)
+  return (
+    (/auto|scroll/.test(overflowY) && el.scrollHeight > el.clientHeight) ||
+    (/auto|scroll/.test(overflowX) && el.scrollWidth > el.clientWidth)
+  )
+}
+
 /**
- * Whether the wheel over `target` should scroll the page element under it, not the camera:
- * inside an element marked with data-native-scroll, or one that has something to scroll.
+ * The element that the wheel over `target` belongs to, instead of the camera: one that has something
+ * to scroll, or a panel marked with data-native-scroll (even while its content fits).
  */
-function scrollsNatively(target: EventTarget | null, container: HTMLElement): boolean {
+function wheelOwner(target: EventTarget | null, container: HTMLElement): HTMLElement | undefined {
   for (let el = target as HTMLElement | null; el && el !== document.body; el = el.parentElement) {
-    if (el.dataset?.nativeScroll !== undefined) return true
-    if (el === container) return false
-    const { overflowX, overflowY } = getComputedStyle(el)
-    const y = /auto|scroll/.test(overflowY) && el.scrollHeight > el.clientHeight
-    const x = /auto|scroll/.test(overflowX) && el.scrollWidth > el.clientWidth
-    if (x || y) return true
+    if (el === container) return undefined
+    if (el.dataset?.nativeScroll !== undefined || canScroll(el)) return el
   }
-  return false
+  return undefined
 }
 
 export class InputSystem extends AbstractGameSystem implements IGameSystem {
@@ -138,8 +142,11 @@ export class InputSystem extends AbstractGameSystem implements IGameSystem {
     // ctrl + wheel, and the trackpad pinch (which browsers send as ctrl + wheel), zoom;
     // metaKey for the Mac command key
     const zoom = (e.ctrlKey || e.metaKey) && e.deltaY !== 0
-    // over a panel that scrolls, the panel scrolls and the camera stays
-    if (!zoom && scrollsNatively(e.target, this._game.$container)) {
+    // over a panel, the panel scrolls (if it can) and the camera stays
+    const owner = zoom ? undefined : wheelOwner(e.target, this._game.$container)
+    if (owner) {
+      // nothing to scroll: the page must not take the wheel either (swipe back/forward)
+      if (!canScroll(owner)) e.preventDefault()
       return
     }
     // otherwise the engine owns the wheel: no page scroll, no page zoom, no two-finger swipe back/forward
