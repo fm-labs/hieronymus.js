@@ -33,6 +33,7 @@ For how worlds are built in general, see [Building Worlds](building-worlds.md).
 | ---- | ---- | ----- | ------------ |
 | Load | `isocontainersGameLauncher.ts` | no | Reads `?api` / `?graph=` / `?stack=` / `?styles=`, fetches the JSON. |
 | API | `isocontainers.api.ts` → `loadFromApi(get)` | yes (takes the fetch) | Loads every host of the mission-control API and turns it into an `EnvironmentSpec` (see [The mission-control API](#the-mission-control-api)). |
+| Events | `isocontainers.events.ts` → `engineLine(event, env)`, `EngineEvents` | `engineLine` yes | Streams each live host's docker events into the log (see [Live engine events](#live-engine-events)). |
 | Import | `isocontainers.import.ts` | yes | Turns docker inspect or compose output into `EnvironmentSpec`s. |
 | Build | `isocontainers.layout.ts` → `buildContainersModel(spec, styleRules)` | yes | Creates the entities, guesses what is missing, lays out the plates, makes and routes the links, resolves the looks. |
 | Simulate | `isocontainers.sim.ts` → `ContainersSimulation` | yes (takes `random`) | Moves flows along links, counts requests and errors, eases cpu and memory. |
@@ -349,13 +350,15 @@ Today every value that changes over time is **simulated**. A real source changes
 | Value | Today | From an API |
 | ----- | ----- | ----------- |
 | hosts, containers, networks, volumes, ports, mounts, labels, limits | spec | spec (inventory) |
-| `state`, `health`, `exitCode` | spec, then changed by stop/start in the view (button or S key) | events / polling |
+| `state`, `health`, `exitCode` | spec, then changed by stop/start in the view (button or S key) | live: engine events (done); stop/start in the view is still simulated |
+| containers coming and going | spec | live: `create` / `destroy` events rebuild the world (done) |
 | calls between containers | spec `calls` / `dependsOn`, or guessed | spec, or observed connections |
 | `cpu`, `mem` | simulated by kind (`BASE_CPU`, `BASE_MEM`) | `docker stats` |
 | request rate per link | `CALL_RATE` by the target's kind | metrics (e.g. a proxy, a service mesh, eBPF) |
 | `requests`, `errors`, flows, sparks | simulated: a request to a container that isn't running fails | metrics |
 | volume `reads`, `writes` | simulated by kind | block I/O stats |
 | volume `size` | spec | `docker system df -v` |
+| engine lines of the log | simulated by `LogSimulator` | live: the API's docker events stream (done) |
 
 ## State kept outside the model
 
@@ -397,7 +400,7 @@ The samples are in `isocontainers.samples.ts` (`shop`, `fleet`, `states`, `devbo
 
 ## The log
 
-At the bottom right, the log is written over the city: no panel and no background, only text with a
+At the bottom left, next to the explorer, the log is written over the city: no panel and no background, only text with a
 dark halo, so it stays readable over plates and buildings, above the canvas and under the panels;
 clicks pass through to the map. The newest line is at the bottom, older lines fade out toward the
 top. The
@@ -416,7 +419,7 @@ Each line is a `LogEvent` in one `LogStream` (`isocontainers.log.ts`, pure):
 `stream.push(input)` adds a line (the last 500 are kept), `stream.subscribe(fn)` hears each new one.
 `LogView` (`IsoContainersLogView.ts`) draws the last 16.
 
-For now the lines are simulated by `LogSimulator`, from the simulation's `onEvent` (`SimEvent`:
+The samples' lines are simulated by `LogSimulator`, from the simulation's `onEvent` (`SimEvent`:
 `request` with `failed`, and `stop`, `start`, `up`):
 
 - a sample of the requests, at most `rate` (2.2) lines a second, as the target's kind writes them:
@@ -430,8 +433,8 @@ For now the lines are simulated by `LogSimulator`, from the simulation's `onEven
   health check or a crash (`die exitCode=1`, `restart`).
 
 The system writes `world` lines itself: the stack loaded, `docker stop|start` from the pane or `S`,
-fixes, and the regions shown. Real engine events (docker's `/events` stream) will be pushed into the
-same stream later, in place of the simulated engine lines.
+fixes, and the regions shown. In the live stack the engine lines are real: see
+[Live engine events](#live-engine-events).
 
 ## The mission-control API
 
@@ -471,11 +474,73 @@ with that delay.
 When a host fails, the others still load and a message says which one failed. When nothing loads
 (the API is down, the key is wrong, no proxy), the first sample opens with a message saying why.
 
+### Live engine events
+
+Once the live stack is shown, the system opens `GET /containers/{alias}/events/stream` for each
+loaded host (`loadFromApi` returns the hosts' aliases) and writes each docker event into the log
+as an `engine` line. The stream is ndjson, one docker event a line; `EngineEvents` reads it with
+`fetch` (through the same proxy, so the key stays on the dev server) and connects again when it
+ends or fails, after 2, 4, 8, … up to 30 seconds. A `world` line says when a host's stream is
+listening, lost (once, until it is back) and reconnected.
+
+`engineLine(event, env)` makes the line:
+
+| Event | Line |
+| ----- | ---- |
+| container `start` | `container start image=redis:7` |
+| container `die` | `container die exitCode=N`: a warning for 0, an error otherwise |
+| container `kill`, `oom` | `container kill signal=15` (warning), `container oom` (error) |
+| `health_status: …` | as docker says it; `unhealthy` is a warning |
+| `exec_start: …` | the command, as debug (health checks) |
+| `exec_die` | only when it failed (exit code not 0), as a warning |
+| `exec_create`, `attach`, `detach`, `resize`, `top` | left out |
+| other container actions | `container create`, `stop`, `destroy`, `pause`, … |
+| network `connect` / `disconnect` | `network connect backend`, on the container's line |
+| volume `mount` / `unmount` | `volume mount data → /var/lib/postgresql/data`, on the container's line |
+| image events | `image pull redis:7` (actor `images`) |
+
+The actor is the container's name. Containers loaded with the stack keep docker's id
+(`Container.id`), so the line carries their key; a container that came later is named from its
+own events (network and volume events name it by id only, so the names seen are remembered).
+
+The live stack has no `LogSimulator`: no simulated lines at all, neither engine events nor traffic.
+The log holds the engine's events and the `world` lines (what you did, the streams' status). The
+caption under the log says so: `LOG · ENGINE EVENTS LIVE FROM /mc-api`.
+
+### The events change the city
+
+`applyEngineState(container, event, sim)` sets the state of a container on the map:
+
+| Event | State |
+| ----- | ----- |
+| `start` | rises out of the ground (`restarting`, then `running`, as a start in the view); `health: starting` when it has a health check |
+| `die` | `exited` with the event's `exitCode` |
+| `stop` | `exited`, when no `die` came before it |
+| `pause` / `unpause` | `paused` / `running` |
+| `health_status: …` | `health` |
+
+`LiveChanges` handles the containers that come and go. A `create` (or any event of a container the
+map doesn't have, e.g. one that was restarting when the stack loaded, which the API's list leaves
+out) is fetched with `GET /containers/{alias}/containers/{id}` and added to the live spec through
+`fromInspect()`. A container of the same name is replaced, as when compose recreates one. A
+`destroy` takes it out. 600 ms after the last change the world is rebuilt once, so a `compose up`
+is one rebuild. A container that is created and destroyed before it is fetched (`docker run --rm`)
+is never added.
+
+The events of a container that is not on the map yet are kept and replayed, in order, once it is,
+since the inspect may be older than them (the API caches). The rebuild (`rebuildWorld(world, spec)`
+in `isocontainers.world.ts`) builds a new model into the same tile map. It swaps the structures, and
+the ground and the overlay draw the new model. The system then carries over, by key:
+- the state, health, load and counts of each container;
+- the volumes' reads and writes;
+- the simulation's speed, pause and totals;
+- the selection, the open host and the regions shown.
+
+A new running container rises out of the ground. The camera stays where it is.
+
 ### Not used yet
 
-- `GET /containers/{alias}/events/stream`: live docker events (ndjson). Most of it is health check
-  noise (`exec_create`, `exec_start`, `exec_die`); `create`, `start`, `die`, `stop`, `pause`,
-  `unpause`, `destroy` and `health_status` change the view.
+- Network and volume events changing the view (a new network is drawn when a container joins it).
 - `POST /containers/{alias}/containers/{id}/actions/{start|stop|restart|pause|unpause|remove}`: the
   real stop and start.
 - Logs and exec.

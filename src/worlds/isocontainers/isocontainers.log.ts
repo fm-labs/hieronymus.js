@@ -5,7 +5,8 @@
  *
  * For now the lines are simulated from what the simulation does: requests arriving and failing,
  * containers stopped and started, and the states of the containers (health checks, crash loops).
- * Later, the engine's own event stream writes into the same `LogStream`.
+ * The live stack has no simulated lines: the engine's own events (isocontainers.events.ts) write into
+ * the same stream.
  */
 import { moodOf } from './isocontainers.fx.ts'
 import type { SimEvent } from './isocontainers.sim.ts'
@@ -126,7 +127,8 @@ export class LogSimulator {
   private nextEngine = 1.5
 
   constructor(
-    private readonly model: ContainersModel,
+    /** Set again when the live stack is rebuilt */
+    public model: ContainersModel,
     private readonly stream: LogStream,
     private readonly random: () => number = Math.random,
   ) {}

@@ -28,7 +28,7 @@ const MAX_PULSES = 8
 export const EVENT_SECONDS = 1.2
 /** How long a started container takes to come up (it rises out of the ground meanwhile) */
 export const START_SECONDS = 2.4
-const STOP_SECONDS = 0.6
+export const STOP_SECONDS = 0.6
 
 const BASE_CPU: Record<ContainerKind, number> = {
   proxy: 4,

@@ -171,6 +171,9 @@ export async function loadHost(
   }
 }
 
+/** A loaded host: its alias in the API, and the name of its environment */
+export type LiveHost = { alias: string; name: string }
+
 /**
  * All connected hosts of the API, as a spec. A host that fails to load is left out (and reported);
  * when none loads, the first error is thrown.
@@ -178,7 +181,7 @@ export async function loadHost(
 export async function loadFromApi(
   get: ApiGet,
   base = API_BASE,
-): Promise<{ spec: ContainersSpec; failed: string[] }> {
+): Promise<{ spec: ContainersSpec; failed: string[]; hosts: LiveHost[] }> {
   const hosts = list(await get('/containers/hosts')).filter(
     (h): h is ApiHost & Json => typeof h.id === 'string' && h.connected !== false,
   )
@@ -187,6 +190,9 @@ export async function loadFromApi(
   const environments = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
   const failed = results.flatMap((r, i) =>
     r.status === 'rejected' ? [`${hosts[i].id}: ${(r.reason as Error).message}`] : [],
+  )
+  const loaded = hosts.flatMap((h, i) =>
+    results[i].status === 'fulfilled' ? [{ alias: h.id, name: h.name || h.id }] : [],
   )
   if (!environments.length)
     throw results.find((r): r is PromiseRejectedResult => r.status === 'rejected')!.reason
@@ -202,9 +208,11 @@ export async function loadFromApi(
       subtitle: `Live: ${containers} containers, ${running} running`,
       description:
         'Loaded from the mission-control API. The containers, networks, volumes and their states are ' +
-        'real; the traffic, cpu and memory are simulated. Reload the page to load the latest state.',
+        'real, and the log shows the live engine events; the traffic, cpu and memory are simulated. ' +
+        'Reload the page to load the latest state.',
       environments,
     },
     failed,
+    hosts: loaded,
   }
 }

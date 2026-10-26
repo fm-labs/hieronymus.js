@@ -20,9 +20,11 @@ import {
   type StyleOptions,
   type StyleRule,
 } from './isocontainers.styles.ts'
-import { ContainersSimulation } from './isocontainers.sim.ts'
+import { ContainersSimulation, START_SECONDS } from './isocontainers.sim.ts'
 import { LogSimulator, LogStream, type LogInput } from './isocontainers.log.ts'
 import { LogView } from './IsoContainersLogView.ts'
+import { EngineEvents, LiveChanges, engineLine, type DockerEvent } from './isocontainers.events.ts'
+import { apiGet, type LiveHost } from './isocontainers.api.ts'
 import {
   POINTS,
   SEVERITY_LABELS,
@@ -52,7 +54,7 @@ import {
   stateText,
   type ContainersScene,
 } from './isocontainers.draw.ts'
-import type { ContainersWorld } from './isocontainers.world.ts'
+import { rebuildWorld, type ContainersWorld } from './isocontainers.world.ts'
 import { IsoContainerBuildingComponent } from './IsoContainerBuildingComponent.ts'
 import { GATE_HEIGHT } from './IsoContainersGateComponent.ts'
 import { PLATE, regionLabelDepth } from './IsoContainersGroundComponent.ts'
@@ -64,6 +66,8 @@ export type IsoContainersSystemOptions = {
   current: string
   /** Where a custom stack came from */
   source?: string
+  /** The live stack: the API and its hosts, whose engine events are streamed into the log */
+  live?: { base: string; hosts: LiveHost[] }
   /** Why the stack asked for (API, files) didn't load: shown at the start */
   error?: string
   /** Select and fly to a container (or network, volume) at the start */
@@ -233,11 +237,17 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
 
   private readonly world: ContainersWorld
   private readonly options: IsoContainersSystemOptions
-  private readonly sim: ContainersSimulation
-  /** The event log: engine, containers and the world; simulated for now */
+  /** A new one when the live stack is rebuilt */
+  private sim: ContainersSimulation
+  /** The event log: engine, containers and the world; the engine's events are live in the live stack */
   readonly log = new LogStream()
-  private readonly logSim: LogSimulator
+  /** The simulated log lines: none in the live stack, which has the engine's own */
+  private readonly logSim?: LogSimulator
   private logView?: LogView
+  /** The streams of the engine events, one a host (live stack only) */
+  private engineEvents: EngineEvents[] = []
+  /** The containers that come and go on the live hosts */
+  private liveChanges?: LiveChanges
   private speedIndex = 2
   private $explorer?: HTMLDivElement
   private $info?: HTMLDivElement
@@ -273,12 +283,14 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.options = options
     applyLooks(world.model, this.styleRules())
     this.sim = new ContainersSimulation(world.model)
-    this.logSim = new LogSimulator(world.model, this.log)
-    this.sim.onEvent = this.logSim.hear
+    if (!options.live?.hosts.length) {
+      this.logSim = new LogSimulator(world.model, this.log)
+      this.sim.onEvent = this.logSim.hear
+    }
     // a few seconds ahead, so the city opens with traffic on the move (and a few lines in the log)
     for (let i = 0; i < 150; i++) {
       this.sim.step(1 / 30)
-      this.logSim.step(1 / 30)
+      this.logSim?.step(1 / 30)
     }
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
@@ -346,11 +358,14 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.$toast?.remove()
     this.$status?.remove()
     this.logView?.remove()
+    for (const events of this.engineEvents) events.close()
+    this.engineEvents = []
+    this.liveChanges?.close()
   }
 
   // ---- the log ----
 
-  /** The log, written over the city at the bottom right */
+  /** The log, written over the city at the bottom left */
   private createLog() {
     const $c = this._game.$container
     const { model, scene } = this.world
@@ -358,10 +373,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       hidden: () => new Set([...scene.hidden].map((e) => e.key)),
       hostName: (key) => model.environments.find((e) => e.key === key)?.name ?? key,
       showHost: model.environments.length > 1,
-      caption:
-        this.options.current === 'api'
+      caption: this.options.live?.hosts.length
+        ? `LOG · ENGINE EVENTS LIVE FROM ${this.options.live.base}`
+        : this.options.current === 'api'
           ? `LOG · ${this.options.source ?? 'API'} · EVENTS SIMULATED`
           : 'LOG · SIMULATED',
+      left: LEFT,
     })
     this.logView.setVisible(scene.showLog)
     const { model: m } = this.world
@@ -369,6 +386,119 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `loaded ${m.title.replace(/\.$/, '')}: ${m.environments.length} host${m.environments.length === 1 ? '' : 's'}, ` +
         `${m.containers.length} containers`,
     )
+    this.listenToEngines()
+  }
+
+  /** The live stack: stream each host's engine events into the log */
+  private listenToEngines() {
+    const live = this.options.live
+    if (!live) return
+    const get = apiGet(live.base)
+    // the environment of a host on the map now: a new one after each rebuild
+    const environment = (name: string) => this.world.model.environments.find((e) => e.key === name)
+    this.liveChanges = new LiveChanges({
+      spec: this.world.model.spec,
+      inspect: (alias, id) =>
+        get(`/containers/${encodeURIComponent(alias)}/containers/${encodeURIComponent(id)}`),
+      rebuild: (spec) => this.rebuild(spec),
+      environment,
+      sim: () => this.sim,
+      changed: (c) => {
+        this.updateExplorerStates()
+        if (this.world.scene.selected === c) this.renderInfo()
+        this.updateHud()
+      },
+    })
+    for (const host of live.hosts) {
+      if (!environment(host.name)) continue
+      // say when the stream is lost, and when it is back, but not each failed try
+      let lost = false
+      const names = new Map<string, string>()
+      this.engineEvents.push(
+        new EngineEvents({
+          base: live.base,
+          alias: host.alias,
+          onEvent: (e: DockerEvent) => {
+            const env = environment(host.name)
+            if (!env) return
+            const line = engineLine(e, env, names)
+            if (line) this.log.push(line)
+            this.liveChanges?.event(host.alias, host.name, e)
+          },
+          onStatus: ({ connected, error, retryIn }) => {
+            const extra = { source: 'world' as const, actor: 'engine', host: host.name }
+            if (connected) {
+              this.log.push({
+                ...extra,
+                level: 'info',
+                text: `${lost ? 'reconnected to' : 'listening to'} the events of ${host.alias}`,
+              })
+              lost = false
+            } else if (!lost) {
+              lost = true
+              this.log.push({
+                ...extra,
+                level: 'warn',
+                text: `events of ${host.alias} lost (${error}); trying again in ${retryIn}s`,
+              })
+            }
+          },
+        }),
+      )
+    }
+  }
+
+  /**
+   * The live stack changed (containers came or went): build the world again from the spec, keeping
+   * what changes over time (states, load, counts), the selection, the open host and the regions shown.
+   */
+  private rebuild(spec: ContainersSpec) {
+    const { scene } = this.world
+    const old = rebuildWorld(this.world, spec)
+    const model = this.world.model
+    applyLooks(model, this.styleRules())
+    const before = new Map(old.containers.map((c) => [c.key, c]))
+    for (const c of model.containers) {
+      const o = before.get(c.key)
+      if (o) {
+        const { state, health, exitCode, transition, cpu, mem, requests, errors, flash } = o
+        Object.assign(c, { state, health, exitCode, transition, cpu, mem, requests, errors, flash })
+      } else if (c.state === 'running') {
+        // a new container rises out of the ground
+        c.state = 'restarting'
+        c.transition = START_SECONDS
+      }
+    }
+    const volumes = new Map(old.volumes.map((v) => [v.key, v]))
+    for (const v of model.volumes) {
+      const o = volumes.get(v.key)
+      if (o) Object.assign(v, { reads: o.reads, writes: o.writes, flash: o.flash })
+    }
+    const networks = new Map(old.networks.map((n) => [n.key, n]))
+    for (const n of model.networks) n.packets = networks.get(n.key)?.packets ?? 0
+
+    const sim = new ContainersSimulation(model)
+    const { speed, paused, time, rps, eps, totalRequests, totalErrors } = this.sim
+    Object.assign(sim, { speed, paused, time, rps, eps, totalRequests, totalErrors })
+    if (this.logSim) sim.onEvent = this.logSim.hear
+    this.sim = sim
+    if (this.logSim) this.logSim.model = model
+
+    // the scene holds entities of the old model: find them again by key
+    const selected = scene.selected && model.byKey.get(scene.selected.key)
+    const host = scene.openHost && model.environments.find((e) => e.key === scene.openHost!.key)
+    scene.plates = new Map()
+    scene.hoveredPlate = undefined
+    scene.selected = undefined
+    scene.openHost = undefined
+    scene.focus = undefined
+    this.applyRegions(false)
+    this.refreshAdvice()
+    this.renderExplorer()
+    if (selected && !scene.hidden.has(selected.env)) this.select(selected)
+    else if (host && !scene.hidden.has(host)) this.openHost(host)
+    else this.select(undefined)
+    this.updateHud()
   }
 
   /** A line from the world itself: what you did */
@@ -381,7 +511,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const seconds = Math.min(deltaTime, 100) / 1000
     this.world.scene.time += seconds
     this.sim.step(seconds)
-    if (!this.sim.paused) this.logSim.step(seconds * this.sim.speed)
+    if (!this.sim.paused) this.logSim?.step(seconds * this.sim.speed)
     this.stepGlide(seconds)
     this.stepPlates(seconds)
     this.updateView()

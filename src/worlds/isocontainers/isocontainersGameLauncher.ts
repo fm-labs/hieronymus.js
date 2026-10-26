@@ -6,7 +6,7 @@ import { API_BASE, apiGet, loadFromApi } from './isocontainers.api.ts'
 import type { ContainersSpec } from './isocontainers.types.ts'
 import { parseRules, type StyleRule } from './isocontainers.styles.ts'
 import isoContainersWorldBuilder from './isocontainers.world.ts'
-import { IsoContainersSystem } from './IsoContainersSystem.ts'
+import { IsoContainersSystem, type IsoContainersSystemOptions } from './IsoContainersSystem.ts'
 
 const FONTS_URL =
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap'
@@ -38,19 +38,24 @@ async function loadFonts() {
  * ?graph=<url>[,<url>…] JSON files, one host each: docker inspect output, docker compose config output,
  * or a ContainersSpec; ?stack=<id> one of the samples (shop, fleet, states, devbox, gallery, massive).
  */
-async function loadSpec(
-  params: URLSearchParams,
-): Promise<{ spec: ContainersSpec; current: string; source?: string; error?: string }> {
+async function loadSpec(params: URLSearchParams): Promise<{
+  spec: ContainersSpec
+  current: string
+  source?: string
+  error?: string
+  live?: IsoContainersSystemOptions['live']
+}> {
   let error: string | undefined
   if (params.has('api')) {
     const base = params.get('api') || API_BASE
     try {
-      const { spec, failed } = await loadFromApi(apiGet(base), base)
+      const { spec, failed, hosts } = await loadFromApi(apiGet(base), base)
       if (failed.length) console.warn('isocontainers: hosts not loaded', failed)
       return {
         spec,
         current: 'api',
         source: base,
+        live: { base, hosts },
         error: failed.length ? `${failed.length} host(s) not loaded: ${failed[0]}` : undefined,
       }
     } catch (e) {
@@ -118,7 +123,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new CameraSystem(game))
 
   const params = new URLSearchParams(window.location.search)
-  const [{ spec, current, source, error }, styleRules] = await Promise.all([
+  const [{ spec, current, source, error, live }, styleRules] = await Promise.all([
     loadSpec(params),
     loadStyles(params),
     loadFonts(),
@@ -131,6 +136,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
       current,
       source,
       error,
+      live,
       select: params.get('select') ?? undefined,
       zoom: Number(params.get('zoom')) || undefined,
       styleRules,

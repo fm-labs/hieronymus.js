@@ -169,6 +169,7 @@ export function fromInspect(data: Json[], name = 'docker host', caption?: string
     const image = String(d.Config.Image ?? d.Image ?? '')
     containers.push({
       name: containerName,
+      id: typeof d.Id === 'string' ? d.Id : undefined,
       image,
       kind: guessKind(image, labels['com.docker.compose.service'] ?? containerName),
       state: d.State.Status,

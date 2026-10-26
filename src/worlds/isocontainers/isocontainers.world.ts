@@ -22,6 +22,48 @@ export type ContainersWorld = {
   scene: ContainersScene
   /** Everything standing (buildings, tanks, gates): moved when the plates are laid out again */
   structures: Array<{ syncPosition(): void }>
+  /** The components drawn from the model: swapped by `rebuildWorld` */
+  parts: {
+    ground: IsoContainersGroundComponent
+    overlay: IsoContainersOverlayComponent
+    /** The ids of the structures in the tile map */
+    ids: number[]
+  }
+}
+
+/** A building per container, a tank per volume and a gate per host, in the structures layer */
+function addStructures(world: Pick<ContainersWorld, 'tileMap' | 'model' | 'scene'>) {
+  const { tileMap, model, scene } = world
+  // adding an object moves it to its cell; the components sort by their own position, so set it again
+  const structures: ContainersWorld['structures'] = []
+  const ids: number[] = []
+  const place = (component: IGameComponent & { syncPosition(): void }) => {
+    ids.push(tileMap.addObjectAtGridPos(LAYER_STRUCTURES, 0, 0, component))
+    component.syncPosition()
+    structures.push(component)
+  }
+  for (const container of model.containers)
+    place(new IsoContainerBuildingComponent({ container, scene }))
+  for (const volume of model.volumes) place(new IsoContainerVolumeComponent({ volume, scene }))
+  for (const env of model.environments) place(new IsoContainersGateComponent({ env, scene }))
+  return { structures, ids }
+}
+
+/**
+ * Build the world of a changed spec into the same tile map (the live stack, when containers come and
+ * go): a new model, new structures; the ground and the overlay draw the new model. The scene stays;
+ * what it holds of the old model is for the caller to move over.
+ */
+export function rebuildWorld(world: ContainersWorld, spec: ContainersSpec): ContainersModel {
+  const old = world.model
+  for (const id of world.parts.ids) world.tileMap.removeObject(LAYER_STRUCTURES, id)
+  world.model = buildContainersModel(spec)
+  const { structures, ids } = addStructures(world)
+  world.structures = structures
+  world.parts.ids = ids
+  world.parts.ground.properties.model = world.model
+  world.parts.overlay.properties.model = world.model
+  return old
 }
 
 /** Lays out the environments and builds the world: the ground, a building per container, a tank per volume */
@@ -59,27 +101,12 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
   })
   tileMap.addLayer(LAYER_OVERLAY, { name: 'Overlay', type: 'OBJECT', data: [] })
 
-  tileMap.addTile(LAYER_GROUND, 0, 0, new IsoContainersGroundComponent({ model, scene }))
-
-  // adding an object moves it to its cell; the components sort by their own position, so set it again
-  const structures: ContainersWorld['structures'] = []
-  const place = (component: IGameComponent & { syncPosition(): void }) => {
-    tileMap.addObjectAtGridPos(LAYER_STRUCTURES, 0, 0, component)
-    component.syncPosition()
-    structures.push(component)
-  }
-  for (const container of model.containers)
-    place(new IsoContainerBuildingComponent({ container, scene }))
-  for (const volume of model.volumes) place(new IsoContainerVolumeComponent({ volume, scene }))
-  for (const env of model.environments) place(new IsoContainersGateComponent({ env, scene }))
-
-  tileMap.addObjectAtGridPos(
-    LAYER_OVERLAY,
-    0,
-    0,
-    new IsoContainersOverlayComponent({ model, scene }),
-  )
-  return { tileMap, model, scene, structures }
+  const ground = new IsoContainersGroundComponent({ model, scene })
+  tileMap.addTile(LAYER_GROUND, 0, 0, ground)
+  const { structures, ids } = addStructures({ tileMap, model, scene })
+  const overlay = new IsoContainersOverlayComponent({ model, scene })
+  tileMap.addObjectAtGridPos(LAYER_OVERLAY, 0, 0, overlay)
+  return { tileMap, model, scene, structures, parts: { ground, overlay, ids } }
 }
 
 export default isoContainersWorldBuilder

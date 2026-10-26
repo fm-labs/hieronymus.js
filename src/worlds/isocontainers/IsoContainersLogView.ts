@@ -1,5 +1,5 @@
 /**
- * The log of the 'isocontainers' world, written over the city at the bottom right: no panel and no
+ * The log of the 'isocontainers' world, written over the city at the bottom left, next to the explorer: no panel and no
  * background, only text with a dark halo, so it stays readable over the buildings; clicks pass
  * through to the map. The newest line is at the bottom; older ones fade out toward the top. Lines of
  * hidden hosts are left out.
@@ -32,6 +32,8 @@ export type LogViewOptions = {
   showHost: boolean
   /** Where the lines come from, under them: simulated, or the engine's address */
   caption: string
+  /** Where the lines start: the width of the panel on the left, in pixels */
+  left: number
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -56,9 +58,8 @@ export class LogView {
     const $el = document.createElement('div')
     // over the canvas, under the panels (z-index 10)
     $el.style.cssText =
-      `position:fixed;right:24px;bottom:68px;z-index:5;pointer-events:none;` +
-      `width:min(660px, calc(100vw - 340px));font:500 11px/1.65 ${FONT.mono};` +
-      'transition:right 0.3s ease, opacity 0.3s ease'
+      `position:fixed;left:${options.left + 14}px;bottom:68px;z-index:5;pointer-events:none;` +
+      `font:500 11px/1.65 ${FONT.mono};transition:width 0.3s ease, opacity 0.3s ease`
     $el.innerHTML =
       `<div class="isocontainers-log-lines" style="display:flex;flex-direction:column;justify-content:flex-end;` +
       `height:${LINES * 1.65 * 11}px;overflow:hidden;` +
@@ -76,6 +77,7 @@ export class LogView {
     }
     $container.appendChild($el)
     this.$el = $el
+    this.setRight(0)
     this.$lines = $el.querySelector<HTMLDivElement>('.isocontainers-log-lines')!
     this.refilter()
     this.unsubscribe = stream.subscribe((e) => this.add(e, true))
@@ -89,9 +91,9 @@ export class LogView {
     for (const e of shown.slice(-LINES)) this.add(e, false)
   }
 
-  /** Leave room for the side pane (its width in pixels, 0 when closed) */
+  /** Leave room for the side pane on the right (its width in pixels, 0 when closed) */
   setRight(px: number) {
-    this.$el.style.right = `${px + 24}px`
+    this.$el.style.width = `min(660px, calc(100vw - ${this.options.left + 14 + px + 24}px))`
   }
 
   setVisible(on: boolean) {

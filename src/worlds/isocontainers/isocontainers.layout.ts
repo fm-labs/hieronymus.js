@@ -499,6 +499,7 @@ function buildContainer(s: ContainerSpec, env: Environment): Container {
     key: `${env.key}/${s.name}`,
     env,
     name: s.name,
+    id: s.id,
     image: s.image ?? '',
     kind,
     state: s.state ?? 'running',

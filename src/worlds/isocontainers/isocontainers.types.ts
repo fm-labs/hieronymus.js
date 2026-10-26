@@ -79,6 +79,8 @@ export type MountSpec =
 
 export type ContainerSpec = {
   name: string
+  /** The engine's id of the container (docker's 64 hex digits), when it came from an engine */
+  id?: string
   image: string
   kind?: ContainerKind
   state?: ContainerState
@@ -239,6 +241,8 @@ export type Container = {
   key: string
   env: Environment
   name: string
+  /** The engine's id, when it came from an engine (e.g. to match its events) */
+  id?: string
   image: string
   kind: ContainerKind
   state: ContainerState
