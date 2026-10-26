@@ -134,6 +134,24 @@ describe('isocontainers api', () => {
     await expect(loadFromApi(fake({ '/containers/hosts': [] }))).rejects.toThrow('no connected')
   })
 
+  it('skips the hosts switched off, but always loads one', async () => {
+    const two = {
+      ...API,
+      '/containers/hosts': [{ id: 'local' }, { id: 'other', name: 'Other' }],
+    }
+    const asked: string[] = []
+    const get: ApiGet = (path) => (asked.push(path), fake(two)(path))
+    const { spec, hosts, available, failed } = await loadFromApi(get, '/mc-api', new Set(['other']))
+    expect(failed).toEqual([])
+    expect(spec.environments.map((e) => e.name)).toEqual(['local'])
+    expect(hosts).toEqual([{ alias: 'local', name: 'local' }])
+    expect(available.map((h) => h.id)).toEqual(['local', 'other'])
+    expect(asked.some((p) => p.startsWith('/containers/other/'))).toBe(false)
+    // all switched off: the first is loaded anyway
+    const all = await loadFromApi(fake(two), '/mc-api', new Set(['local', 'other']))
+    expect(all.hosts.map((h) => h.alias)).toEqual(['local'])
+  })
+
   it('tries a request again after a server error', async () => {
     let calls = 0
     const flaky: ApiGet = async (path) => {

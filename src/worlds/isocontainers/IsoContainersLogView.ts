@@ -28,8 +28,8 @@ export type LogViewOptions = {
   hidden: () => Set<string>
   /** A host's name, by its key */
   hostName: (key: string) => string
-  /** Several hosts: each line says which */
-  showHost: boolean
+  /** Several hosts: each line says which (asked for each line: hosts come and go in the live stack) */
+  showHost: () => boolean
   /** Where the lines come from, under them: simulated, or the engine's address */
   caption: string
   /** Where the lines start: the width of the panel on the left, in pixels */
@@ -111,14 +111,14 @@ export class LogView {
     $line.style.cssText =
       'display:flex;gap:10px;white-space:nowrap;' +
       'text-shadow:0 0 3px #05080a, 0 0 6px #05080a, 0 0 12px rgba(5,8,10,0.9)'
-    const who = [
-      this.options.showHost && e.host ? this.options.hostName(e.host) : '',
-      e.actor ?? '',
-    ].filter(Boolean)
+    const showHost = this.options.showHost()
+    const who = [showHost && e.host ? this.options.hostName(e.host) : '', e.actor ?? ''].filter(
+      Boolean,
+    )
     const mark = e.source === 'engine' ? '◆' : e.source === 'world' ? '▸' : '·'
     $line.innerHTML =
       `<span style="color:${COLORS.faint};flex:none">${clock(e.time)}</span>` +
-      `<span style="flex:none;width:${this.options.showHost ? 230 : 120}px;overflow:hidden;text-overflow:ellipsis;color:${SOURCE_COLORS[e.source]}">` +
+      `<span style="flex:none;width:${showHost ? 230 : 120}px;overflow:hidden;text-overflow:ellipsis;color:${SOURCE_COLORS[e.source]}">` +
       `<span style="opacity:0.8">${mark}</span> ` +
       who
         .map((w, i) =>

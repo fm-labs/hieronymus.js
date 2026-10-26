@@ -2,7 +2,7 @@ import type { GameConfig } from '../../../lib/game.types'
 import { CameraSystem, Game, InputSystem, TileMapSystem } from '../../../lib'
 import { SAMPLES } from './isocontainers.samples.ts'
 import { toEnvironments } from './isocontainers.import.ts'
-import { API_BASE, apiGet, loadFromApi } from './isocontainers.api.ts'
+import { API_BASE, apiGet, loadFromApi, loadHiddenHosts } from './isocontainers.api.ts'
 import type { ContainersSpec } from './isocontainers.types.ts'
 import { parseRules, type StyleRule } from './isocontainers.styles.ts'
 import isoContainersWorldBuilder from './isocontainers.world.ts'
@@ -49,13 +49,17 @@ async function loadSpec(params: URLSearchParams): Promise<{
   if (params.has('api')) {
     const base = params.get('api') || API_BASE
     try {
-      const { spec, failed, hosts } = await loadFromApi(apiGet(base), base)
+      const { spec, failed, hosts, available } = await loadFromApi(
+        apiGet(base),
+        base,
+        loadHiddenHosts(),
+      )
       if (failed.length) console.warn('isocontainers: hosts not loaded', failed)
       return {
         spec,
         current: 'api',
         source: base,
-        live: { base, hosts },
+        live: { base, hosts, available },
         error: failed.length ? `${failed.length} host(s) not loaded: ${failed[0]}` : undefined,
       }
     } catch (e) {

@@ -24,7 +24,14 @@ import { ContainersSimulation, START_SECONDS } from './isocontainers.sim.ts'
 import { LogSimulator, LogStream, type LogInput } from './isocontainers.log.ts'
 import { LogView } from './IsoContainersLogView.ts'
 import { EngineEvents, LiveChanges, engineLine, type DockerEvent } from './isocontainers.events.ts'
-import { apiGet, type LiveHost } from './isocontainers.api.ts'
+import {
+  apiGet,
+  liveHeadline,
+  loadHost,
+  saveHiddenHosts,
+  type ApiHost,
+  type LiveHost,
+} from './isocontainers.api.ts'
 import {
   POINTS,
   SEVERITY_LABELS,
@@ -66,8 +73,11 @@ export type IsoContainersSystemOptions = {
   current: string
   /** Where a custom stack came from */
   source?: string
-  /** The live stack: the API and its hosts, whose engine events are streamed into the log */
-  live?: { base: string; hosts: LiveHost[] }
+  /**
+   * The live stack: the API and its hosts shown, whose engine events are streamed into the log, and
+   * all its connected hosts (to switch on and off)
+   */
+  live?: { base: string; hosts: LiveHost[]; available?: ApiHost[] }
   /** Why the stack asked for (API, files) didn't load: shown at the start */
   error?: string
   /** Select and fly to a container (or network, volume) at the start */
@@ -244,8 +254,10 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   /** The simulated log lines: none in the live stack, which has the engine's own */
   private readonly logSim?: LogSimulator
   private logView?: LogView
-  /** The streams of the engine events, one a host (live stack only) */
-  private engineEvents: EngineEvents[] = []
+  /** The streams of the engine events, by host alias (live stack only) */
+  private engineEvents = new Map<string, EngineEvents>()
+  /** The live hosts being loaded, by alias: switched on, not on the map yet */
+  private loadingHosts = new Set<string>()
   /** The containers that come and go on the live hosts */
   private liveChanges?: LiveChanges
   private speedIndex = 2
@@ -358,8 +370,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.$toast?.remove()
     this.$status?.remove()
     this.logView?.remove()
-    for (const events of this.engineEvents) events.close()
-    this.engineEvents = []
+    for (const events of this.engineEvents.values()) events.close()
+    this.engineEvents.clear()
     this.liveChanges?.close()
   }
 
@@ -372,7 +384,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.logView = new LogView($c, this.log, {
       hidden: () => new Set([...scene.hidden].map((e) => e.key)),
       hostName: (key) => model.environments.find((e) => e.key === key)?.name ?? key,
-      showHost: model.environments.length > 1,
+      showHost: () => this.world.model.environments.length > 1,
       caption: this.options.live?.hosts.length
         ? `LOG · ENGINE EVENTS LIVE FROM ${this.options.live.base}`
         : this.options.current === 'api'
@@ -389,19 +401,22 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.listenToEngines()
   }
 
+  /** The environment of a host on the map now (a new one after each rebuild) */
+  private environment(name: string) {
+    return this.world.model.environments.find((e) => e.key === name)
+  }
+
   /** The live stack: stream each host's engine events into the log */
   private listenToEngines() {
     const live = this.options.live
     if (!live) return
     const get = apiGet(live.base)
-    // the environment of a host on the map now: a new one after each rebuild
-    const environment = (name: string) => this.world.model.environments.find((e) => e.key === name)
     this.liveChanges = new LiveChanges({
       spec: this.world.model.spec,
       inspect: (alias, id) =>
         get(`/containers/${encodeURIComponent(alias)}/containers/${encodeURIComponent(id)}`),
       rebuild: (spec) => this.rebuild(spec),
-      environment,
+      environment: (name) => this.environment(name),
       sim: () => this.sim,
       changed: (c) => {
         this.updateExplorerStates()
@@ -409,43 +424,116 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         this.updateHud()
       },
     })
-    for (const host of live.hosts) {
-      if (!environment(host.name)) continue
-      // say when the stream is lost, and when it is back, but not each failed try
-      let lost = false
-      const names = new Map<string, string>()
-      this.engineEvents.push(
-        new EngineEvents({
-          base: live.base,
-          alias: host.alias,
-          onEvent: (e: DockerEvent) => {
-            const env = environment(host.name)
-            if (!env) return
-            const line = engineLine(e, env, names)
-            if (line) this.log.push(line)
-            this.liveChanges?.event(host.alias, host.name, e)
-          },
-          onStatus: ({ connected, error, retryIn }) => {
-            const extra = { source: 'world' as const, actor: 'engine', host: host.name }
-            if (connected) {
-              this.log.push({
-                ...extra,
-                level: 'info',
-                text: `${lost ? 'reconnected to' : 'listening to'} the events of ${host.alias}`,
-              })
-              lost = false
-            } else if (!lost) {
-              lost = true
-              this.log.push({
-                ...extra,
-                level: 'warn',
-                text: `events of ${host.alias} lost (${error}); trying again in ${retryIn}s`,
-              })
-            }
-          },
-        }),
-      )
+    for (const host of live.hosts) if (this.environment(host.name)) this.connectEngine(host)
+  }
+
+  /** Stream a live host's engine events: into the log, and the changes onto the map */
+  private connectEngine(host: LiveHost) {
+    const live = this.options.live!
+    // say when the stream is lost, and when it is back, but not each failed try
+    let lost = false
+    const names = new Map<string, string>()
+    this.engineEvents.get(host.alias)?.close()
+    this.engineEvents.set(
+      host.alias,
+      new EngineEvents({
+        base: live.base,
+        alias: host.alias,
+        onEvent: (e: DockerEvent) => {
+          const env = this.environment(host.name)
+          if (!env) return
+          const line = engineLine(e, env, names)
+          if (line) this.log.push(line)
+          this.liveChanges?.event(host.alias, host.name, e)
+        },
+        onStatus: ({ connected, error, retryIn }) => {
+          const extra = { source: 'world' as const, actor: 'engine', host: host.name }
+          if (connected) {
+            this.log.push({
+              ...extra,
+              level: 'info',
+              text: `${lost ? 'reconnected to' : 'listening to'} the events of ${host.alias}`,
+            })
+            lost = false
+          } else if (!lost) {
+            lost = true
+            this.log.push({
+              ...extra,
+              level: 'warn',
+              text: `events of ${host.alias} lost (${error}); trying again in ${retryIn}s`,
+            })
+          }
+        },
+      }),
+    )
+  }
+
+  /**
+   * Switch a live host on or off. Off: its event stream is closed and its plate taken away. On: it
+   * is loaded from the API, built into the city and its events streamed. One host always stays on.
+   */
+  private async toggleHost(alias: string) {
+    const live = this.options.live
+    const api = live?.available?.find((h) => h.id === alias)
+    if (!live || !api || this.loadingHosts.has(alias)) return
+    const spec = this.world.model.spec
+    const shown = live.hosts.find((h) => h.alias === alias)
+    if (shown) {
+      if (live.hosts.length === 1) {
+        this.toast('ONE HOST STAYS ON', { color: COLORS.muted })
+        return
+      }
+      this.engineEvents.get(alias)?.close()
+      this.engineEvents.delete(alias)
+      live.hosts = live.hosts.filter((h) => h !== shown)
+      spec.environments = spec.environments.filter((e) => e.name !== shown.name)
+      this.say(`hide host ${shown.name}; its events are closed`)
+      Object.assign(spec, liveHeadline(spec.environments))
+      this.saveHosts()
+      this.rebuild(spec)
+      this.fitView()
+      return
     }
+    const host: LiveHost = { alias, name: api.name || alias }
+    this.loadingHosts.add(alias)
+    this.say(`show host ${host.name}: loading`)
+    this.renderExplorer()
+    try {
+      const env = await loadHost(apiGet(live.base), api)
+      // in the order of the API's list
+      const order = (name: string) => live.available!.findIndex((h) => (h.name || h.id) === name)
+      spec.environments = [...spec.environments.filter((e) => e.name !== env.name), env].sort(
+        (a, b) => order(a.name) - order(b.name),
+      )
+      live.hosts = [...live.hosts, host].sort((a, b) => order(a.name) - order(b.name))
+      Object.assign(spec, liveHeadline(spec.environments))
+      this.saveHosts()
+      this.rebuild(spec)
+      this.connectEngine(host)
+      this.say(
+        `host ${host.name} shown: ${env.containers?.length ?? 0} containers; listening to its events`,
+      )
+      this.fitView()
+    } catch (e) {
+      const message = (e as Error).message
+      this.log.push({
+        source: 'world',
+        level: 'error',
+        actor: 'you',
+        text: `host ${host.name} not loaded: ${message}`,
+      })
+      this.toast(`HOST ${host.name.toUpperCase()} NOT LOADED`, { color: COLORS.red })
+    } finally {
+      this.loadingHosts.delete(alias)
+      this.renderExplorer()
+    }
+  }
+
+  /** Remember the live hosts switched off, for the next load */
+  private saveHosts() {
+    const live = this.options.live!
+    const on = new Set(live.hosts.map((h) => h.alias))
+    saveHiddenHosts(new Set((live.available ?? []).map((h) => h.id).filter((id) => !on.has(id))))
   }
 
   /**
@@ -1084,6 +1172,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         'volumes',
       )}</div>` +
       this.regionChips() +
+      this.hostChips() +
       `<div class="isocontainers-rating" title="The advisor (A)" style="display:flex;align-items:center;padding:10px 16px;cursor:pointer;` +
       `border-bottom:1px solid rgba(255,255,255,0.06)"></div>` +
       `<div class="isocontainers-tree" style="overflow-y:auto;padding:4px 8px 12px;flex:1"></div>`
@@ -1093,6 +1182,9 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     })
     $panel.querySelectorAll<HTMLButtonElement>('.isocontainers-region').forEach(($chip) => {
       $chip.onclick = (e) => this.toggleRegion($chip.dataset.region!, e.shiftKey || e.altKey)
+    })
+    $panel.querySelectorAll<HTMLButtonElement>('.isocontainers-host').forEach(($chip) => {
+      $chip.onclick = () => void this.toggleHost($chip.dataset.alias!)
     })
     const $all = $panel.querySelector<HTMLSpanElement>('.isocontainers-regions-all')
     if ($all) $all.onclick = () => this.showRegions(new Set())
@@ -1179,6 +1271,39 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       (hidden.size
         ? `<span class="isocontainers-regions-all" title="Show all regions" style="margin-left:auto;cursor:pointer;color:${COLORS.green}">SHOW ALL</span>`
         : '') +
+      `</div><div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div></div>`
+    )
+  }
+
+  /** The live stack's hosts, as chips to show (load, stream) or hide; nothing for one host */
+  private hostChips(): string {
+    const live = this.options.live
+    const available = live?.available ?? []
+    if (available.length < 2) return ''
+    const on = new Set(live!.hosts.map((h) => h.alias))
+    const chips = available
+      .map((h) => {
+        const name = h.name || h.id
+        const loading = this.loadingHosts.has(h.id)
+        const shown = on.has(h.id) || loading
+        const color = COLORS.green
+        return (
+          `<button class="isocontainers-host" data-alias="${escapeHtml(h.id)}" ` +
+          `title="${shown ? 'Hide' : 'Show'} ${escapeHtml(name)}: ${shown ? 'its plate goes and its events are closed' : 'loaded from the API, with its live events'}" ` +
+          `style="display:flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:12px;cursor:${loading ? 'progress' : 'pointer'};` +
+          `font:600 10px ${FONT.mono};letter-spacing:0.5px;text-transform:uppercase;max-width:100%;` +
+          `color:${shown ? color : COLORS.faint};background:${shown ? hexAlpha(color, 0.1) : 'transparent'};` +
+          `border:1px solid ${shown ? hexAlpha(color, 0.45) : 'rgba(255,255,255,0.1)'};opacity:${loading ? 0.6 : 1}">` +
+          `<span style="width:7px;height:7px;border-radius:2px;flex:none;` +
+          `background:${shown ? color : 'transparent'};border:1px solid ${shown ? color : COLORS.faint}"></span>` +
+          `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}${loading ? ' …' : ''}</span></button>`
+        )
+      })
+      .join('')
+    return (
+      `<div style="padding:10px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">` +
+      `<div style="display:flex;align-items:baseline;${MONO_LABEL};margin-bottom:8px">HOSTS` +
+      `<span style="margin-left:8px;color:${COLORS.faint}">${on.size}/${available.length} · LIVE EVENTS</span>` +
       `</div><div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div></div>`
     )
   }

@@ -368,6 +368,7 @@ Today every value that changes over time is **simulated**. A real source changes
 | Accepted advice ids | `localStorage['isocontainers.accepted.v1']` |
 | Flags switch, host links switch, log switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']`, `['isocontainers.log.v1']` |
 | The log's lines (the last 500) | `IsoContainersSystem.log` (`LogStream`) |
+| Live hosts switched off (not loaded, no event stream) | `localStorage['isocontainers.hosts.v1']` (`[alias, …]`) |
 | Regions switched off, by stack | `localStorage['isocontainers.regions.v1']` (`{ [stack]: [region, …] }`); their hosts in `scene.hidden` |
 | The host open in the side pane, the one under the pointer, the pane's tab | `scene.openHost`, `scene.hoveredHost`, `IsoContainersSystem.hostTab` |
 | The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
@@ -470,6 +471,14 @@ The responses go through `fromInspect()` unchanged, apart from the sizes merged 
 so an API host is read like a `docker inspect` file. Each host is one environment named by the
 host's `name` (or `id`). The API caches its answers (30 s, `df` 60 s), so a reload shows changes
 with that delay.
+
+### Choosing the hosts
+
+With more than one connected host, the explorer has a HOSTS chip per host. A host switched off is
+not loaded and its event stream is not opened: clicking its chip off closes the stream and takes
+its plate away (a rebuild), and clicking it on loads it (`loadHost()`), builds it into the city and
+opens its stream. The hosts switched off are kept in `localStorage['isocontainers.hosts.v1']` and
+skipped on the next load (`loadFromApi(get, base, hidden)`); one host always stays on.
 
 When a host fails, the others still load and a message says which one failed. When nothing loads
 (the API is down, the key is wrong, no proxy), the first sample opens with a message saying why.

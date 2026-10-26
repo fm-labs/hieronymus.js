@@ -171,21 +171,58 @@ export async function loadHost(
   }
 }
 
+/** The title and subtitle of the live stack, from its hosts */
+export function liveHeadline(environments: EnvironmentSpec[]): { title: string; subtitle: string } {
+  const containers = environments.reduce((n, e) => n + (e.containers?.length ?? 0), 0)
+  const running = environments.reduce(
+    (n, e) => n + (e.containers?.filter((c) => c.state === 'running').length ?? 0),
+    0,
+  )
+  return {
+    title: environments.length > 1 ? `${environments.length} hosts.` : `${environments[0]?.name}.`,
+    subtitle: `Live: ${containers} containers, ${running} running`,
+  }
+}
+
 /** A loaded host: its alias in the API, and the name of its environment */
 export type LiveHost = { alias: string; name: string }
 
+/** The hosts switched off in the live stack, by their alias (they are not loaded) */
+const HOSTS_STORAGE = 'isocontainers.hosts.v1'
+
+export function loadHiddenHosts(): Set<string> {
+  try {
+    const list = JSON.parse(localStorage.getItem(HOSTS_STORAGE) ?? '[]')
+    return new Set(Array.isArray(list) ? list.filter((a) => typeof a === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function saveHiddenHosts(aliases: Set<string>) {
+  try {
+    localStorage.setItem(HOSTS_STORAGE, JSON.stringify([...aliases]))
+  } catch {
+    // no storage: the choice lasts until the page is reloaded
+  }
+}
+
 /**
- * All connected hosts of the API, as a spec. A host that fails to load is left out (and reported);
- * when none loads, the first error is thrown.
+ * The connected hosts of the API, as a spec: all of them but those switched off (`hidden`, by alias;
+ * when that is all of them, the first is loaded anyway). A host that fails to load is left out (and
+ * reported); when none loads, the first error is thrown. `available` lists every connected host.
  */
 export async function loadFromApi(
   get: ApiGet,
   base = API_BASE,
-): Promise<{ spec: ContainersSpec; failed: string[]; hosts: LiveHost[] }> {
-  const hosts = list(await get('/containers/hosts')).filter(
+  hidden: Set<string> = new Set(),
+): Promise<{ spec: ContainersSpec; failed: string[]; hosts: LiveHost[]; available: ApiHost[] }> {
+  const available = list(await get('/containers/hosts')).filter(
     (h): h is ApiHost & Json => typeof h.id === 'string' && h.connected !== false,
   )
-  if (!hosts.length) throw new ApiError(`${base}: no connected container hosts`)
+  if (!available.length) throw new ApiError(`${base}: no connected container hosts`)
+  const shown = available.filter((h) => !hidden.has(h.id))
+  const hosts = shown.length ? shown : available.slice(0, 1)
   const results = await Promise.allSettled(hosts.map((h) => loadHost(get, h)))
   const environments = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
   const failed = results.flatMap((r, i) =>
@@ -196,16 +233,10 @@ export async function loadFromApi(
   )
   if (!environments.length)
     throw results.find((r): r is PromiseRejectedResult => r.status === 'rejected')!.reason
-  const containers = environments.reduce((n, e) => n + (e.containers?.length ?? 0), 0)
-  const running = environments.reduce(
-    (n, e) => n + (e.containers?.filter((c) => c.state === 'running').length ?? 0),
-    0,
-  )
   return {
     spec: {
       id: 'api',
-      title: environments.length > 1 ? `${environments.length} hosts.` : `${environments[0].name}.`,
-      subtitle: `Live: ${containers} containers, ${running} running`,
+      ...liveHeadline(environments),
       description:
         'Loaded from the mission-control API. The containers, networks, volumes and their states are ' +
         'real, and the log shows the live engine events; the traffic, cpu and memory are simulated. ' +
@@ -214,5 +245,6 @@ export async function loadFromApi(
     },
     failed,
     hosts: loaded,
+    available,
   }
 }
