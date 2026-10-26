@@ -392,15 +392,8 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
       'background:rgba(15,20,34,0.86);color:#e8ecf4;font:12px/1.5 "Helvetica Neue",Arial,sans-serif;' +
       'border-radius:10px;border:1px solid rgba(255,153,0,0.35);' +
       'box-shadow:0 6px 24px rgba(0,0,0,0.35);backdrop-filter:blur(6px)'
-    // scrolling a panel must not pan the map: the engine listens for the wheel on the window
-    $panel.addEventListener(
-      'wheel',
-      (e) => {
-        e.stopPropagation()
-        if (e.ctrlKey || e.metaKey) e.preventDefault()
-      },
-      { passive: false },
-    )
+    // the wheel scrolls the panel, not the map
+    $panel.dataset.nativeScroll = ''
     this._game.$container.appendChild($panel)
     return $panel
   }

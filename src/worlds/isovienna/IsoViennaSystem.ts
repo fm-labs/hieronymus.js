@@ -88,7 +88,6 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
     this.handleDoubleClick = this.handleDoubleClick.bind(this)
-    this.preventPageZoom = this.preventPageZoom.bind(this)
   }
 
   public onLoad() {
@@ -102,10 +101,6 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     this._game.eventbus.on('mouse.mousedown', this.handleMouseDown)
     this._game.eventbus.on('mouse.dblclick', this.handleDoubleClick)
     this.previousBackground = this._game.$container.style.background
-    // ctrl + wheel and pinch zoom the map, not the page: a zoomed page would scroll the panels out of view
-    window.addEventListener('wheel', this.preventPageZoom, { passive: false })
-    window.addEventListener('gesturestart', this.preventPageZoom)
-    window.addEventListener('gesturechange', this.preventPageZoom)
     this.previousOverflow = this._game.$container.style.overflow
     this._game.$container.style.overflow = 'hidden'
     this.$hud = this.createPanel('left:10px;bottom:10px;width:auto;transition:left 0.3s ease')
@@ -124,9 +119,6 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     this._game.eventbus.off('mouse.mousedown', this.handleMouseDown)
     this._game.eventbus.off('mouse.dblclick', this.handleDoubleClick)
     this._game.$container.style.background = this.previousBackground
-    window.removeEventListener('wheel', this.preventPageZoom)
-    window.removeEventListener('gesturestart', this.preventPageZoom)
-    window.removeEventListener('gesturechange', this.preventPageZoom)
     this._game.$container.style.overflow = this.previousOverflow
     this.$hud?.remove()
     this.pane?.remove()
@@ -403,11 +395,6 @@ export class IsoViennaSystem extends AbstractGameSystem implements IGameSystem {
     else return
     this.updateSky()
     this.updateHud()
-  }
-
-  /** Stop the browser from zooming the page (ctrl + wheel, trackpad pinch, Safari gestures) */
-  private preventPageZoom(e: Event) {
-    if (!(e instanceof WheelEvent) || e.ctrlKey || e.metaKey) e.preventDefault()
   }
 
   private handleMouseDown(e: MouseEvent) {

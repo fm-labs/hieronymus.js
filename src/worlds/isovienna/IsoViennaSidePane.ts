@@ -40,15 +40,8 @@ export class IsoViennaSidePane {
       `overflow-y:auto;overscroll-behavior:contain;background:rgba(251,247,238,0.97);color:${INK};` +
       `font:13px/1.5 Georgia,serif;border-right:1px solid ${GOLD};box-shadow:4px 0 18px rgba(40,25,10,0.25);` +
       'transform:translateX(-105%);transition:transform 0.3s ease;visibility:hidden'
-    // scrolling the pane must not pan the map: the engine listens for the wheel on the window
-    this.$pane.addEventListener(
-      'wheel',
-      (e) => {
-        e.stopPropagation()
-        if (e.ctrlKey || e.metaKey) e.preventDefault()
-      },
-      { passive: false },
-    )
+    // the wheel scrolls the pane, not the map
+    this.$pane.dataset.nativeScroll = ''
 
     // the Austrian flag
     const $stripe = document.createElement('div')
