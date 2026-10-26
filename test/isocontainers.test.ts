@@ -3,6 +3,7 @@ import {
   buildContainersModel,
   parsePort,
   parseSize,
+  placeEnvironments,
   pointAlong,
 } from '../src/worlds/isocontainers/isocontainers.layout'
 import {
@@ -365,5 +366,80 @@ describe('isocontainers states', () => {
     // frozen and crash looping containers send nothing
     for (const name of ['scheduler', 'worker'])
       expect(c(name).out.every((l) => l.pulses.length === 0)).toBe(true)
+  })
+})
+
+describe('isocontainers regions', () => {
+  const massive = () => buildContainersModel(SAMPLES.find((s) => s.id === 'massive')!)
+  /** The screen box of a plate */
+  const box = (e: ContainersModel['environments'][number]) => {
+    const xs = [e.col - e.row - e.rows, e.col + e.cols - e.row]
+    const ys = [e.col + e.row, e.col + e.cols + e.row + e.rows]
+    return { x0: xs[0], x1: xs[1], y0: ys[0], y1: ys[1] }
+  }
+  const apart = (a: ReturnType<typeof box>, b: ReturnType<typeof box>) =>
+    a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0
+
+  it('groups the hosts by region, each with its own color', () => {
+    const model = massive()
+    expect(model.regions.map((r) => r.name)).toEqual([
+      'eu-west',
+      'us-east',
+      'ap-south',
+      'us-west',
+      'sa-east',
+      'global',
+    ])
+    expect(new Set(model.regions.map((r) => r.color)).size).toBe(6)
+    expect(model.regions[0].environments).toHaveLength(12)
+    for (const env of model.environments) expect(env.region?.environments).toContain(env)
+  })
+
+  it('keeps the plates of a region together, apart from the other regions', () => {
+    const model = massive()
+    const [a, b] = model.regions
+    // every plate of a region is nearer to its own region's plates than to another's
+    const center = (e: (typeof a.environments)[number]) => [e.col + e.cols / 2, e.row + e.rows / 2]
+    const spread = (envs: typeof a.environments) => {
+      const cs = envs.map(center)
+      return [
+        cs.reduce((s, c) => s + c[0], 0) / cs.length,
+        cs.reduce((s, c) => s + c[1], 0) / cs.length,
+      ]
+    }
+    const [ca, cb] = [spread(a.environments), spread(b.environments)]
+    for (const e of a.environments) {
+      const [x, y] = center(e)
+      expect(Math.hypot(x - ca[0], y - ca[1])).toBeLessThan(Math.hypot(x - cb[0], y - cb[1]))
+    }
+    // no two plates overlap on screen
+    const envs = model.environments
+    for (let i = 0; i < envs.length; i++)
+      for (let j = i + 1; j < envs.length; j++) expect(apart(box(envs[i]), box(envs[j]))).toBe(true)
+    for (const r of model.regions) expect(r.outline.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('lays out only the regions shown, closed up', () => {
+    const model = massive()
+    const before = Math.max(...model.environments.map((e) => e.col + e.cols))
+    const shown = model.regions[4].environments
+    placeEnvironments(model, shown)
+    expect(Math.max(...shown.map((e) => e.col + e.cols))).toBeLessThan(before / 2)
+    expect(model.regions[4].outline.length).toBeGreaterThanOrEqual(4)
+    expect(model.regions[0].outline).toEqual([])
+    // the links are routed again: a call on a shown host starts at its new place
+    const link = model.links.find((l) => l.from?.env === shown[0] && l.path.length)!
+    const [c, r] = link.path[0]
+    const env = shown[0]
+    expect(c).toBeGreaterThanOrEqual(env.col)
+    expect(c).toBeLessThanOrEqual(env.col + env.cols)
+    expect(r).toBeGreaterThanOrEqual(env.row)
+    expect(r).toBeLessThanOrEqual(env.row + env.rows)
+  })
+
+  it('places hosts without regions as before', () => {
+    const model = buildContainersModel(SAMPLES.find((s) => s.id === 'fleet')!)
+    expect(model.regions).toEqual([])
+    expect(model.environments.every((e) => !e.region)).toBe(true)
   })
 })

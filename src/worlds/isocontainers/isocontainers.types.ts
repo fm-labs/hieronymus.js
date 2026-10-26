@@ -177,6 +177,8 @@ export type EnvironmentSpec = {
   caption?: string
   /** The container engine, when the host was read from its API */
   engine?: EngineSpec
+  /** The region (or site, cluster) of the host: the hosts of a region are grouped on the map */
+  region?: string
   containers?: ContainerSpec[]
   networks?: NetworkSpec[]
   volumes?: VolumeSpec[]
@@ -352,6 +354,7 @@ export type Environment = {
   name: string
   caption?: string
   engine?: EngineSpec
+  region?: Region
   containers: Container[]
   networks: Network[]
   volumes: Volume[]
@@ -410,6 +413,15 @@ export type Link = {
   timer: number
 }
 
+/** The hosts of one region, grouped on the map; its outline is set by the layout (empty while hidden) */
+export type Region = {
+  name: string
+  color: string
+  environments: Environment[]
+  /** The outline around its plates, on the plane, in cells; empty when hidden */
+  outline: GridPoint[]
+}
+
 export type ContainersModel = {
   spec: ContainersSpec
   title: string
@@ -421,6 +433,8 @@ export type ContainersModel = {
   volumes: Volume[]
   links: Link[]
   byKey: Map<string, Container | Network | Volume>
+  /** The regions of the hosts, in the order they first appear; none when no host names one */
+  regions: Region[]
   columns: number
   rows: number
 }

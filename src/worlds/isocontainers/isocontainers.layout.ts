@@ -27,6 +27,7 @@ import {
   type MountSpec,
   type Network,
   type Port,
+  type Region,
   type SizeClass,
   type Volume,
 } from './isocontainers.types.ts'
@@ -169,15 +170,16 @@ export function buildContainersModel(
     buildLinks(env, spec.environments[i], environments),
   )
 
+  const regions = buildRegions(environments, spec.environments)
   for (const env of environments) layoutEnvironment(env, 0, 0)
-  placeEnvironments(environments)
 
   const containers = environments.flatMap((e) => e.containers)
   for (const c of containers) {
     c.look = resolveLook(c, styleRules)
     c.height = Math.round(c.baseHeight * c.look.scale)
   }
-  for (const link of links) route(link)
+  placeEnvironments({ links, regions }, environments)
+  const margin = LOT.margin + (regions.length ? REGION_PAD : 0)
 
   return {
     spec,
@@ -190,41 +192,164 @@ export function buildContainersModel(
     volumes: environments.flatMap((e) => e.volumes),
     links,
     byKey,
-    columns: Math.ceil(Math.max(10, ...environments.map((e) => e.col + e.cols)) + LOT.margin),
-    rows: Math.ceil(Math.max(10, ...environments.map((e) => e.row + e.rows)) + LOT.margin),
+    regions,
+    columns: Math.ceil(Math.max(10, ...environments.map((e) => e.col + e.cols)) + margin),
+    rows: Math.ceil(Math.max(10, ...environments.map((e) => e.row + e.rows)) + margin),
   }
 }
 
+/** The colors of the regions, in order: none of them green (hover, selection) or red (trouble) */
+export const REGION_COLORS = [
+  '#38bdf8',
+  '#c084fc',
+  '#fb923c',
+  '#f472b6',
+  '#2dd4bf',
+  '#facc15',
+  '#818cf8',
+]
+
+/** The regions named by the hosts, in the order they first appear */
+function buildRegions(environments: Environment[], specs: EnvironmentSpec[]): Region[] {
+  const regions = new Map<string, Region>()
+  environments.forEach((env, i) => {
+    const name = specs[i].region?.trim()
+    if (!name) return
+    let region = regions.get(name)
+    if (!region) {
+      region = {
+        name,
+        color: REGION_COLORS[regions.size % REGION_COLORS.length],
+        environments: [],
+        outline: [],
+      }
+      regions.set(name, region)
+    }
+    region.environments.push(env)
+    env.region = region
+  })
+  return [...regions.values()]
+}
+
+/** Room around the plates of a region, in cells: its outline on the floor */
+const REGION_PAD = 3
+/** Room under a region for its name, in pixels: the name at its largest (zoomed far out) fits */
+export const REGION_LABEL_ROOM = 640
+
+/** The screen box of a plate, in pixels: x = (col - row) * 32, y = (col + row) * 16 */
+const screenSize = (e: Environment): [number, number] => [
+  (e.cols + e.rows) * 32,
+  (e.cols + e.rows) * 16,
+]
+
 /**
- * The plates in lines on screen, left to right and top to bottom (up to three in a line, a square-ish
- * grid for more). Plates whose screen boxes don't overlap don't overlap on the grid either.
+ * Boxes in lines on screen, left to right and top to bottom (up to three in a line, a square-ish grid
+ * for more), each line centered: the size of it all and the center of each box.
  */
-function placeEnvironments(environments: Environment[]) {
-  const n = environments.length
+function arrange(sizes: Array<[number, number]>, gapX: number, gapY: number) {
+  const n = sizes.length
   const perLine = n <= 3 ? n : Math.ceil(Math.sqrt(n))
-  // the screen box of a plate, in pixels: x = (col - row) * 32, y = (col + row) * 16
-  const size = (e: Environment) => [(e.cols + e.rows) * 32, (e.cols + e.rows) * 16]
-  const [gapX, gapY] = [LOT.envGap * 40, LOT.envGap * 24]
-  let y = 0
+  const centers: Array<[number, number]> = []
+  let [width, y] = [0, 0]
   for (let i = 0; i < n; i += perLine) {
-    const line = environments.slice(i, i + perLine)
-    const height = Math.max(...line.map((e) => size(e)[1]))
-    const total = line.reduce((w, e) => w + size(e)[0], 0) + gapX * (line.length - 1)
+    const line = sizes.slice(i, i + perLine)
+    const height = Math.max(...line.map(([, h]) => h))
+    const total = line.reduce((w, [lw]) => w + lw, 0) + gapX * (line.length - 1)
+    width = Math.max(width, total)
     let x = -total / 2
-    for (const env of line) {
-      const [w] = size(env)
-      // the screen center of the box → the grid center of the plate
-      const [sx, sy] = [x + w / 2, y + height / 2]
-      const cc = (sx / 32 + sy / 16) / 2
-      const rc = (sy / 16 - sx / 32) / 2
-      shiftEnvironment(env, cc - env.cols / 2 - env.col, rc - env.rows / 2 - env.row)
+    for (const [w] of line) {
+      centers.push([x + w / 2, y + height / 2])
       x += w + gapX
     }
     y += height + gapY
   }
+  return { width, height: y - gapY, centers }
+}
+
+/**
+ * The plates on screen, so that plates whose screen boxes don't overlap don't overlap on the grid
+ * either. The hosts of a region stay together: the plates of each region in lines, the regions in
+ * lines of their own, farther apart. Only the given environments are placed (the others are hidden);
+ * then the links are routed again and the outlines of the regions set.
+ */
+export function placeEnvironments(
+  model: Pick<ContainersModel, 'links' | 'regions'>,
+  environments: Environment[],
+) {
+  if (!environments.length) return
+  const [gapX, gapY] = [LOT.envGap * 40, LOT.envGap * 24]
+  // the hosts of each region, then those of none
+  const groups: Environment[][] = model.regions
+    .map((r) => r.environments.filter((e) => environments.includes(e)))
+    .filter((g) => g.length)
+  const loose = environments.filter((e) => !e.region)
+  if (loose.length) groups.push(loose)
+
+  const clusters = groups.map((g) => arrange(g.map(screenSize), gapX, gapY))
+  // between regions: their outlines, and below each its name (which grows when zoomed out)
+  const pad = REGION_PAD * 48
+  const outer = arrange(
+    clusters.map((c) => [c.width + 2 * pad, c.height + 2 * pad]),
+    gapX * 1.2,
+    REGION_LABEL_ROOM,
+  )
+  groups.forEach((group, k) => {
+    const [ox, oy] = outer.centers[k]
+    const cluster = clusters[k]
+    group.forEach((env, i) => {
+      const [cx, cy] = cluster.centers[i]
+      // the screen center of the box → the grid center of the plate
+      const [sx, sy] = [ox + cx, oy - cluster.height / 2 + cy]
+      const cc = (sx / 32 + sy / 16) / 2
+      const rc = (sy / 16 - sx / 32) / 2
+      shiftEnvironment(env, cc - env.cols / 2 - env.col, rc - env.rows / 2 - env.row)
+    })
+  })
   const left = Math.min(...environments.map((e) => e.col))
   const top = Math.min(...environments.map((e) => e.row))
-  for (const env of environments) shiftEnvironment(env, LOT.margin - left, LOT.margin - top)
+  const margin = LOT.margin + (model.regions.length ? REGION_PAD : 0)
+  for (const env of environments) shiftEnvironment(env, margin - left, margin - top)
+
+  for (const link of model.links) route(link)
+  for (const region of model.regions) {
+    const shown = region.environments.filter((e) => environments.includes(e))
+    region.outline = shown.length
+      ? hull(
+          shown.flatMap((e): GridPoint[] => {
+            const [c0, r0, c1, r1] = [
+              e.col - REGION_PAD,
+              e.row - REGION_PAD,
+              e.col + e.cols + REGION_PAD,
+              e.row + e.rows + REGION_PAD,
+            ]
+            return [
+              [c0, r0],
+              [c1, r0],
+              [c1, r1],
+              [c0, r1],
+            ]
+          }),
+        )
+      : []
+  }
+}
+
+/** The convex hull of points, counterclockwise (monotone chain) */
+export function hull(points: GridPoint[]): GridPoint[] {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1])
+  if (sorted.length < 3) return sorted
+  const cross = (o: GridPoint, a: GridPoint, b: GridPoint) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  const half = (list: GridPoint[]) => {
+    const out: GridPoint[] = []
+    for (const p of list) {
+      while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop()
+      out.push(p)
+    }
+    out.pop()
+    return out
+  }
+  return [...half(sorted), ...half([...sorted].reverse())]
 }
 
 function buildEnvironment(

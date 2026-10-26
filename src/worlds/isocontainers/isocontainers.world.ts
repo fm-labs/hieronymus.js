@@ -20,6 +20,8 @@ export type ContainersWorld = {
   model: ContainersModel
   /** Shared by all components, the system updates it every frame */
   scene: ContainersScene
+  /** Everything standing (buildings, tanks, gates): moved when the plates are laid out again */
+  structures: Array<{ syncPosition(): void }>
 }
 
 /** Lays out the environments and builds the world: the ground, a building per container, a tank per volume */
@@ -43,6 +45,7 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
     showCrossHost: true,
     popups: [],
     plates: new Map(),
+    hidden: new Set(),
   }
 
   // the ground is one flat component; everything standing is depth sorted; arcs and labels on top
@@ -58,10 +61,11 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
   tileMap.addTile(LAYER_GROUND, 0, 0, new IsoContainersGroundComponent({ model, scene }))
 
   // adding an object moves it to its cell; the components sort by their own position, so set it again
-  const place = (component: IGameComponent) => {
-    const [x, y] = [component.x, component.y]
+  const structures: ContainersWorld['structures'] = []
+  const place = (component: IGameComponent & { syncPosition(): void }) => {
     tileMap.addObjectAtGridPos(LAYER_STRUCTURES, 0, 0, component)
-    component.setPosition(x, y)
+    component.syncPosition()
+    structures.push(component)
   }
   for (const container of model.containers)
     place(new IsoContainerBuildingComponent({ container, scene }))
@@ -74,7 +78,7 @@ const isoContainersWorldBuilder = (spec: ContainersSpec): ContainersWorld => {
     0,
     new IsoContainersOverlayComponent({ model, scene }),
   )
-  return { tileMap, model, scene }
+  return { tileMap, model, scene, structures }
 }
 
 export default isoContainersWorldBuilder

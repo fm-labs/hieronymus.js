@@ -1,5 +1,5 @@
 /**
- * A huge sample for the 'isocontainers' world: a fleet of dozens of hosts in three regions, generated
+ * A huge sample for the 'isocontainers' world: a fleet of dozens of hosts in five regions, generated
  * from a few host templates (edge, apps, data, search, storage, ops, ci). Everything is derived from
  * the host's index, so the fleet is the same on every load: the same incidents in the same places.
  */
@@ -275,7 +275,8 @@ function host(region: string, role: Role, n: number): EnvironmentSpec {
   }
   return {
     name,
-    caption: `${region} · ${ip}`,
+    region,
+    caption: ip,
     networks,
     volumes,
     containers: containers.map((c) => ({ ...PRODUCTION, ...c, ...INCIDENTS[`${name}/${c.name}`] })),
@@ -292,7 +293,8 @@ function ci(): EnvironmentSpec {
   }))
   return {
     name: 'ci',
-    caption: 'global · 10.9.0.10',
+    region: 'global',
+    caption: '10.9.0.10',
     networks: [{ name: 'build' }],
     volumes: [{ name: 'images', size: '2.2 TB' }],
     containers: (

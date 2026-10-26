@@ -9,6 +9,7 @@ import type {
   ContainersModel,
   Environment,
   GridPoint,
+  Region,
   Link,
   Network,
 } from './isocontainers.types.ts'
@@ -90,9 +91,11 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
     const { model, scene } = this.properties
     const P = scene.projection
     const envs = model.environments.filter((e) => {
+      if (scene.hidden.has(e)) return false
       const [x, y] = P.at(e.col + e.cols / 2, e.row + e.rows / 2)
       return isVisible(scene, x, y, (e.cols + e.rows) * P.cell)
     })
+    for (const region of model.regions) this.region(ctx, region)
     envs.forEach((env, i) => this.plateShadow(ctx, env, i * 1.7))
     for (const env of envs) this.plate(ctx, env)
     P.plane(ctx, 0, () => {
@@ -132,6 +135,62 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       }
     }
     ctx.globalAlpha = 1
+  }
+
+  /**
+   * A region on the floor under its plates: a faint tinted field in its color with a dashed edge, and
+   * its name in front. The name keeps a readable size when zoomed out.
+   */
+  private region(ctx: CanvasRenderingContext2D, region: Region) {
+    const { scene } = this.properties
+    const P = scene.projection
+    const outline = region.outline
+    if (outline.length < 3) return
+    const screen = outline.map(([c, r]) => P.at(c, r, -PLATE.float))
+    const xs = screen.map(([x]) => x)
+    const ys = screen.map(([, y]) => y)
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+    const { view } = scene
+    if (x1 < view.x0 - 200 || x0 > view.x1 + 200 || y1 < view.y0 - 200 || y0 > view.y1 + 400) return
+
+    const hovered = !!scene.hoveredPlate && scene.hoveredPlate.region === region
+    P.plane(ctx, -PLATE.float, () => {
+      closedTrace(
+        ctx,
+        outline.map(([c, r]) => [c * U, r * U]),
+        2.5 * U,
+      )
+      ctx.fillStyle = hexAlpha(region.color, hovered ? 0.075 : 0.05)
+      ctx.fill()
+      ctx.setLineDash([28, 18])
+      ctx.strokeStyle = hexAlpha(region.color, hovered ? 0.6 : 0.38)
+      ctx.lineWidth = Math.max(3, 1.4 / scene.zoom)
+      ctx.stroke()
+      ctx.setLineDash([])
+    })
+
+    // the name, centered under the outline
+    const front = [(x0 + x1) / 2, y1]
+    const k = regionLabelScale(scene.zoom)
+    const hosts = region.environments.filter((e) => !scene.hidden.has(e))
+    const containers = hosts.flatMap((e) => e.containers)
+    const up = containers.filter((c) => c.state === 'running').length
+    const caption = `${hosts.length} HOST${hosts.length === 1 ? '' : 'S'} · ${up}/${containers.length} UP`
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.font = `700 ${34 * k}px ${FONT.mono}`
+    ctx.letterSpacing = `${6 * k}px`
+    ctx.shadowColor = hexAlpha(region.color, 0.6)
+    ctx.shadowBlur = blur(scene.zoom, 12)
+    ctx.fillStyle = region.color
+    ctx.fillText(region.name.toUpperCase(), front[0], front[1] + 26 * k)
+    ctx.shadowBlur = 0
+    ctx.font = `600 ${15 * k}px ${FONT.mono}`
+    ctx.letterSpacing = `${2 * k}px`
+    ctx.fillStyle = COLORS.muted
+    ctx.fillText(caption, front[0], front[1] + 70 * k)
+    ctx.restore()
   }
 
   /**
@@ -243,12 +302,14 @@ export class IsoContainersGroundComponent extends AbstractGameComponent implemen
       }
       ctx.restore()
 
-      // the rim: calm white, turning green under the pointer
+      // the rim: calm white (or the color of its region), turning green under the pointer
+      const rim = env.region ? mix(env.region.color, '#ffffff', 0.2) : PLATE.rim
+      const rimGlow = env.region ? hexAlpha(env.region.color, 0.4) : PLATE.rimGlow
       roundRect(ctx, u0, v0, w, h, R)
       ctx.save()
-      ctx.shadowColor = glow > 0.01 ? hexAlpha(COLORS.green, 0.35 + 0.35 * glow) : PLATE.rimGlow
+      ctx.shadowColor = glow > 0.01 ? hexAlpha(COLORS.green, 0.35 + 0.35 * glow) : rimGlow
       ctx.shadowBlur = blur(scene.zoom, 8 + 10 * glow)
-      ctx.strokeStyle = mix(PLATE.rim, PLATE.rimLit, glow)
+      ctx.strokeStyle = mix(rim, PLATE.rimLit, glow)
       ctx.lineWidth = 3.5 + glow
       ctx.stroke()
       ctx.restore()
@@ -616,3 +677,24 @@ function pointAt(l: Link, d: number, length: number): GridPoint {
   const seg = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1
   return [q[0] + ((q[0] - p[0]) / seg) * over, q[1] + ((q[1] - p[1]) / seg) * over]
 }
+
+/** A closed polygon with rounded corners, through points in the current space */
+function closedTrace(ctx: CanvasRenderingContext2D, points: GridPoint[], radius: number) {
+  const n = points.length
+  const mid = (a: GridPoint, b: GridPoint): GridPoint => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+  const dist = (a: GridPoint, b: GridPoint) => Math.hypot(b[0] - a[0], b[1] - a[1])
+  ctx.beginPath()
+  ctx.moveTo(...mid(points[n - 1], points[0]))
+  for (let i = 0; i < n; i++) {
+    const [prev, p, next] = [points[(i + n - 1) % n], points[i], points[(i + 1) % n]]
+    const r = Math.min(radius, dist(prev, p) / 2, dist(p, next) / 2)
+    ctx.arcTo(p[0], p[1], ...mid(p, next), r)
+  }
+  ctx.closePath()
+}
+
+/** How much a region's name grows, at a zoom: it keeps a readable size when zoomed out */
+export const regionLabelScale = (zoom: number) => Math.min(Math.max(1, 0.5 / zoom), 6.5)
+
+/** How far a region's name reaches below its outline, in pixels */
+export const regionLabelDepth = (zoom: number) => 90 * regionLabelScale(zoom)

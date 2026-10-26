@@ -1,6 +1,12 @@
 import type { IGame, IGameSystem } from '../../../lib/game.types'
 import { AbstractGameSystem } from '../../../lib'
-import { LOT, applyLooks, isPublished, neighborhood } from './isocontainers.layout.ts'
+import {
+  LOT,
+  applyLooks,
+  isPublished,
+  neighborhood,
+  placeEnvironments,
+} from './isocontainers.layout.ts'
 import {
   ROOFS,
   SCALE_RANGE,
@@ -47,6 +53,7 @@ import {
 import type { ContainersWorld } from './isocontainers.world.ts'
 import { IsoContainerBuildingComponent } from './IsoContainerBuildingComponent.ts'
 import { GATE_HEIGHT } from './IsoContainersGateComponent.ts'
+import { PLATE, regionLabelDepth } from './IsoContainersGroundComponent.ts'
 
 export type IsoContainersSystemOptions = {
   /** The stacks that can be opened from the explorer */
@@ -119,6 +126,29 @@ const HEALTH_GROUPS: Array<{ label: string; color: string; moods: Mood[] }> = [
 /** What counts as an incident: a container that fails or crashed */
 const INCIDENT_MOODS = new Set<Mood>(['unhealthy', 'crashloop', 'burning', 'dead'])
 const ACCEPTED_STORAGE = 'isocontainers.accepted.v1'
+
+/** The regions switched off, by stack: { [stack]: [region, …] } */
+const REGIONS_STORAGE = 'isocontainers.regions.v1'
+
+function loadHiddenRegions(stack: string): Set<string> {
+  try {
+    const list = JSON.parse(localStorage.getItem(REGIONS_STORAGE) ?? '{}')[stack]
+    return new Set(Array.isArray(list) ? list.filter((x) => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveHiddenRegions(stack: string, names: Set<string>) {
+  try {
+    const all = JSON.parse(localStorage.getItem(REGIONS_STORAGE) ?? '{}')
+    if (names.size) all[stack] = [...names]
+    else delete all[stack]
+    localStorage.setItem(REGIONS_STORAGE, JSON.stringify(all))
+  } catch {
+    // private mode: the choice lasts until the page reloads
+  }
+}
 
 function loadAccepted(): Set<string> {
   try {
@@ -221,6 +251,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private hostTab: 'engine' | 'network' = 'engine'
   /** The tab of the container pane; it stays when another container is selected */
   private containerTab: 'info' | 'advisor' = 'info'
+  /** The regions switched off (their hosts are hidden and the others close up) */
+  private hiddenRegions = new Set<string>()
 
   constructor(game: IGame, world: ContainersWorld, options: IsoContainersSystemOptions) {
     super(game)
@@ -263,6 +295,8 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     $c.appendChild(this.$toast)
     this.refreshAdvice()
     this.initialAdvice = new Set(this.advice.map((a) => a.id))
+    this.hiddenRegions = loadHiddenRegions(this.options.current)
+    if (this.hiddenRegions.size) this.applyRegions(false)
     this.renderExplorer()
     if (this.options.advisor) this.toggleAdvisor()
     if (this.options.error) this.toast(this.options.error, { color: COLORS.red, seconds: 10 })
@@ -434,11 +468,25 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
   }
 
-  /** Zoom out and center, so all plates (or the given ones) fit between the panels */
-  private fitView(now = false, environments = this.world.model.environments, maxZoom = 1.4) {
+  /**
+   * Zoom out and center, so all plates shown (or the given ones) fit between the panels; all of them
+   * with the outlines and names of their regions
+   */
+  private fitView(now = false, given?: Environment[], maxZoom = 1.4) {
     const P = this.world.scene.projection
     const xs: number[] = []
     const ys: number[] = []
+    const environments = given ?? this.shownEnvironments()
+    const fronts: number[] = []
+    if (!given)
+      for (const region of this.world.model.regions) {
+        for (const [c, r] of region.outline) {
+          const [x, y] = P.at(c, r, -PLATE.float)
+          xs.push(x)
+          ys.push(y)
+          fronts.push(y)
+        }
+      }
     for (const e of environments) {
       for (const [c, r, z] of [
         [e.col, e.row, 0],
@@ -454,9 +502,13 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
     if (!xs.length) return
     const [x0, x1] = [Math.min(...xs), Math.max(...xs)]
-    const [y0, y1] = [Math.min(...ys), Math.max(...ys)]
+    const y0 = Math.min(...ys)
+    let y1 = Math.max(...ys)
     const f = this.freeArea()
-    const zoom = Math.min(maxZoom, (f.w * 0.94) / (x1 - x0), (f.h * 0.94) / (y1 - y0))
+    const fit = () => Math.min(maxZoom, (f.w * 0.94) / (x1 - x0), (f.h * 0.94) / (y1 - y0))
+    // the names of the regions under their outlines: as big as they will be at that zoom
+    if (fronts.length) y1 = Math.max(y1, Math.max(...fronts) + regionLabelDepth(fit()))
+    const zoom = fit()
     this.glideTo((x0 + x1) / 2, (y0 + y1) / 2, zoom, now)
   }
 
@@ -513,7 +565,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   /** The host whose gate (its pad, pillars, beam or label) is under a screen point */
   private pickHost(clientX: number, clientY: number): Environment | undefined {
     const half = LOT.avenue / 2 + 0.4
-    for (const env of this.world.model.environments) {
+    for (const env of this.shownEnvironments()) {
       const [gc, gr] = env.gate
       for (const z of [GATE_HEIGHT, GATE_HEIGHT / 2, 0]) {
         const [col, row] = this.gridAt(clientX, clientY, z)
@@ -535,7 +587,9 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         depth = d
       }
     }
+    const hidden = this.world.scene.hidden
     for (const c of model.containers) {
+      if (hidden.has(c.env)) continue
       // the roof or the ground footprint (a tall building also hides what is behind its sides)
       for (const z of [c.height, c.height / 2, 0]) {
         const [col, row] = this.gridAt(clientX, clientY, z)
@@ -546,6 +600,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       }
     }
     for (const v of model.volumes) {
+      if (hidden.has(v.env)) continue
       for (const z of [v.height, v.height / 2, 0]) {
         const [col, row] = this.gridAt(clientX, clientY, z)
         if (Math.hypot(col - v.col, row - v.row) <= v.r + 0.08) {
@@ -557,7 +612,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     if (best) return best
     const [col, row] = this.gridAt(clientX, clientY, 0)
     return model.networks.find(
-      (n) => n.street && col >= n.col0 && col <= n.col1 && Math.abs(row - n.row) <= LOT.street / 2,
+      (n) =>
+        n.street &&
+        !hidden.has(n.env) &&
+        col >= n.col0 &&
+        col <= n.col1 &&
+        Math.abs(row - n.row) <= LOT.street / 2,
     )
   }
 
@@ -589,7 +649,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     }
     const [col, row] = this.gridAt(e.clientX, e.clientY, 0)
     this.hoverPlate(
-      this.world.model.environments.find(
+      this.shownEnvironments().find(
         (env) =>
           col >= env.col &&
           col <= env.col + env.cols &&
@@ -673,6 +733,61 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     params.delete('graph')
     params.delete('select')
     window.location.search = params.toString()
+  }
+
+  /** The hosts whose region is switched on (all, without regions) */
+  private shownEnvironments(): Environment[] {
+    const { model, scene } = this.world
+    return scene.hidden.size
+      ? model.environments.filter((e) => !scene.hidden.has(e))
+      : model.environments
+  }
+
+  /**
+   * Switch a region on or off; alone, it shows only that region (or all again, when it already is the
+   * only one). One region always stays on.
+   */
+  private toggleRegion(name: string, alone = false) {
+    const names = this.world.model.regions.map((r) => r.name)
+    const next = new Set(this.hiddenRegions)
+    if (alone) {
+      const only = names.every((n) => n === name || next.has(n)) && !next.has(name)
+      next.clear()
+      if (!only) for (const n of names) if (n !== name) next.add(n)
+    } else if (next.has(name)) next.delete(name)
+    else next.add(name)
+    if (names.every((n) => next.has(n))) {
+      this.toast('ONE REGION STAYS ON', { color: COLORS.muted })
+      return
+    }
+    this.showRegions(next)
+  }
+
+  private showRegions(hidden: Set<string>) {
+    this.hiddenRegions = hidden
+    saveHiddenRegions(this.options.current, hidden)
+    this.applyRegions(true)
+    this.renderExplorer()
+  }
+
+  /**
+   * Hide the hosts of the regions switched off and lay out the others again, closed up; what was
+   * selected or open there is let go. Then (fly) the camera fits what is shown.
+   */
+  private applyRegions(fly: boolean) {
+    const { model, scene, structures } = this.world
+    scene.hidden = new Set(
+      model.environments.filter((e) => e.region && this.hiddenRegions.has(e.region.name)),
+    )
+    placeEnvironments(model, this.shownEnvironments())
+    for (const s of structures) s.syncPosition()
+    scene.popups = []
+    scene.hovered = undefined
+    scene.hoveredHost = undefined
+    this.hoverPlate(undefined)
+    if (scene.selected && scene.hidden.has(scene.selected.env)) this.select(undefined)
+    if (scene.openHost && scene.hidden.has(scene.openHost)) this.openHost(undefined)
+    if (fly) this.fitView()
   }
 
   private select(thing: Entity | undefined, fly = false) {
@@ -762,14 +877,28 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div style="flex:1"><div style="font:600 16px ${FONT.ui};color:${COLORS.text}">${value}</div>` +
       `<div style="${MONO_LABEL};font-size:9px;letter-spacing:1.5px">${label}</div></div>`
 
+    const shown = this.shownEnvironments()
+    const count = <T>(pick: (e: Environment) => T[]) =>
+      shown.reduce((n, e) => n + pick(e).length, 0)
+
     $panel.innerHTML =
       `<div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">` +
       `<div style="${MONO_LABEL};color:${COLORS.text}">${this.dot(COLORS.green, 7, true)}IsoContainers</div>` +
       `<div style="color:${COLORS.muted};margin-top:4px">Docker hosts as a city: networks are streets, containers buildings, volumes tanks</div></div>` +
       `<div style="padding:10px 8px 6px"><div style="${MONO_LABEL};padding:0 8px 4px">Stacks</div>${stacks}</div>` +
       `<div style="display:flex;gap:6px;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06)">` +
-      `${stat(model.environments.length, 'hosts')}${stat(model.containers.length, 'containers')}` +
-      `${stat(model.networks.filter((n) => n.street).length, 'networks')}${stat(model.volumes.length, 'volumes')}</div>` +
+      `${stat(shown.length, 'hosts')}${stat(
+        count((e) => e.containers),
+        'containers',
+      )}` +
+      `${stat(
+        count((e) => e.networks.filter((n) => n.street)),
+        'networks',
+      )}${stat(
+        count((e) => e.volumes),
+        'volumes',
+      )}</div>` +
+      this.regionChips() +
       `<div class="isocontainers-rating" title="The advisor (A)" style="display:flex;align-items:center;padding:10px 16px;cursor:pointer;` +
       `border-bottom:1px solid rgba(255,255,255,0.06)"></div>` +
       `<div class="isocontainers-tree" style="overflow-y:auto;padding:4px 8px 12px;flex:1"></div>`
@@ -777,11 +906,25 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     $panel.querySelectorAll<HTMLDivElement>('.isocontainers-stack').forEach(($row) => {
       $row.onclick = () => this.open($row.dataset.id!)
     })
+    $panel.querySelectorAll<HTMLButtonElement>('.isocontainers-region').forEach(($chip) => {
+      $chip.onclick = (e) => this.toggleRegion($chip.dataset.region!, e.shiftKey || e.altKey)
+    })
+    const $all = $panel.querySelector<HTMLSpanElement>('.isocontainers-regions-all')
+    if ($all) $all.onclick = () => this.showRegions(new Set())
     const $rating = $panel.querySelector<HTMLDivElement>('.isocontainers-rating')!
     $rating.onclick = () => this.toggleAdvisor()
     this.updateRating()
     const $tree = $panel.querySelector<HTMLDivElement>('.isocontainers-tree')!
-    for (const env of model.environments) {
+    let region: Environment['region']
+    for (const env of shown) {
+      // a heading where a region starts
+      if (env.region && env.region !== region) {
+        const $region = document.createElement('div')
+        $region.style.cssText = `${MONO_LABEL};color:${env.region.color};padding:12px 8px 0;font-size:9px`
+        $region.innerHTML = `${this.square(env.region.color)}${escapeHtml(env.region.name.toUpperCase())}`
+        $tree.appendChild($region)
+      }
+      region = env.region
       const $env = document.createElement('div')
       $env.dataset.host = env.key
       $env.title = 'The host: its engine and network'
@@ -820,6 +963,39 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         )
     }
     this.updateExplorerStates()
+  }
+
+  /** The regions, as chips to switch on and off; nothing without regions */
+  private regionChips(): string {
+    const regions = this.world.model.regions
+    if (!regions.length) return ''
+    const hidden = this.hiddenRegions
+    const chips = regions
+      .map((r) => {
+        const on = !hidden.has(r.name)
+        return (
+          `<button class="isocontainers-region" data-region="${escapeHtml(r.name)}" ` +
+          `title="Show or hide ${escapeHtml(r.name)}, ${r.environments.length} hosts (shift-click: only this one)" ` +
+          `style="display:flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:12px;cursor:pointer;` +
+          `font:600 10px ${FONT.mono};letter-spacing:0.5px;text-transform:uppercase;` +
+          `color:${on ? r.color : COLORS.faint};background:${on ? hexAlpha(r.color, 0.12) : 'transparent'};` +
+          `border:1px solid ${on ? hexAlpha(r.color, 0.5) : 'rgba(255,255,255,0.1)'}">` +
+          `<span style="width:7px;height:7px;border-radius:2px;flex:none;` +
+          `background:${on ? r.color : 'transparent'};border:1px solid ${on ? r.color : COLORS.faint}"></span>` +
+          `${escapeHtml(r.name)}</button>`
+        )
+      })
+      .join('')
+    const shown = regions.length - regions.filter((r) => hidden.has(r.name)).length
+    return (
+      `<div style="padding:10px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">` +
+      `<div style="display:flex;align-items:baseline;${MONO_LABEL};margin-bottom:8px">REGIONS` +
+      `<span style="margin-left:8px;color:${COLORS.faint}">${shown}/${regions.length}</span>` +
+      (hidden.size
+        ? `<span class="isocontainers-regions-all" title="Show all regions" style="margin-left:auto;cursor:pointer;color:${COLORS.green}">SHOW ALL</span>`
+        : '') +
+      `</div><div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div></div>`
+    )
   }
 
   private treeRow($tree: HTMLDivElement, e: Entity, icon: string, label: string, caption: string) {
@@ -1151,7 +1327,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       `<div class="isocontainers-meter" style="display:flex;gap:2px;width:140px;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.06)"></div>` +
       `<span class="isocontainers-health" style="${value}"></span></div>` +
       `<div class="isocontainers-incidents" style="font:600 10.5px ${FONT.mono};letter-spacing:1px"></div>` +
-      `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-rps" style="${value}"></span><span style="${label}">REQ/S</span></div>` +
       `<div style="display:flex;align-items:baseline;gap:6px"><span class="isocontainers-errors" style="${value}"></span><span style="${label}">ERRORS</span></div>` +
       `<div class="isocontainers-status-rating" title="The advisor (A)" style="display:flex;align-items:center;gap:6px;cursor:pointer"></div>` +
       (Object.keys(SWITCHES) as SwitchName[])
@@ -1200,7 +1375,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       : `${this.dot(COLORS.green, 7)}<span style="color:${COLORS.green}">NO INCIDENTS</span>`
 
     const sim = this.sim
-    $bar.querySelector<HTMLSpanElement>('.isocontainers-rps')!.textContent = sim.rps.toFixed(1)
     const share = sim.eps / Math.max(1e-6, sim.rps + sim.eps)
     const $errors = $bar.querySelector<HTMLSpanElement>('.isocontainers-errors')!
     $errors.textContent =
@@ -1896,7 +2070,6 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const status =
       `${this.dot(COLORS.green, 7, true)}${label(`${up} UP`, COLORS.green)}` +
       (down ? ` &nbsp;${label(`${down} DOWN`, COLORS.red)}` : '') +
-      ` &nbsp;${label(`${sim.rps.toFixed(1)} REQ/S`)} &nbsp;${label(`${sim.totalRequests} REQUESTS`)}` +
       (sim.totalErrors ? ` &nbsp;${label(`${sim.totalErrors} FAILED`, COLORS.red)}` : '')
     const paused = sim.paused ? ` &nbsp;${label('PAUSED', COLORS.amber)}` : ''
     this.$hud.innerHTML =

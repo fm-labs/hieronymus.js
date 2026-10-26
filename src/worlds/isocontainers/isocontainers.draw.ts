@@ -4,7 +4,14 @@
  * the volumes cylinders, and each network has an accent color.
  */
 import { COLORS, FONT, FlowProjection, fit, roundRect } from '../isoflow/isoflow.draw.ts'
-import type { Container, Entity, Environment, GridPoint, SizeClass } from './isocontainers.types.ts'
+import type {
+  Container,
+  Entity,
+  Environment,
+  GridPoint,
+  Link,
+  SizeClass,
+} from './isocontainers.types.ts'
 
 export { COLORS, FONT, FlowProjection, fit, roundRect }
 
@@ -59,6 +66,8 @@ export type ContainersScene = {
    * (scene time), for the ripple on entering
    */
   plates: Map<Environment, { glow: number; entered: number }>
+  /** The hosts of the regions switched off: not drawn, not picked */
+  hidden: Set<Environment>
   /** The selected entity, its neighbors and their links; everything else steps back */
   focus?: Set<unknown>
   /** The camera zoom, so markers stay readable from far away */
@@ -90,6 +99,13 @@ export const isVisible = (scene: ContainersScene, x: number, y: number, margin =
   x < scene.view.x1 + margin &&
   y > scene.view.y0 - margin &&
   y < scene.view.y1 + margin
+
+/** A link with an end on a hidden host */
+export const linkHidden = (scene: ContainersScene, l: Link) =>
+  scene.hidden.size > 0 &&
+  (scene.hidden.has(l.env) ||
+    scene.hidden.has(l.to.env) ||
+    (!!l.from && scene.hidden.has(l.from.env)))
 
 /** The opacity of something, by the focus: full when in focus (or no focus), faint otherwise */
 export const focusAlpha = (scene: ContainersScene, thing: unknown, dim = 0.22) =>

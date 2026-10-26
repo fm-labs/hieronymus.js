@@ -107,6 +107,7 @@ model builder fills in sensible defaults.
 | ------------ | ----------------- | ----- |
 | `name`       | string, required  | Unique among the environments; it is the prefix of every key on this host. Two hosts with the same name get a `'` added to the key. |
 | `caption`    | string            | The small text on the plate, e.g. the docker version or the address. |
+| `region`     | string            | Optional: the region, site or cluster of the host. Hosts of a region are grouped on the map, outlined in the region's color, and can be shown or hidden together. |
 | `engine`     | `EngineSpec`      | Optional: what the engine says about itself (`docker info`), for the host pane. All fields optional: `engine`, `version`, `address`, `hostname`, `os`, `kernel`, `arch`, `cpus`, `memory`, `storageDriver`, `loggingDriver`, `cgroup`, `runtime`, `rootDir`, `images`, `swarm`, `firewall`, `ipForwarding`, `httpProxy`, `httpsProxy`, `noProxy`, `warnings`. |
 | `containers` | `ContainerSpec[]` | |
 | `networks`   | `NetworkSpec[]`   | Optional: a network a container names is created on the fly. List it here to give it a driver, subnet or `internal`. |
@@ -202,6 +203,7 @@ ContainersModel
  ├─ containers, networks, volumes        (all hosts, flat)
  ├─ links: Link[]                        (call | ingress | mount; from? → to, volume?, network?)
  ├─ byKey: Map<key, Container | Network | Volume>
+ ├─ regions: Region[]                    (name, color, environments, outline; none without `region`)
  └─ spec                                 (the input, kept as is)
 ```
 
@@ -249,7 +251,7 @@ Tanks by size class (`TANK_STYLES` in `isocontainers.draw.ts`):
 
 | Group  | Fields |
 | ------ | ------ |
-| data   | `key`, `name`, `caption`, `containers`, `networks`, `volumes` |
+| data   | `key`, `name`, `caption`, `region` (the `Region` it belongs to), `containers`, `networks`, `volumes` |
 | layout | `col`, `row`, `cols`, `rows` (the plate), `roads` (one in front of each line of districts; the last, at `frontRow`, leads to the gate), `avenues` (from a district, `row0`, to its line's road, `row1`; plus the spine that joins the roads), `gate` |
 
 ### `Link`
@@ -278,7 +280,12 @@ Tanks by size class (`TANK_STYLES` in `isocontainers.draw.ts`):
   into the number of lines that makes it closest to square, each line with a road in front and a
   spine on the left joining the roads to the gate. Volumes nobody mounts are stored in a compact yard,
   the tallest at the back: unknown sizes first (they are drawn at a middle
-  height), then by size. Plates are placed in lines on screen.
+  height), then by size. Plates are placed in lines on screen. With regions, the plates of each
+  region are placed in lines of their own, and the regions in lines farther apart, with room under
+  each for its name; hosts without a region come last. Each region gets a color from
+  `REGION_COLORS` (never green or red, which mean hover and trouble) and an `outline` (the convex
+  hull around its plates). `placeEnvironments(model, shown)` places only the hosts shown, closed
+  up, routes the links again and empties the outlines of hidden regions.
 - **Looks** and **heights**: see below.
 
 ## Building looks
@@ -357,6 +364,7 @@ Today every value that changes over time is **simulated**. A real source changes
 | Style rules made in the settings | `localStorage['isocontainers.styles.v1']` |
 | Accepted advice ids | `localStorage['isocontainers.accepted.v1']` |
 | Flags switch, host links switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']` |
+| Regions switched off, by stack | `localStorage['isocontainers.regions.v1']` (`{ [stack]: [region, …] }`); their hosts in `scene.hidden` |
 | The host open in the side pane, the one under the pointer, the pane's tab | `scene.openHost`, `scene.hoveredHost`, `IsoContainersSystem.hostTab` |
 | The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
 | Selected entity, zoom, open panes | URL: `?select=<key>`, `?zoom=`, `?advisor`, `?settings` |
@@ -375,8 +383,16 @@ firewall and proxies, every published port with its container, and all networks,
 `host`, `none` and empty ones; a network with a street jumps to it. Hosts from a file or a sample
 without `engine` show only what the model knows. Esc or a second click closes it.
 
+When the hosts have regions (the `massive` sample), each region is a tinted field on the floor under
+its plates, with a dashed edge and its name and counts in front, and its plates' rims take its
+color. The explorer lists the hosts under region headings and has a chip per region: a click shows
+or hides that region, shift-click shows only it (again: all), SHOW ALL brings them all back; one
+region always stays on. Hidden hosts are not drawn or picked, the others close up, and the camera
+fits what is left. The explorer's counts are those of the hosts shown; the status bar stays
+fleet-wide, so incidents in hidden regions still show.
+
 The samples are in `isocontainers.samples.ts` (`shop`, `fleet`, `states`, `devbox`, `gallery`) and
-`isocontainers.massive.ts` (`massive`: 61 generated hosts).
+`isocontainers.massive.ts` (`massive`: 61 generated hosts in five regions and `global`).
 
 ## The mission-control API
 

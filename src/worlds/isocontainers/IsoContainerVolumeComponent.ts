@@ -33,7 +33,12 @@ export class IsoContainerVolumeComponent extends AbstractGameComponent implement
 
   constructor(properties: IsoContainerVolumeComponentProps) {
     super(properties)
-    const { volume: v, scene } = properties
+    this.syncPosition()
+  }
+
+  /** Back to the volume's place, after the plates were laid out again */
+  syncPosition() {
+    const { volume: v, scene } = this.properties
     const [x, y] = scene.projection.at(v.col, v.row)
     this.setPosition(x, y)
   }
@@ -43,7 +48,7 @@ export class IsoContainerVolumeComponent extends AbstractGameComponent implement
   draw(ctx: CanvasRenderingContext2D): void {
     const { volume: v, scene } = this.properties
     const P = scene.projection
-    if (!isVisible(scene, this.x, this.y, 80)) return
+    if (scene.hidden.has(v.env) || !isVisible(scene, this.x, this.y, 80)) return
     const unused = !v.mounts.length
     ctx.globalAlpha = focusAlpha(scene, v) * (unused ? 0.6 : 1)
     const h = v.height

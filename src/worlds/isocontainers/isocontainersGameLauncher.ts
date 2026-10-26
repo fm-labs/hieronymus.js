@@ -109,7 +109,7 @@ export const isocontainersGameLauncher = async (app: HTMLDivElement) => {
     id: 'isocontainers',
     name: 'IsoContainers',
     fullscreen: true,
-    camera: { minZoom: 0.12, maxZoom: 3 },
+    camera: { minZoom: 0.06, maxZoom: 3 },
   }
   const game = new Game(app, config)
 

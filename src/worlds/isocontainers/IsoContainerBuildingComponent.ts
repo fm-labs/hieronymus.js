@@ -83,7 +83,12 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
 
   constructor(properties: IsoContainerBuildingComponentProps) {
     super(properties)
-    const { container: c, scene } = properties
+    this.syncPosition()
+  }
+
+  /** Back to the container's place, after the plates were laid out again */
+  syncPosition() {
+    const { container: c, scene } = this.properties
     // depth sorting by the center of the footprint
     const [x, y] = scene.projection.at(c.col + c.w / 2, c.row + c.d / 2)
     this.setPosition(x, y)
@@ -93,6 +98,7 @@ export class IsoContainerBuildingComponent extends AbstractGameComponent impleme
 
   draw(ctx: CanvasRenderingContext2D): void {
     const { container: c, scene } = this.properties
+    if (scene.hidden.has(c.env)) return
     const P = scene.projection
     if (!isVisible(scene, this.x, this.y - c.height, (c.w + c.d) * P.cell + 120)) return
     const mood = moodOf(c)

@@ -22,6 +22,7 @@ import {
   PALETTE,
   arcControl,
   focusAlpha,
+  linkHidden,
   hexAlpha,
   pill,
   quadAt,
@@ -55,9 +56,13 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
     const { model, scene } = this.properties
     const P = scene.projection
     ctx.lineCap = 'round'
+    // the containers on the hosts shown (the others' regions are switched off)
+    const containers = scene.hidden.size
+      ? model.containers.filter((c) => !scene.hidden.has(c.env))
+      : model.containers
 
     // networks joined away from the lot: a dashed arc down to the street
-    for (const c of model.containers) {
+    for (const c of containers) {
       for (const n of c.flyovers) {
         ctx.globalAlpha = focusAlpha(scene, c, 0.15) * 0.8
         const a = P.at(c.col + c.w / 2, c.row + c.d / 2, c.height)
@@ -78,7 +83,7 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
     }
 
     for (const l of model.links) {
-      if (!l.arc) continue
+      if (!l.arc || linkHidden(scene, l)) continue
       // between hosts: only when switched on, or when it belongs to the selection
       if (
         !scene.showCrossHost &&
@@ -124,19 +129,19 @@ export class IsoContainersOverlayComponent extends AbstractGameComponent impleme
     ctx.globalAlpha = 1
 
     // smoke over what burns or burned, then the markers over everything that needs a look
-    for (const c of model.containers) {
+    for (const c of containers) {
       const mood = moodOf(c)
       if (mood !== 'burning' && mood !== 'dead') continue
       ctx.globalAlpha = focusAlpha(scene, c, 0.3)
       smoke(ctx, P, c, heightOf(c), scene.time + phaseOf(c) * 10, mood === 'burning')
     }
-    for (const c of model.containers) {
+    for (const c of containers) {
       if (!hasMarker(c)) continue
       ctx.globalAlpha = focusAlpha(scene, c, 0.25)
       marker(ctx, P, c, heightOf(c), scene.time, scene.zoom)
     }
     // the advisor's flags: risks and warnings, and the tips while the advisor is open
-    for (const c of scene.showAdvice ? model.containers : []) {
+    for (const c of scene.showAdvice ? containers : []) {
       const advice = scene.advice.get(c)
       if (!advice || (advice.severity === 'tip' && !scene.allAdvice)) continue
       ctx.globalAlpha = focusAlpha(scene, c, 0.25)

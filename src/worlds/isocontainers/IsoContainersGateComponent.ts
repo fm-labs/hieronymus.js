@@ -36,8 +36,13 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
 
   constructor(properties: IsoContainersGateComponentProps) {
     super(properties)
-    const [col, row] = properties.env.gate
-    const [x, y] = properties.scene.projection.at(col, row)
+    this.syncPosition()
+  }
+
+  /** Back to the gate's place, after the plates were laid out again */
+  syncPosition() {
+    const [col, row] = this.properties.env.gate
+    const [x, y] = this.properties.scene.projection.at(col, row)
     this.setPosition(x, y)
   }
 
@@ -46,7 +51,7 @@ export class IsoContainersGateComponent extends AbstractGameComponent implements
   draw(ctx: CanvasRenderingContext2D): void {
     const { env, scene } = this.properties
     const P = scene.projection
-    if (!isVisible(scene, this.x, this.y, 120)) return
+    if (scene.hidden.has(env) || !isVisible(scene, this.x, this.y, 120)) return
     const [col, row] = env.gate
     const half = LOT.avenue / 2 + 0.15
     const r0 = row - PILLAR / 2
