@@ -4,7 +4,7 @@ import {
   stepTraffic,
   createVehicle,
   blockersOf,
-} from '../src/worlds/isocity/isocity.traffic'
+} from '../examples/src/worlds/isocity/isocity.traffic'
 import {
   formatClock,
   groundOf,
@@ -15,7 +15,7 @@ import {
   PROPS,
   VEGAS_MAP,
   vegasRoadMap,
-} from '../src/worlds/isovegas/isovegas.map'
+} from '../examples/src/worlds/isovegas/isovegas.map'
 
 const map = parseVegasMap()
 const isRoad = vegasRoadMap(VEGAS_MAP)

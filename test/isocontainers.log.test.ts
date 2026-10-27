@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { LogSimulator, LogStream, portOf } from '../src/worlds/isocontainers/isocontainers.log'
-import { buildContainersModel } from '../src/worlds/isocontainers/isocontainers.layout'
-import { ContainersSimulation, START_SECONDS } from '../src/worlds/isocontainers/isocontainers.sim'
-import { SAMPLES } from '../src/worlds/isocontainers/isocontainers.samples'
+import { LogSimulator, LogStream, portOf } from '../examples/src/worlds/isocontainers/isocontainers.log'
+import { buildContainersModel } from '../examples/src/worlds/isocontainers/isocontainers.layout'
+import { ContainersSimulation, START_SECONDS } from '../examples/src/worlds/isocontainers/isocontainers.sim'
+import { SAMPLES } from '../examples/src/worlds/isocontainers/isocontainers.samples'
 
 /** A seeded random, so the lines are the same on every run */
 function seeded(seed = 7) {

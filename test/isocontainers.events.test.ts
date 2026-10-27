@@ -6,14 +6,14 @@ import {
   engineLine,
   readNdjson,
   type DockerEvent,
-} from '../src/worlds/isocontainers/isocontainers.events'
-import { buildContainersModel } from '../src/worlds/isocontainers/isocontainers.layout'
-import { ContainersSimulation, START_SECONDS } from '../src/worlds/isocontainers/isocontainers.sim'
+} from '../examples/src/worlds/isocontainers/isocontainers.events'
+import { buildContainersModel } from '../examples/src/worlds/isocontainers/isocontainers.layout'
+import { ContainersSimulation, START_SECONDS } from '../examples/src/worlds/isocontainers/isocontainers.sim'
 import isoContainersWorldBuilder, {
   LAYER_STRUCTURES,
   rebuildWorld,
-} from '../src/worlds/isocontainers/isocontainers.world'
-import type { ContainersSpec } from '../src/worlds/isocontainers/isocontainers.types'
+} from '../examples/src/worlds/isocontainers/isocontainers.world'
+import type { ContainersSpec } from '../examples/src/worlds/isocontainers/isocontainers.types'
 
 const ID = 'a'.repeat(64)
 const NET = 'b'.repeat(64)

@@ -1,9 +1,10 @@
 /build/
 /dist/
 /submodules/
-/public/assets/sprites/kenney-assets
-/public/assets/fonts
-/public/aws
+/examples/public/assets/sprites/kenney-assets
+/examples/public/assets/fonts
+/examples/public/aws
+/scratchpad
 
 # Logs
 logs

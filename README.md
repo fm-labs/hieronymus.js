@@ -2,51 +2,70 @@
 
 A small HTML5 canvas game engine for 2D (orthogonal) and isometric tile-based games, written in TypeScript.
 
-- `lib/` – the engine, built as a library (`dist/world-lib.js` / `dist/world-lib.umd.cjs`)
-- `src/` – a demo app with several example worlds (`src/worlds/*`)
+- `lib/` – the engine, built as the `@fmlabs/world` library into `dist/`
+- `examples/` – a demo app with example worlds that uses the built library (see [examples/README.md](examples/README.md))
+- `src/` – a small dev page (the `dev` world) that imports `lib/` directly
+- `test/` – unit tests (vitest)
 - `docs/` – engine documentation (MkDocs)
+
+The repository is a pnpm workspace: the root package `@fmlabs/world` is the library, `examples/` is the
+`@fmlabs/world-examples` package that depends on it.
 
 ## Getting Started
 
 ```bash
-yarn install
-yarn dev
+pnpm install
+pnpm build      # build the library into dist/
+pnpm examples   # start the examples dev server
 ```
 
 Open the dev server and pick a world, e.g. `http://localhost:5173/?world=dev`.
 Without a `?world=` parameter a launcher with all available worlds is shown.
 
-Some worlds need data that is not in the repository:
+To work on the library and the examples together, run the watch build next to the dev server,
+each in its own terminal, and reload the page after a change:
 
-| World             | Requires                                           |
-| ----------------- | -------------------------------------------------- |
-| `aws`, `awsgraph` | the sibling repository `../cloudia-common`         |
-| `casino`          | `src/worlds/casino/gameidx-web.json` (gitignored)  |
-| `container`       | `src/worlds/container/container.json` (gitignored) |
+```bash
+pnpm build:watch
+```
 
-Launchers are loaded lazily, so a missing file only breaks the world that needs it.
+```bash
+pnpm examples
+```
+
+Some example worlds need local data that is not in the repository, see [examples/README.md](examples/README.md#worlds).
 
 ## Using the library
 
-`yarn build` writes the package to `dist/`: an ES module (`world-lib.js`), a UMD build (`world-lib.umd.cjs`)
-and a single bundled type declaration file (`index.d.ts`). The demo assets in `public/` are not included.
+`pnpm build` type-checks `lib/` and writes the package to `dist/`: an ES module (`world-lib.js`), a UMD build
+(`world-lib.umd.cjs`) and a single bundled type declaration file (`index.d.ts`). Demo assets are not included.
 
 ```typescript
-import { Game, TileMap, TileMapSystem } from 'world'
-import type { IGame, ITileMap, TileMapConfig } from 'world'
+import { Game, TileMap, TileMapSystem } from '@fmlabs/world'
+import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/world'
 ```
 
-All engine types (`IGame`, `IGameSystem`, `ITileMap`, `IGameComponent`, …) are regular exports.
-Inside this repository they are imported from `lib/game.types` (`import type { IGame } from '../game.types'`).
+Everything an app can use is exported from `lib/index.ts`; deep imports into `lib/` are not part of the
+package. All engine types (`IGame`, `IGameSystem`, `ITileMap`, `IGameComponent`, …) are regular exports.
+Inside `lib/` they are imported from `lib/game.types` (`import type { IGame } from '../game.types'`).
+
+In another pnpm workspace package, depend on it with `"@fmlabs/world": "workspace:*"` (as `examples/` does).
 
 ## Scripts
 
-| Command      | Description                             |
-| ------------ | --------------------------------------- |
-| `yarn dev`   | Start the Vite dev server               |
-| `yarn build` | Type-check `lib/` and build the library |
-| `yarn test`  | Run the unit tests (vitest)             |
-| `yarn lint`  | Lint the project                        |
+Run in the repository root:
+
+| Command            | Description                                      |
+| ------------------ | ------------------------------------------------ |
+| `pnpm build`       | Type-check `lib/` and build the library          |
+| `pnpm build:watch` | Rebuild the library on every change              |
+| `pnpm examples`    | Start the examples dev server                    |
+| `pnpm dev`         | Start the root dev page (`src/`, imports `lib/`) |
+| `pnpm test`        | Run the unit tests (vitest)                      |
+| `pnpm lint`        | Lint the project                                 |
+
+The tests that cover example worlds import them from `examples/src/worlds/`. In tests `@fmlabs/world`
+resolves to `lib/index.ts`, so they run against the library source and need no build.
 
 ## Documentation
 

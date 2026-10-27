@@ -17,10 +17,11 @@
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
-  },
-  "paths": {
-    "@/*": ["src/*", "lib/*"]
+    "noFallthroughCasesInSwitch": true,
+
+    "paths": {
+      "@world/*": ["./src/*", "./lib/*"]
+    }
   },
 
   "include": ["src", "lib"],

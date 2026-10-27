@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { roadDirections } from '../src/worlds/isocity/isocity.traffic'
+import { roadDirections } from '../examples/src/worlds/isocity/isocity.traffic'
 import {
   AIRPORT_MAP,
   airportRoadMap,
@@ -8,7 +8,7 @@ import {
   parseAirportMap,
   placeAt,
   PROPS,
-} from '../src/worlds/isoairport/isoairport.map'
+} from '../examples/src/worlds/isoairport/isoairport.map'
 import {
   distanceToPolyline,
   GATES,
@@ -24,12 +24,12 @@ import {
   taxiOutPath,
   vec,
   type Vec,
-} from '../src/worlds/isoairport/isoairport.airside'
+} from '../examples/src/worlds/isoairport/isoairport.airside'
 import {
   createTraffic,
   stepAirport,
   type Flight,
-} from '../src/worlds/isoairport/isoairport.flights'
+} from '../examples/src/worlds/isoairport/isoairport.flights'
 
 const map = parseAirportMap()
 const isRoad = airportRoadMap(AIRPORT_MAP)

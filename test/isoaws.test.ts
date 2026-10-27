@@ -6,9 +6,9 @@ import {
   resourceKey,
   subnetTier,
   type ResourceKind,
-} from '../src/worlds/isoaws/isoaws.inventory'
-import { GROUND, groundAt, layoutCity, pickAt, type Rect } from '../src/worlds/isoaws/isoaws.layout'
-import { sampleInventory, SAMPLE_ACCOUNT } from '../src/worlds/isoaws/isoaws.sample'
+} from '../examples/src/worlds/isoaws/isoaws.inventory'
+import { GROUND, groundAt, layoutCity, pickAt, type Rect } from '../examples/src/worlds/isoaws/isoaws.layout'
+import { sampleInventory, SAMPLE_ACCOUNT } from '../examples/src/worlds/isoaws/isoaws.sample'
 
 const model = buildNetworkModel(sampleInventory())
 const key = (kind: ResourceKind, id: string, region = 'eu-west-1') =>

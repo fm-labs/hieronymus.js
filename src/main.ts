@@ -7,40 +7,6 @@ type GameLauncher = (app: HTMLDivElement) => Promise<Game>
 // only fails when it is selected, instead of breaking the whole app.
 const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
   dev: async () => (await import('./worlds/dev/devGameLauncher.ts')).devGameLauncher,
-  aws: async () => (await import('./worlds/aws/awsGameLauncher.ts')).awsGameLauncher,
-  awsgraph: async () =>
-    (await import('./worlds/awsgraph/awsgraphGameLauncher.ts')).awsgraphGameLauncher,
-  roulette: async () =>
-    (await import('./worlds/roulette/rouletteGameLauncher.ts')).rouletteGameLauncher,
-  vienna: async () => (await import('./worlds/vienna/viennaGameLauncher.ts')).viennaGameLauncher,
-  container: async () =>
-    (await import('./worlds/container/containerGameLauncher.ts')).containerGameLauncher,
-  casino: async () => (await import('./worlds/casino/casinoGameLauncher.ts')).casinoGameLauncher,
-  chess: async () => (await import('./worlds/chess/chessGameLauncher.ts')).chessGameLauncher,
-  snake: async () => (await import('./worlds/snake/snakeGameLauncher.ts')).snakeGameLauncher,
-  isosnake: async () =>
-    (await import('./worlds/isosnake/isosnakeGameLauncher.ts')).isosnakeGameLauncher,
-  isoislands: async () =>
-    (await import('./worlds/isoislands/isoislandsGameLauncher.ts')).isoislandsGameLauncher,
-  isocity: async () =>
-    (await import('./worlds/isocity/isocityGameLauncher.ts')).isocityGameLauncher,
-  isocasino: async () =>
-    (await import('./worlds/isocasino/isocasinoGameLauncher.ts')).isocasinoGameLauncher,
-  isovegas: async () =>
-    (await import('./worlds/isovegas/isovegasGameLauncher.ts')).isovegasGameLauncher,
-  isovienna: async () =>
-    (await import('./worlds/isovienna/isoviennaGameLauncher.ts')).isoviennaGameLauncher,
-  isoairport: async () =>
-    (await import('./worlds/isoairport/isoairportGameLauncher.ts')).isoairportGameLauncher,
-  isosoccer: async () =>
-    (await import('./worlds/isosoccer/isosoccerGameLauncher.ts')).isosoccerGameLauncher,
-  isoaws: async () => (await import('./worlds/isoaws/isoawsGameLauncher.ts')).isoawsGameLauncher,
-  flow: async () => (await import('./worlds/flow/flowGameLauncher.ts')).flowGameLauncher,
-  isoflow: async () =>
-    (await import('./worlds/isoflow/isoflowGameLauncher.ts')).isoflowGameLauncher,
-  isocontainers: async () =>
-    (await import('./worlds/isocontainers/isocontainersGameLauncher.ts'))
-      .isocontainersGameLauncher,
 }
 
 // read the 'world' query parameter

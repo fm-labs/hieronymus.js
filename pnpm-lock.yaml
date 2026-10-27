@@ -23,9 +23,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^7.0.0
         version: 7.18.0(eslint@8.57.1(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)
-      cloudia-common:
-        specifier: link:../cloudia-common
-        version: link:../cloudia-common
       eslint:
         specifier: ^8.45.0
         version: 8.57.1(supports-color@8.1.1)
@@ -65,6 +62,25 @@ importers:
       vitest:
         specifier: ^1.1.0
         version: 1.6.1(@types/node@20.19.43)(sass@1.106.1)(supports-color@8.1.1)
+
+  examples:
+    dependencies:
+      '@fmlabs/world':
+        specifier: workspace:*
+        version: link:..
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.5
+        version: 20.19.43
+      cloudia-common:
+        specifier: link:../../cloudia-common
+        version: link:../../cloudia-common
+      typescript:
+        specifier: ^5.2.2
+        version: 5.9.3
+      vite:
+        specifier: ^5.0.8
+        version: 5.4.21(@types/node@20.19.43)(sass@1.106.1)
 
 packages:
 

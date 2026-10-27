@@ -5,7 +5,7 @@ import {
   roadDirections,
   type RoadMap,
   type Vehicle,
-} from '../src/worlds/isocity/isocity.traffic'
+} from '../examples/src/worlds/isocity/isocity.traffic'
 import {
   groundOf,
   LANDMARKS,
@@ -16,7 +16,7 @@ import {
   VIENNA_MAP,
   viennaRoadMap,
   viennaTramMap,
-} from '../src/worlds/isovienna/isovienna.map'
+} from '../examples/src/worlds/isovienna/isovienna.map'
 
 const map = parseViennaMap()
 const isRoad = viennaRoadMap(VIENNA_MAP)

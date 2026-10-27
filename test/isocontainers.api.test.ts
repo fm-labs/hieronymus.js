@@ -7,8 +7,8 @@ import {
   loadFromApi,
   loadHost,
   type ApiGet,
-} from '../src/worlds/isocontainers/isocontainers.api'
-import { buildContainersModel } from '../src/worlds/isocontainers/isocontainers.layout'
+} from '../examples/src/worlds/isocontainers/isocontainers.api'
+import { buildContainersModel } from '../examples/src/worlds/isocontainers/isocontainers.layout'
 
 /** A container as docker inspect (and the API) returns it, with what the importer reads */
 const container = (name: string, image: string, extra: Record<string, unknown> = {}) => ({

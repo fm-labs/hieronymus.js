@@ -8,7 +8,7 @@ import {
   parseIslandMap,
   WATER,
   type IslandMap,
-} from '../src/worlds/isoislands/isoislands.generator'
+} from '../examples/src/worlds/isoislands/isoislands.generator'
 
 /** Land cells grouped into islands (cells touching, also diagonally, belong to the same island) */
 function landRegions(map: IslandMap): Array<Array<[number, number]>> {

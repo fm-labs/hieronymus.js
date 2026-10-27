@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRandom } from '../src/worlds/isoislands/isoislands.generator'
+import { createRandom } from '../examples/src/worlds/isoislands/isoislands.generator'
 import {
   createMatch,
   GOAL_Y0,
@@ -9,8 +9,8 @@ import {
   PITCH_WIDTH,
   stepMatch,
   type Match,
-} from '../src/worlds/isosoccer/isosoccer.match'
-import { cellKind, MAP_COLUMNS, MAP_ROWS } from '../src/worlds/isosoccer/isosoccer.stadium'
+} from '../examples/src/worlds/isosoccer/isosoccer.match'
+import { cellKind, MAP_COLUMNS, MAP_ROWS } from '../examples/src/worlds/isosoccer/isosoccer.stadium'
 
 const DT = 1 / 60
 

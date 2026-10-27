@@ -7,7 +7,7 @@ import {
   parseSize,
   sizeClass,
   tankHeight,
-} from '../src/worlds/isocontainers/isocontainers.layout'
+} from '../examples/src/worlds/isocontainers/isocontainers.layout'
 import {
   STYLES,
   badgeOf,
@@ -21,16 +21,16 @@ import {
   resolveLook,
   upsertRule,
   type StyleRule,
-} from '../src/worlds/isocontainers/isocontainers.styles'
+} from '../examples/src/worlds/isocontainers/isocontainers.styles'
 import {
   advise,
   adviseContainer,
   applyFix,
   imageTag,
   rate,
-} from '../src/worlds/isocontainers/isocontainers.advisor'
-import { SAMPLES } from '../src/worlds/isocontainers/isocontainers.samples'
-import type { ContainersSpec } from '../src/worlds/isocontainers/isocontainers.types'
+} from '../examples/src/worlds/isocontainers/isocontainers.advisor'
+import { SAMPLES } from '../examples/src/worlds/isocontainers/isocontainers.samples'
+import type { ContainersSpec } from '../examples/src/worlds/isocontainers/isocontainers.types'
 
 const base = { name: 'db', image: 'postgres:16', kind: 'database' as const, labels: {} }
 

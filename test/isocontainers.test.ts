@@ -5,21 +5,21 @@ import {
   parseSize,
   placeEnvironments,
   pointAlong,
-} from '../src/worlds/isocontainers/isocontainers.layout'
+} from '../examples/src/worlds/isocontainers/isocontainers.layout'
 import {
   fromCompose,
   guessKind,
   subnetOf,
   toEnvironments,
-} from '../src/worlds/isocontainers/isocontainers.import'
-import { ContainersSimulation } from '../src/worlds/isocontainers/isocontainers.sim'
-import { SAMPLES } from '../src/worlds/isocontainers/isocontainers.samples'
-import { stateColor, stateText } from '../src/worlds/isocontainers/isocontainers.draw'
+} from '../examples/src/worlds/isocontainers/isocontainers.import'
+import { ContainersSimulation } from '../examples/src/worlds/isocontainers/isocontainers.sim'
+import { SAMPLES } from '../examples/src/worlds/isocontainers/isocontainers.samples'
+import { stateColor, stateText } from '../examples/src/worlds/isocontainers/isocontainers.draw'
 import type {
   ContainerSpec,
   ContainersModel,
   ContainersSpec,
-} from '../src/worlds/isocontainers/isocontainers.types'
+} from '../examples/src/worlds/isocontainers/isocontainers.types'
 
 /** mulberry32 */
 const createRandom = (seed: number) => () => {

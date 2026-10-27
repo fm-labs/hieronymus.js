@@ -9,7 +9,7 @@ import {
   ROOMS,
   roomAt,
   walkableMap,
-} from '../src/worlds/isocasino/isocasino.floor'
+} from '../examples/src/worlds/isocasino/isocasino.floor'
 
 const plan = parseFloorPlan()
 const isWalkable = walkableMap(FLOOR_PLAN)

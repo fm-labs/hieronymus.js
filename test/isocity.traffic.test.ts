@@ -10,7 +10,7 @@ import {
   vehiclePosition,
   type RoadMap,
   type Vehicle,
-} from '../src/worlds/isocity/isocity.traffic'
+} from '../examples/src/worlds/isocity/isocity.traffic'
 
 /** '#' is road, anything else is not */
 const roadMap =
@@ -113,7 +113,7 @@ describe('isocity traffic', () => {
 })
 
 describe('isocity example map', async () => {
-  const { CITY_MAP, cityRoadMap } = await import('../src/worlds/isocity/isocity.world')
+  const { CITY_MAP, cityRoadMap } = await import('../examples/src/worlds/isocity/isocity.world')
   const isRoad = cityRoadMap(CITY_MAP)
 
   it('is a rectangle', () => {

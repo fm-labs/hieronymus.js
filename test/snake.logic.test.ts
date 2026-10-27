@@ -6,7 +6,7 @@ import {
   queueDirection,
   stepSnake,
   type SnakeState,
-} from '../src/worlds/snake/snake.logic'
+} from '../examples/src/worlds/snake/snake.logic'
 
 const first = () => 0
 

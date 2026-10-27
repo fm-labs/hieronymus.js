@@ -1,5 +1,5 @@
 {
-  "name": "world",
+  "name": "@fmlabs/world",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -18,12 +18,12 @@
   },
   "scripts": {
     "dev": "vite",
-    "build0": "tsc && vite build",
     "build": "tsc --p ./tsconfig.build.json && vite build",
+    "build:watch": "vite build --watch",
+    "examples": "pnpm --filter @fmlabs/world-examples dev",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview",
-    "dev:watch": "tsc-watch --onSuccess \"yarn build\"",
     "test": "vitest --silent=false --reporter=verbose"
   },
   "devDependencies": {
@@ -32,7 +32,6 @@
     "@types/pug": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "cloudia-common": "link:../cloudia-common",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
