@@ -2,6 +2,7 @@
  * Drawing helpers and the color scheme of the 'isoaws' world.
  * The shapes come from the isovegas drawing kit (IsoPainter), which also darkens every surface at night.
  */
+import { FONT, hexAlpha } from '../isocontainers/isocontainers.draw.ts'
 import type { SubnetTier } from './isoaws.inventory.ts'
 
 export { IsoPainter, isoOffset, mix, noise, shade, type Point } from '../isovegas/isovegas.draw.ts'
@@ -30,13 +31,22 @@ export const AWS = {
   orange: '#ff9900',
 }
 
-/** Day colors; IsoPainter.c() turns them into night colors */
-export const GROUND_COLORS = {
-  land: '#cfd8d3',
-  campus: '#c6c9e6',
-  park: '#a9d39a',
-  slab: '#7d8a99',
+/**
+ * The region plates, in the look of 'isocontainers': a dark slab, a floor lit from the back, and a
+ * rim in the color of the region. They are dark by day too, so they don't go through IsoPainter.c().
+ */
+export const PLATE = {
+  floor: '#0a1012',
+  floorLit: '#111b1d',
+  edge: '#18231f',
+  under: '#030506',
+  /** Rounded corners, in cells */
+  radius: 0.75,
 }
+
+/** One color per region, in order of appearance; the same palette as the isocontainers regions */
+export { REGION_COLORS } from '../isocontainers/isocontainers.layout.ts'
+export { FONT, hexAlpha }
 
 export const TIER_COLORS: Record<SubnetTier, string> = {
   public: '#a7d98b',
@@ -61,7 +71,8 @@ export const isVisible = (scene: AwsScene, x: number, y: number, margin = 160) =
 
 /**
  * Text painted flat on the ground, running along the columns (down to the right on screen).
- * Sizes are in 1/64 of a cell, so a 16 unit font is a quarter of a cell high.
+ * Sizes are in 1/64 of a cell, so a 16 unit font is a quarter of a cell high. Monospace, like the
+ * captions of 'isocontainers'; `spacing` is the letter spacing in the same units.
  */
 export function groundText(
   ctx: CanvasRenderingContext2D,
@@ -70,12 +81,19 @@ export function groundText(
   y: number,
   size: number,
   color: string,
-  options: { weight?: string; maxWidth?: number; glow?: number; align?: CanvasTextAlign } = {},
+  options: {
+    weight?: string
+    maxWidth?: number
+    glow?: number
+    align?: CanvasTextAlign
+    spacing?: number
+  } = {},
 ) {
   ctx.save()
   // text x → along the columns, text y → along the rows
   ctx.transform(0.5, 0.25, -0.5, 0.25, x, y)
-  ctx.font = `${options.weight ?? 'bold'} ${size}px Arial, sans-serif`
+  ctx.font = `${options.weight ?? 'bold'} ${size}px ${FONT.mono}`
+  ctx.letterSpacing = `${options.spacing ?? 0}px`
   ctx.textAlign = options.align ?? 'left'
   ctx.textBaseline = 'middle'
   if (options.glow) {

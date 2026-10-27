@@ -10,7 +10,7 @@
  * - Resources stand on the plots of their subnets, one per cell. The back row of a plot carries its
  *   painted name and CIDR.
  * - Regional services outside the VPCs (functions, buckets, queues, file systems, CloudFront) stand
- *   in a park next to the campuses.
+ *   in a park at the front of the district, below the campuses.
  */
 import type {
   District,
@@ -50,7 +50,7 @@ export type DistrictLayout = {
   /** Including a border of one cell all around */
   rect: Rect
   campuses: CampusLayout[]
-  /** Where the regional services stand: below a short campus, and/or next to the campuses */
+  /** Where the regional services stand: one park below the campuses, or none */
   parks: Rect[]
 }
 
@@ -171,28 +171,20 @@ function planDistrict(district: District): DistrictPlan {
     })
     dc += column.cols + 1
   }
-  let n = district.services.length
+  // the regional services: one park at the front, below the campuses and as wide as they are; a
+  // free row above it carries its name (also without campuses, where it is roughly square)
+  const n = district.services.length
   const parks: Rect[] = []
-  // first the free space below the shortest column of campuses
-  const roomy = [...columns].sort((a, b) => a.rows - b.rows)[0]
-  if (n > 0 && roomy && height - roomy.rows - 1 >= 2 && roomy.cols >= 3) {
-    const rows = height - roomy.rows - 1
-    // only as wide as needed
-    const cols = Math.min(roomy.cols, Math.ceil(n / rows))
-    n -= cols * rows
-    parks.push({ col: roomy.dc, row: roomy.rows + 1, cols, rows })
-  }
-  // the rest next to the campuses, as high as they are, or roughly square when there are none
-  let parkCols = 0
+  const width = dc > 0 ? dc - 1 : Math.max(3, Math.ceil(Math.sqrt(n)))
   if (n > 0) {
-    const rows = height > 0 ? height : Math.max(3, Math.ceil(Math.sqrt(n)))
-    parkCols = Math.ceil(n / rows)
-    parks.push({ col: dc, row: 0, cols: parkCols, rows })
+    // filled column by column, so no column stays empty
+    const rows = Math.ceil(n / Math.min(width, n))
+    parks.push({ col: 0, row: height > 0 ? height + 1 : 1, cols: Math.ceil(n / rows), rows })
   }
-  const parkRows = Math.max(0, ...parks.map((p) => p.row + p.rows))
-  const innerCols = Math.max(10, 1 + dc + (parkCols ? parkCols + 1 : 0))
-  // header, the tallest campus or the park, and a margin row
-  const innerRows = HEADER_ROWS + Math.max(height, parkRows) + 1
+  const bottom = Math.max(height, ...parks.map((p) => p.row + p.rows))
+  const innerCols = Math.max(10, 1 + Math.max(dc, width + 1))
+  // header, the campuses and the park, and a margin row
+  const innerRows = HEADER_ROWS + bottom + 1
   return { district, campuses, parks, innerCols, innerRows }
 }
 

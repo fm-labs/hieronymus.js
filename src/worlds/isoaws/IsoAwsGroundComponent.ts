@@ -2,8 +2,8 @@ import type { GameComponentProperties, IGameComponent } from '../../../lib/game.
 import { AbstractGameComponent } from '../../../lib'
 import {
   ellipsis,
-  GROUND_COLORS,
   groundText,
+  hexAlpha,
   IsoPainter,
   isVisible,
   mix,
@@ -11,11 +11,13 @@ import {
   TIER_COLORS,
   TIER_GLOW,
   AWS,
+  PLATE,
+  REGION_COLORS,
   type AwsScene,
   type Point,
 } from './isoaws.draw.ts'
 import type { Subnet } from './isoaws.inventory.ts'
-import { GROUND, groundAt, type CityLayout, type Rect } from './isoaws.layout.ts'
+import type { CityLayout, DistrictLayout, Rect } from './isoaws.layout.ts'
 
 export interface IsoAwsGroundComponentProps extends GameComponentProperties {
   tileSize: number
@@ -24,6 +26,11 @@ export interface IsoAwsGroundComponentProps extends GameComponentProperties {
 }
 
 const SLAB_DEPTH = 26
+/** Dimmed captions on the plates, as in isocontainers */
+const MUTED = '#8a9894'
+/** The VPCs and the park are faint tinted fields on the plate, like the isocontainers regions */
+const CAMPUS_FIELD = hexAlpha(AWS.networking, 0.07)
+const PARK_FIELD = hexAlpha(TIER_GLOW.public, 0.05)
 
 /**
  * The whole ground of the city in one component: the slab, land, campuses, plots and the
@@ -35,8 +42,25 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
 
   public readonly componentType: string = 'IsoAwsGround'
 
+  /** The color of each region, in order of appearance; a region in several accounts keeps one */
+  private readonly regionColors = new Map<string, string>()
+  private readonly captions = new Map<DistrictLayout, string>()
+
   constructor(properties: IsoAwsGroundComponentProps) {
     super(properties)
+    for (const d of properties.layout.districts) {
+      this.captions.set(d, IsoAwsGroundComponent.caption(d))
+      const { district } = d
+      if (this.regionColors.has(district.region)) continue
+      this.regionColors.set(
+        district.region,
+        REGION_COLORS[this.regionColors.size % REGION_COLORS.length],
+      )
+    }
+  }
+
+  private regionColor(region: string) {
+    return this.regionColors.get(region) ?? REGION_COLORS[0]
   }
 
   update(deltaTime: number): void {}
@@ -44,9 +68,8 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
   draw(ctx: CanvasRenderingContext2D): void {
     const { tileSize, layout, scene } = this.properties
     const p = new IsoPainter(ctx, tileSize, scene.night, [this.x, this.y])
-    const night = scene.night
 
-    // the islands, back to front: the sides of the slab, and the land on top
+    // the plates, back to front: the slab, its floor and the rim
     const islands = [...layout.districts].sort(
       (a, b) =>
         a.rect.col +
@@ -55,9 +78,12 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
         a.rect.rows -
         (b.rect.col + b.rect.cols + b.rect.row + b.rect.rows),
     )
-    for (const d of islands) if (this.rectVisible(p, d.rect)) this.drawIsland(p, d.rect)
+    for (const d of islands)
+      if (this.rectVisible(p, d.rect))
+        this.drawIsland(p, d.rect, this.regionColor(d.district.region))
 
-    // areas are filled as one polygon each, one path per color
+    // areas are filled as one polygon each, one path per color; rgba colors are see-through
+    // fields on the dark plate, and are not darkened at night
     const paths = new Map<string, Path2D>()
     const area = (r: Rect, color: string) => {
       if (!this.rectVisible(p, r)) return
@@ -75,27 +101,28 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
     }
     for (const d of layout.districts) {
       for (const c of d.campuses) {
-        area(c.rect, GROUND_COLORS.campus)
+        area(c.rect, CAMPUS_FIELD)
         for (const plot of c.plots) area(plot.rect, TIER_COLORS[plot.subnet.tier])
       }
-      for (const park of d.parks) area(park, GROUND_COLORS.park)
+      for (const park of d.parks) area(park, PARK_FIELD)
     }
     for (const [color, path] of paths) {
-      ctx.fillStyle = p.c(color)
+      ctx.fillStyle = color.startsWith('rgba') ? color : p.c(color)
       ctx.fill(path)
     }
 
     for (const d of layout.districts) {
-      this.drawDistrict(p, d.rect, d.district.region, d.district.account)
+      this.drawDistrict(p, d)
       for (const c of d.campuses) {
         if (!this.rectVisible(p, c.rect)) continue
-        this.outline(p, c.rect, 0.12, mix(AWS.networking, '#ffffff', 0.2), 2.5, night)
+        this.outline(p, c.rect, 0.12, mix(AWS.networking, '#ffffff', 0.2), 2, 1)
         this.drawGateway(p, c.gateway, c.vpc.name, c.vpc.cidr, c.vpc.isDefault)
         c.zones.forEach((az, z) => {
           // the zone names at the back of each column of plots, on the border
           const plotCols = (c.rect.cols - 1) / c.zones.length - 1
           const [x, y] = p.at(c.rect.col + 1 + z * (plotCols + 1) + 0.15, c.rect.row + 0.5)
-          groundText(p.ctx, az, x, y, 16, night > 0.5 ? '#d9ccff' : '#4c3b8f', {
+          groundText(p.ctx, az.toUpperCase(), x, y, 14, '#d9ccff', {
+            spacing: 2,
             maxWidth: plotCols * 64 - 20,
           })
         })
@@ -103,14 +130,20 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
       }
       const park = d.parks[0]
       if (park && this.rectVisible(p, park)) {
-        const [x, y] = p.at(park.col + 0.1, park.row - 0.3)
+        // a dashed edge, like the region fields of isocontainers
+        ctx.save()
+        ctx.setLineDash([10, 7])
+        this.outline(p, park, 0.08, TIER_GLOW.public, 1.5, 0.3)
+        ctx.restore()
+        const [x, y] = p.at(park.col + 0.1, park.row - 0.35)
         groundText(
           p.ctx,
           d.district.key === 'global' ? 'EDGE LOCATIONS' : 'REGIONAL SERVICES',
           x,
           y,
-          13,
-          night > 0.5 ? '#c8f5b8' : '#2f5a26',
+          14,
+          '#c8f5b8',
+          { spacing: 2 },
         )
       }
     }
@@ -126,30 +159,107 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
     )
   }
 
-  /** An island: the two front sides of its slab, and the land on top */
-  private drawIsland(p: IsoPainter, r: Rect) {
-    const down = (pt: Point): Point => [pt[0], pt[1] + SLAB_DEPTH]
-    const back = p.at(r.col, r.row)
-    const right = p.at(r.col + r.cols, r.row)
-    const front = p.at(r.col + r.cols, r.row + r.rows)
-    const left = p.at(r.col, r.row + r.rows)
-    p.poly([left, front, down(front), down(left)], shade(p.c(GROUND_COLORS.slab), -0.1))
-    p.poly([front, right, down(right), down(front)], shade(p.c(GROUND_COLORS.slab), -0.35))
-    p.poly([back, right, front, left], p.c(GROUND_COLORS.land))
-    // a glowing edge at night
-    if (p.night > 0) {
-      const ctx = p.ctx
+  /**
+   * A region plate in the look of 'isocontainers': a soft shadow below, a slab with rounded corners
+   * that darkens toward its underside, a floor lit from the back, and a glowing rim in the region's
+   * color. It is drawn in grid space, so the rounded rectangle lies flat on the ground.
+   */
+  private drawIsland(p: IsoPainter, r: Rect, color: string) {
+    const ctx = p.ctx
+    const [ox, oy] = p.at(0, 0)
+    const [cx, cy] = p.at(1, 0)
+    const [rx, ry] = p.at(0, 1)
+    // a cell is this many pixels across, so line widths can be given in pixels
+    const cell = Math.hypot(cx - ox, cy - oy)
+    /** The plate's outline `dy` pixels lower, `grow` cells wider on each side */
+    const plate = (dy: number, draw: () => void, grow = 0) => {
       ctx.save()
-      ctx.globalAlpha = p.night
-      ctx.strokeStyle = AWS.orange
-      ctx.lineWidth = 2
+      ctx.setTransform(ctx.getTransform().translate(0, dy))
+      ctx.transform(cx - ox, cy - oy, rx - ox, ry - oy, ox, oy)
       ctx.beginPath()
-      ctx.moveTo(...down(left))
-      ctx.lineTo(...down(front))
-      ctx.lineTo(...down(right))
-      ctx.stroke()
+      ctx.roundRect(
+        r.col - grow,
+        r.row - grow,
+        r.cols + grow * 2,
+        r.rows + grow * 2,
+        PLATE.radius + grow,
+      )
+      draw()
       ctx.restore()
     }
+
+    // the shadow below, so the plate seems to hover: a few soft layers instead of a costly blur
+    for (let i = 0; i < 4; i++) {
+      plate(
+        SLAB_DEPTH + 24,
+        () => {
+          ctx.fillStyle = 'rgba(0,0,0,0.06)'
+          ctx.fill()
+        },
+        0.1 + i * 0.3,
+      )
+    }
+
+    // the slab's edge, from its dark underside up to the floor
+    const steps = Math.ceil(SLAB_DEPTH / 2)
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps
+      plate(SLAB_DEPTH * (1 - t), () => {
+        ctx.fillStyle = mix(PLATE.under, PLATE.edge, t)
+        ctx.fill()
+      })
+    }
+    // the lip under the rim catches a little light, the underside a little less
+    for (const [dy, alpha] of [
+      [SLAB_DEPTH, 0.07],
+      [4, 0.16],
+    ]) {
+      plate(dy, () => {
+        ctx.strokeStyle = `rgba(225,236,231,${alpha})`
+        ctx.lineWidth = 1.5 / cell
+        ctx.stroke()
+      })
+    }
+
+    plate(0, () => {
+      // the floor: lit from the back, darker toward the front edges
+      const fx = r.col + r.cols * 0.35
+      const fy = r.row + r.rows * 0.3
+      const floor = ctx.createRadialGradient(fx, fy, 0, fx, fy, Math.hypot(r.cols, r.rows) * 0.8)
+      floor.addColorStop(0, PLATE.floorLit)
+      floor.addColorStop(1, PLATE.floor)
+      ctx.fillStyle = floor
+      ctx.fill()
+      // the tiles, one per cell; they fade out from far away before they turn into a moiré
+      const t = ctx.getTransform()
+      const onScreen = (cell * Math.hypot(t.a, t.b)) / Math.hypot(cx - ox, cy - oy)
+      const tiles = Math.min(1, Math.max(0, (onScreen - 8) / 16))
+      if (tiles > 0) {
+        ctx.save()
+        ctx.clip()
+        ctx.beginPath()
+        for (let c = r.col + 1; c < r.col + r.cols; c++) {
+          ctx.moveTo(c, r.row)
+          ctx.lineTo(c, r.row + r.rows)
+        }
+        for (let w = r.row + 1; w < r.row + r.rows; w++) {
+          ctx.moveTo(r.col, w)
+          ctx.lineTo(r.col + r.cols, w)
+        }
+        ctx.strokeStyle = `rgba(200,220,212,${0.05 * tiles})`
+        ctx.lineWidth = 1 / cell
+        ctx.stroke()
+        ctx.restore()
+        ctx.beginPath()
+        ctx.roundRect(r.col, r.row, r.cols, r.rows, PLATE.radius)
+      }
+      // the rim in the region's color, with a glow
+      ctx.shadowColor = hexAlpha(color, 0.4)
+      ctx.shadowBlur = 8
+      ctx.strokeStyle = mix(color, '#ffffff', 0.2)
+      ctx.lineWidth = 3.5 / cell
+      ctx.stroke()
+    })
   }
 
   /** A rectangle's outline on the ground, inset by `inset` cells */
@@ -183,32 +293,51 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
     ctx.restore()
   }
 
-  private drawDistrict(p: IsoPainter, r: Rect, region: string, account: string) {
+  /** The region's name in its color, and a caption below it, as on the isocontainers regions */
+  private drawDistrict(p: IsoPainter, d: DistrictLayout) {
+    const r = d.rect
     if (!this.rectVisible(p, r)) return
-    const night = p.night
+    const { region } = d.district
     const [x, y] = p.at(r.col + 2, r.row + 1.75)
     const title = region === 'global' ? 'GLOBAL' : region.toUpperCase()
-    groundText(p.ctx, title, x, y, 46, night > 0.5 ? AWS.orange : AWS.ink, {
-      glow: night > 0.5 ? 10 : 0,
+    groundText(p.ctx, title, x, y, 40, this.regionColor(region), {
+      glow: 10,
+      spacing: 6,
       maxWidth: (r.cols - 4) * 64,
     })
-    if (account) {
-      const [ax, ay] = p.at(r.col + 2, r.row + 2.65)
-      groundText(p.ctx, `ACCOUNT ${account}`, ax, ay, 18, night > 0.5 ? '#ffd8a0' : '#4b5563', {
-        weight: 'normal',
-      })
-    }
+    const [ax, ay] = p.at(r.col + 2, r.row + 2.65)
+    groundText(p.ctx, this.captions.get(d) ?? '', ax, ay, 15, MUTED, {
+      weight: '600',
+      spacing: 2,
+      maxWidth: (r.cols - 4) * 64,
+    })
+  }
+
+  /** E.g. 'ACCOUNT 123456789012 · 2 VPCS · 4/8 EC2 UP · 12 SERVICES' */
+  private static caption({ district }: DistrictLayout): string {
+    const instances = district.vpcs
+      .flatMap((v) => v.subnets.flatMap((s) => s.resources))
+      .filter((r) => r.kind === 'instance')
+    const up = instances.filter((r) => r.state === 'running').length
+    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 'S'}`
+    return [
+      district.account && `ACCOUNT ${district.account}`,
+      district.vpcs.length && plural(district.vpcs.length, 'VPC'),
+      instances.length && `${up}/${instances.length} EC2 UP`,
+      district.services.length && plural(district.services.length, 'SERVICE'),
+    ]
+      .filter(Boolean)
+      .join(' · ')
   }
 
   private drawGateway(p: IsoPainter, r: Rect, name: string, cidr: string, isDefault: boolean) {
-    const night = p.night
     const [x, y] = p.at(r.col + 0.1, r.row + 0.35)
     const label = `${ellipsis(name, 28)}${isDefault ? ' (default)' : ''}`
-    groundText(p.ctx, `VPC ${label}`, x, y, 24, night > 0.5 ? '#e4d9ff' : AWS.networking, {
+    groundText(p.ctx, `VPC ${label}`, x, y, 22, '#e4d9ff', {
       maxWidth: (r.cols - 1.2) * 64,
     })
     const [cx, cy] = p.at(r.col + 0.1, r.row + 0.72)
-    groundText(p.ctx, cidr, cx, cy, 19, night > 0.5 ? '#b9a6ff' : '#4c3b8f', { weight: 'normal' })
+    groundText(p.ctx, cidr, cx, cy, 17, '#b9a6ff', { weight: 'normal' })
   }
 
   private drawPlot(p: IsoPainter, r: Rect, subnet: Subnet) {
