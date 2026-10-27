@@ -1,6 +1,5 @@
-import type { IGame, IGameSystem, ITileMap } from '../game.types'
-import { AbstractGameSystem } from './AbstractGameSystem'
-import IsoCharacterComponent2 from '../components/IsoCharacterComponent2'
+import type { IGame, IGameSystem, ITileMap } from '@fmlabs/world'
+import { AbstractGameSystem, IsoCharacterComponent2 } from '@fmlabs/world'
 
 export class MechDemoSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'MechDemoSystem'

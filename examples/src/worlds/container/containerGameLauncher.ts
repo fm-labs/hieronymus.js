@@ -8,7 +8,6 @@ import containerWorldBuilder from './container.world.ts'
 import { CameraSystem } from '@fmlabs/world'
 import { GridLinesSystem } from '@fmlabs/world'
 import { ContainerSystem } from './ContainerSystem.ts'
-import { MechDemoSystem } from '@fmlabs/world'
 import { WebUiSystem2 } from '@fmlabs/world'
 
 const API_BASE_URL = 'http://127.0.0.1:3080/'
@@ -137,7 +136,6 @@ export const containerGameLauncher = async (app: HTMLDivElement) => {
     game.addSystem(new GridSystem(game, tileMap))
     game.addSystem(new ContainerSystem(game, tileMap, api))
     game.addSystem(new TileMapSystem(game, tileMap))
-    //game.addSystem(new MechDemoSystem(game, tileMap))
     //game.addSystem(new TileMapEditorSystem(game, tileMap))
   } else {
     throw new Error('No inventory URL provided')

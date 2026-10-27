@@ -7,7 +7,6 @@ import { TileMapEditorSystem } from '../../../lib'
 import { InfoSystem } from '../../../lib'
 import { CameraSystem } from '../../../lib/systems/CameraSystem.ts'
 import devWorldBuilder from './dev.world.ts'
-import { MechDemoSystem } from '../../../lib/systems/MechDemoSystem.ts'
 import { GridLinesSystem } from '../../../lib/systems/GridLinesSystem.ts'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
@@ -26,7 +25,6 @@ export const devGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new GridLinesSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
   game.addSystem(new TileMapEditorSystem(game, tileMap))
-  game.addSystem(new MechDemoSystem(game, tileMap, 5)) // 5 = 'Objects' layer, depth-sorted with the buildings
 
   return game
 }

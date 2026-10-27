@@ -16,7 +16,6 @@ system lifecycle and how to write your own.
 | TileMapEditorSystem                               | `(game, tileMap)`          | –          | HTML editor panels: sprite palette, layers, select/draw mode, save.                 |
 | InfoSystem                                        | `(game)`                   | –          | HTML overlay with FPS, dimensions, camera, mouse and draw counters.                 |
 | HeroSystem                                        | `(game)`                   | yes        | Demo: a controllable character (keyboard / gamepad). Needs the `mech-*` tilesheets. |
-| MechDemoSystem                                    | `(game, tileMap)`          | –          | Demo: spawns walking mech characters.                                               |
 | EntitySystem                                      | `(game)`                   | –          | Experimental: emits `object.update` when a cell is clicked with a selected sprite.  |
 | DebugSystem, DevPanelSystem                       | `(game)`                   | –          | Stubs that log their lifecycle calls.                                               |
 

@@ -11,7 +11,6 @@ import { CameraSystem } from '@fmlabs/world'
 import { AwsInventoryItemFull } from 'cloudia-common'
 import { GraphSystem } from './GraphSystem.ts'
 import { GridLinesSystem } from '@fmlabs/world'
-import { MechDemoSystem } from '@fmlabs/world'
 
 const fetchData = async (url: string): Promise<AwsGraphData> => {
   return await fetch(url).then((response) => {
@@ -41,7 +40,6 @@ export const awsgraphGameLauncher = async (app: HTMLDivElement) => {
     game.addSystem(new GraphSystem(game, graphData))
     game.addSystem(new GridSystem(game, tileMap))
     game.addSystem(new InfoSystem(game))
-    //game.addSystem(new MechDemoSystem(game, tileMap))
   } else {
     throw new Error('No inventory URL provided')
   }

@@ -7,7 +7,7 @@ import { TileMapEditorSystem } from '@fmlabs/world'
 import { InfoSystem } from '@fmlabs/world'
 import { CameraSystem } from '@fmlabs/world'
 import devWorldBuilder from './dev.world.ts'
-import { MechDemoSystem } from '@fmlabs/world'
+import { MechDemoSystem } from './MechDemoSystem.ts'
 import { GridLinesSystem } from '@fmlabs/world'
 
 export const devGameLauncher = async (app: HTMLDivElement) => {
