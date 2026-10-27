@@ -19,7 +19,6 @@ system lifecycle and how to write your own.
 | MechDemoSystem                                    | `(game, tileMap)`          | –          | Demo: spawns walking mech characters.                                               |
 | EntitySystem                                      | `(game)`                   | –          | Experimental: emits `object.update` when a cell is clicked with a selected sprite.  |
 | DebugSystem, DevPanelSystem                       | `(game)`                   | –          | Stubs that log their lifecycle calls.                                               |
-| RoutletteSystem                                   | `(game)`                   | –          | Used by the roulette world.                                                         |
 
 Every system that has its own canvas resizes it on the `resize` event and draws in its `tick()`.
 

@@ -48,7 +48,6 @@ export * from './systems/TileMapSystem'
 export * from './systems/TileMapEditorSystem'
 export * from './systems/WebUiSystem2'
 export * from './systems/MechDemoSystem'
-export * from './systems/RouletteSystem'
 
 export * from './map/IsometricGridProjection'
 export * from './map/OrthogonalGridProjection'

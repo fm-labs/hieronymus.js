@@ -1,8 +1,8 @@
-import type { IGame, IGameSystem } from '../game.types'
-import { AbstractGameSystem } from './AbstractGameSystem'
+import type { IGame, IGameSystem } from '@fmlabs/world'
+import { AbstractGameSystem } from '@fmlabs/world'
 
-export class RoutletteSystem extends AbstractGameSystem implements IGameSystem {
-  public name = 'RoutletteSystem'
+export class RouletteSystem extends AbstractGameSystem implements IGameSystem {
+  public name = 'RouletteSystem'
   private readonly objCanvas: HTMLCanvasElement = document.createElement('canvas')
 
   constructor(game: IGame) {
@@ -15,38 +15,38 @@ export class RoutletteSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   public onLoad() {
-    console.log('RoutletteSystem.onLoad')
+    console.log('RouletteSystem.onLoad')
 
     this._game.$container.appendChild(this.objCanvas)
   }
 
   public onUnload() {
-    console.log('RoutletteSystem.onUnload')
+    console.log('RouletteSystem.onUnload')
 
     this._game.$container.removeChild(this.objCanvas)
   }
 
   public start() {
-    console.log('RoutletteSystem.start')
+    console.log('RouletteSystem.start')
     //this._game.eventbus.on('grid.cellClick', this.handleCellClick.bind(this))
   }
 
   public stop() {
-    console.log('RoutletteSystem.stop')
+    console.log('RouletteSystem.stop')
   }
 
   public async tick() {
-    //console.log('RoutletteSystem.update')
+    //console.log('RouletteSystem.update')
     this.draw(this.objCanvas.getContext('2d')!)
   }
 
   private handleCellClick({ index, col, row }: any) {
-    console.log('[Routlettes] clicked cell', index, col, row)
+    console.log('[Roulettes] clicked cell', index, col, row)
   }
 
   public draw(ctx: CanvasRenderingContext2D) {
     //if (!this.dirty) return
-    //console.log('RoutletteSystem.draw')
+    //console.log('RouletteSystem.draw')
     // const cols = this._game.worldMap.columns
     // const rows = this._game.worldMap.rows
     // const tsize = this._game.worldMap.tileWidth

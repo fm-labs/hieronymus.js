@@ -3,7 +3,7 @@ import { Game, GridSystem, TileMapSystem } from '@fmlabs/world'
 import { InputSystem } from '@fmlabs/world'
 import { InfoSystem } from '@fmlabs/world'
 import { CameraSystem } from '@fmlabs/world'
-import { RoutletteSystem } from '@fmlabs/world'
+import { RouletteSystem } from './RouletteSystem.ts'
 import rouletteWorldBuilder from './roulette.world.ts'
 import { GridLinesSystem } from '@fmlabs/world'
 
@@ -23,6 +23,6 @@ export const rouletteGameLauncher = async (app: HTMLDivElement) => {
   game.addSystem(new GridSystem(game, tileMap))
   game.addSystem(new TileMapSystem(game, tileMap))
   //game.addSystem(new WebUiSystem(game, tileMap))
-  game.addSystem(new RoutletteSystem(game))
+  game.addSystem(new RouletteSystem(game))
   return game
 }
