@@ -3,11 +3,10 @@
  * Pure functions without engine dependencies, so they can be unit tested.
  *
  * - Every account/region is a district: an island of its own. The islands are packed into shelves;
- *   no roads lead from one to another.
- * - Every VPC is a campus inside its district: a ring road, a gateway strip at the back (name, CIDR,
- *   VPN endpoints), and a grid of subnet plots: one column per availability zone, rows by tier
- *   (public, private, isolated, transit), streets between them. The roads of a campus are a network
- *   of their own, so its traffic stays inside the VPC.
+ *   nothing leads from one to another.
+ * - Every VPC is a campus inside its district: an open border, a gateway strip at the back (name,
+ *   CIDR, VPN endpoints), and a grid of subnet plots: one column per availability zone, rows by tier
+ *   (public, private, isolated, transit), with a free lane between them.
  * - Resources stand on the plots of their subnets, one per cell. The back row of a plot carries its
  *   painted name and CIDR.
  * - Regional services outside the VPCs (functions, buckets, queues, file systems, CloudFront) stand
@@ -28,17 +27,16 @@ export type Rect = { col: number; row: number; cols: number; rows: number }
 export const GROUND = {
   void: 0,
   land: 1,
-  road: 2,
-  campus: 3,
-  plot: 4,
-  park: 5,
+  campus: 2,
+  plot: 3,
+  park: 4,
 } as const
 
 export type PlotLayout = { subnet: Subnet; rect: Rect }
 
 export type CampusLayout = {
   vpc: Vpc
-  /** Including the ring road */
+  /** Including the border */
   rect: Rect
   /** The gateway strip at the back, inside the ring */
   gateway: Rect
@@ -125,7 +123,7 @@ function planCampus(vpc: Vpc): CampusPlan {
     tiers,
     plot,
     cols: zones.length * (plot.cols + 1) + 1,
-    // ring, gateway strip, then plots each followed by a street (the last one is the ring)
+    // border, gateway strip, then plots each followed by a lane (the last one is the border)
     rows: 2 + plotRows * (plot.rows + 1),
   }
 }
@@ -256,12 +254,6 @@ export function layoutCity(model: NetworkModel): CityLayout {
       for (let col = r.col; col < r.col + r.cols; col++) owner[row * columns + col] = index
     }
   }
-  const ring = (r: Rect) => {
-    fill({ ...r, rows: 1 }, GROUND.road)
-    fill({ ...r, row: r.row + r.rows - 1, rows: 1 }, GROUND.road)
-    fill({ ...r, cols: 1 }, GROUND.road)
-    fill({ ...r, col: r.col + r.cols - 1, cols: 1 }, GROUND.road)
-  }
   const place = (resource: Resource, col: number, row: number) => {
     placements.push({ resource, col, row })
     own({ col, row, cols: 1, rows: 1 }, { type: 'resource', resource })
@@ -289,15 +281,9 @@ export function layoutCity(model: NetworkModel): CityLayout {
       }
       fill(campusRect, GROUND.campus)
       own(campusRect, { type: 'vpc', campus })
-      ring(campusRect)
-      // streets: one between every column of plots, and one below every row of plots
-      for (let z = 1; z < c.zones.length; z++) {
-        fill({ col: col + z * (c.plot.cols + 1), row, cols: 1, rows: c.rows }, GROUND.road)
-      }
       let plotRow = row + 2
       for (const tier of c.tiers) {
         for (let k = 0; k < tier.rows; k++) {
-          fill({ col, row: plotRow + c.plot.rows, cols: c.cols, rows: 1 }, GROUND.road)
           c.zones.forEach((az, z) => {
             const subnet = c.vpc.subnets.filter((s) => s.tier === tier.tier && s.az === az)[k]
             if (!subnet) return
@@ -360,10 +346,6 @@ export const groundAt = (layout: CityLayout, col: number, row: number): number =
   col < 0 || row < 0 || col >= layout.columns || row >= layout.rows
     ? GROUND.void
     : layout.ground[row * layout.columns + col]
-
-/** Tells whether a cell is road; outside the map it is not */
-export const cityRoadMap = (layout: CityLayout) => (col: number, row: number) =>
-  groundAt(layout, col, row) === GROUND.road
 
 /** What a click on a cell selects: the resource, else the subnet, the VPC or the district */
 export function pickAt(layout: CityLayout, col: number, row: number): Pick | undefined {

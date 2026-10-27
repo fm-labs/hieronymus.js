@@ -26,7 +26,7 @@ export interface IsoAwsGroundComponentProps extends GameComponentProperties {
 const SLAB_DEPTH = 26
 
 /**
- * The whole ground of the city in one component: the slab, land, roads, campuses, plots and the
+ * The whole ground of the city in one component: the slab, land, campuses, plots and the
  * painted labels. It is the only component on the (unsorted) ground layer, placed on cell (0, 0),
  * and draws only the cells in view. Cells of one color are filled as one path.
  */
@@ -57,7 +57,7 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
     )
     for (const d of islands) if (this.rectVisible(p, d.rect)) this.drawIsland(p, d.rect)
 
-    // areas are filled as one polygon each, roads cell by cell; one path per color
+    // areas are filled as one polygon each, one path per color
     const paths = new Map<string, Path2D>()
     const area = (r: Rect, color: string) => {
       if (!this.rectVisible(p, r)) return
@@ -80,28 +80,11 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
       }
       for (const park of d.parks) area(park, GROUND_COLORS.park)
     }
-    const visible: Array<[number, number]> = []
-    for (let row = 0; row < layout.rows; row++) {
-      for (let col = 0; col < layout.columns; col++) {
-        if (layout.ground[row * layout.columns + col] !== GROUND.road) continue
-        const [x, y] = p.at(col + 0.5, row + 0.5)
-        if (!isVisible(scene, x, y, tileSize)) continue
-        visible.push([col, row])
-        area({ col, row, cols: 1, rows: 1 }, GROUND_COLORS.road)
-      }
-    }
     for (const [color, path] of paths) {
       ctx.fillStyle = p.c(color)
       ctx.fill(path)
-      // the same color around each cell hides the seams between neighbors
-      if (color === GROUND_COLORS.road) {
-        ctx.strokeStyle = ctx.fillStyle
-        ctx.lineWidth = 1
-        ctx.stroke(path)
-      }
     }
 
-    this.drawRoadMarkings(p, visible)
     for (const d of layout.districts) {
       this.drawDistrict(p, d.rect, d.district.region, d.district.account)
       for (const c of d.campuses) {
@@ -109,10 +92,10 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
         this.outline(p, c.rect, 0.12, mix(AWS.networking, '#ffffff', 0.2), 2.5, night)
         this.drawGateway(p, c.gateway, c.vpc.name, c.vpc.cidr, c.vpc.isDefault)
         c.zones.forEach((az, z) => {
-          // the zone names at the back of each column of plots, on the ring road
+          // the zone names at the back of each column of plots, on the border
           const plotCols = (c.rect.cols - 1) / c.zones.length - 1
           const [x, y] = p.at(c.rect.col + 1 + z * (plotCols + 1) + 0.15, c.rect.row + 0.5)
-          groundText(p.ctx, az, x, y, 16, night > 0.5 ? '#d9ccff' : '#ffffff', {
+          groundText(p.ctx, az, x, y, 16, night > 0.5 ? '#d9ccff' : '#4c3b8f', {
             maxWidth: plotCols * 64 - 20,
           })
         })
@@ -167,39 +150,6 @@ export class IsoAwsGroundComponent extends AbstractGameComponent implements IGam
       ctx.stroke()
       ctx.restore()
     }
-  }
-
-  /** Lane dashes along the straight pieces of road */
-  private drawRoadMarkings(p: IsoPainter, cells: Array<[number, number]>) {
-    const { layout, scene } = this.properties
-    const ctx = p.ctx
-    const path = new Path2D()
-    for (const [col, row] of cells) {
-      if (groundAt(layout, col, row) !== GROUND.road) continue
-      const road = (dc: number, dr: number) => groundAt(layout, col + dc, row + dr) === GROUND.road
-      const n = road(0, -1)
-      const s = road(0, 1)
-      const e = road(1, 0)
-      const w = road(-1, 0)
-      // straight pieces only, junctions stay clean
-      if ((n || s) && !(e || w)) {
-        const a = p.at(col + 0.5, row + 0.2)
-        const b = p.at(col + 0.5, row + 0.8)
-        path.moveTo(...a)
-        path.lineTo(...b)
-      } else if ((e || w) && !(n || s)) {
-        const a = p.at(col + 0.2, row + 0.5)
-        const b = p.at(col + 0.8, row + 0.5)
-        path.moveTo(...a)
-        path.lineTo(...b)
-      }
-    }
-    ctx.save()
-    ctx.strokeStyle = scene.night > 0.5 ? 'rgba(255,190,90,0.75)' : 'rgba(255,255,255,0.7)'
-    ctx.lineWidth = 1.5
-    ctx.setLineDash([5, 4])
-    ctx.stroke(path)
-    ctx.restore()
   }
 
   /** A rectangle's outline on the ground, inset by `inset` cells */

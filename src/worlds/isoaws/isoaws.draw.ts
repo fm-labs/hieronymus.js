@@ -33,7 +33,6 @@ export const AWS = {
 /** Day colors; IsoPainter.c() turns them into night colors */
 export const GROUND_COLORS = {
   land: '#cfd8d3',
-  road: '#5b6472',
   campus: '#c6c9e6',
   park: '#a9d39a',
   slab: '#7d8a99',

@@ -1,20 +1,11 @@
 import type { IGame, IGameSystem } from '../../../lib/game.types'
 import { AbstractGameSystem } from '../../../lib'
-import {
-  createVehicle,
-  stepTraffic,
-  vehiclePosition,
-  type RoadMap,
-  type Vehicle,
-} from '../isocity/isocity.traffic.ts'
-import { IsoAwsPacketComponent } from './IsoAwsPacketComponent.ts'
 import { AWS, mix, TIER_GLOW } from './isoaws.draw.ts'
 import type { Resource, ResourceKind, Subnet } from './isoaws.inventory.ts'
-import { cityRoadMap, findCampus, findPlot, pickAt, type Pick, type Rect } from './isoaws.layout.ts'
+import { findCampus, findPlot, pickAt, type Pick, type Rect } from './isoaws.layout.ts'
 import type { AwsWorld } from './isoaws.world.ts'
 
 export type IsoAwsSystemOptions = {
-  packetLayer: number
   /** Where the data came from, shown in the explorer */
   source: string
   /** Accounts that can be opened from the explorer */
@@ -24,10 +15,6 @@ export type IsoAwsSystemOptions = {
   /** Select and fly to a VPC, subnet or resource id (or name) at the start */
   select?: string
 }
-
-type Traffic = { vehicle: Vehicle; component: IsoAwsPacketComponent; id: number }
-
-const PACKET_COLORS = ['#ff9900', '#00d1ff', '#ff4fa3', '#7cff6b', '#b48cff', '#ffe066']
 
 const ICON_ROOT = '/aws/awsicons/Architecture-Service-Icons_01312023'
 const ICONS: Record<ResourceKind | 'vpc', string> = {
@@ -67,7 +54,7 @@ const HEIGHTS: Partial<Record<ResourceKind, number>> = {
   database: 34,
 }
 const buildingHeight = (r: Resource) =>
-  r.kind === 'instance' ? 16 + r.size * 8 : HEIGHTS[r.kind] ?? 20
+  r.kind === 'instance' ? 16 + r.size * 8 : (HEIGHTS[r.kind] ?? 20)
 
 const escapeHtml = (text: string) =>
   text.replace(
@@ -76,19 +63,15 @@ const escapeHtml = (text: string) =>
   )
 
 /**
- * Runs the AWS network city: packets on the roads, day and night, picking, the explorer on the left,
- * the info pane on the right and the HUD.
- * Keys: N day / night, + / − packets, space pause, F fit the city, Esc clear the selection.
+ * Runs the AWS network city: day and night, picking, the explorer on the left, the info pane on the
+ * right and the HUD.
+ * Keys: N day / night, F fit the city, Esc clear the selection.
  */
 export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
   public name = 'IsoAwsSystem'
 
   private readonly world: AwsWorld
-  private readonly isRoad: RoadMap
   private readonly options: IsoAwsSystemOptions
-  private readonly traffic: Traffic[] = []
-  private nextId = 1
-  private paused = false
   private targetNight: number
   private skyNight = -1
   private selected?: Pick
@@ -101,16 +84,9 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
     super(game)
     this.world = world
     this.options = options
-    this.isRoad = cityRoadMap(world.layout)
     this.targetNight = world.scene.night
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
-  }
-
-  public onLoad() {
-    const roads = this.world.layout.ground.filter((g) => g === 2).length
-    const count = Math.min(160, Math.max(12, Math.round(roads / 9)))
-    for (let i = 0; i < count; i++) this.addPacket()
   }
 
   public start() {
@@ -143,30 +119,14 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
   }
 
   public async tick(deltaTime: number) {
-    // cap the step, so a long frame (e.g. a background tab) doesn't teleport the packets
+    // cap the step, so a long frame (e.g. a background tab) doesn't jump ahead
     const seconds = Math.min(deltaTime, 100) / 1000
     const { scene } = this.world
     scene.time += seconds
     // dusk and dawn take a second
     scene.night += Math.max(-seconds, Math.min(seconds, this.targetNight - scene.night))
-    if (!this.paused) {
-      stepTraffic(
-        this.traffic.map((t) => t.vehicle),
-        this.isRoad,
-        seconds,
-        Math.random,
-      )
-    }
-    this.traffic.forEach(({ vehicle, component }) => this.syncComponent(vehicle, component))
     this.updateSky()
     this.updateView()
-  }
-
-  private syncComponent(vehicle: Vehicle, component: IsoAwsPacketComponent) {
-    const p = vehiclePosition(vehicle)
-    const screen = this.world.tileMap.projection.mapGridToScreen(p.col - 0.5, p.row - 0.5)
-    component.setPosition(screen.x, screen.y)
-    component.properties.direction = vehicle.direction
   }
 
   /** The visible part of the world, so components can skip drawing what is off screen */
@@ -179,55 +139,6 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
     view.y0 = offset.y / zoom
     view.x1 = (offset.x + width) / zoom
     view.y1 = (offset.y + height) / zoom
-  }
-
-  private addPacket() {
-    const cell = this.findFreeRoadCell()
-    if (!cell) return
-    const id = this.nextId++
-    const color = PACKET_COLORS[id % PACKET_COLORS.length]
-    const vehicle = createVehicle(id, this.isRoad, cell.col, cell.row, Math.random, {
-      kind: 'car',
-      color,
-      speed: 1.4 + Math.random() * 1.2,
-    })
-    const component = new IsoAwsPacketComponent({
-      tileSize: this.world.tileMap.tileWidth,
-      color,
-      direction: vehicle.direction,
-      scene: this.world.scene,
-    })
-    const componentId = this.world.tileMap.addObjectAtGridPos(
-      this.options.packetLayer,
-      cell.col,
-      cell.row,
-      component,
-    )
-    this.syncComponent(vehicle, component)
-    this.traffic.push({ vehicle, component, id: componentId })
-  }
-
-  private removePacket() {
-    const removed = this.traffic.pop()
-    if (removed) this.world.tileMap.removeObject(this.options.packetLayer, removed.id)
-  }
-
-  /** A random road cell without a packet on it or right next to it */
-  private findFreeRoadCell(): { col: number; row: number } | undefined {
-    const { columns, rows } = this.world.layout
-    const taken = new Set(
-      this.traffic.map(({ vehicle }) => {
-        const p = vehiclePosition(vehicle)
-        return `${Math.floor(p.col)},${Math.floor(p.row)}`
-      }),
-    )
-    const cells: Array<{ col: number; row: number }> = []
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < columns; col++) {
-        if (this.isRoad(col, row) && !taken.has(`${col},${row}`)) cells.push({ col, row })
-      }
-    }
-    return cells[Math.floor(Math.random() * cells.length)]
   }
 
   /** The sky behind the slab: a pale blueprint by day, deep navy at night */
@@ -347,10 +258,7 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
 
   private handleKeyDown(e: KeyboardEvent) {
     if ((e.target as HTMLElement | null)?.closest?.('select, input')) return
-    if (e.key === '+' || e.key === '=') this.addPacket()
-    else if (e.key === '-') this.removePacket()
-    else if (e.code === 'Space') this.paused = !this.paused
-    else if (e.key === 'n' || e.key === 'N') this.targetNight = this.targetNight > 0.5 ? 0 : 1
+    if (e.key === 'n' || e.key === 'N') this.targetNight = this.targetNight > 0.5 ? 0 : 1
     else if (e.key === 'f' || e.key === 'F') this.fitView()
     else if (e.key === 'Escape') this.select(undefined)
     else return
@@ -741,10 +649,9 @@ export class IsoAwsSystem extends AbstractGameSystem implements IGameSystem {
   private updateHud() {
     if (!this.$hud) return
     const night = this.targetNight > 0.5
-    const state = this.paused ? ' · <span style="color:#ffca28">paused</span>' : ''
     this.$hud.innerHTML =
-      `<b style="color:${AWS.orange}">ISO AWS</b> · ${night ? '🌙 night' : '☀️ day'} · ${this.traffic.length} packets${state}` +
-      '<span style="opacity:0.6;margin-left:14px">click anything · N day / night · + / − packets · space pause · ' +
+      `<b style="color:${AWS.orange}">ISO AWS</b> · ${night ? '🌙 night' : '☀️ day'}` +
+      '<span style="opacity:0.6;margin-left:14px">click anything · N day / night · ' +
       'F fit · esc clear · WASD / wheel pan · ctrl+wheel zoom</span>'
   }
 }

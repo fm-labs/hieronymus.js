@@ -12,8 +12,7 @@ export const ISOAWS_TILE_SIZE = 64
 
 export const LAYER_GROUND = 0
 export const LAYER_STRUCTURES = 1
-export const LAYER_PACKETS = 2
-export const LAYER_OVERLAY = 3
+export const LAYER_OVERLAY = 2
 
 export type AwsWorld = {
   tileMap: ITileMap
@@ -44,14 +43,13 @@ const isoAwsWorldBuilder = async (items: InventoryItem[], night = 1): Promise<Aw
   }
 
   tileMap.addLayer(LAYER_GROUND, { name: 'Ground', type: 'TILE', data: [] })
-  // buildings and packets stand up from the ground, so they are depth-sorted together
+  // buildings stand up from the ground, so they are depth-sorted
   tileMap.addLayer(LAYER_STRUCTURES, {
     name: 'Structures',
     type: 'TILE',
     data: [],
     depthSort: true,
   })
-  tileMap.addLayer(LAYER_PACKETS, { name: 'Packets', type: 'OBJECT', data: [], depthSort: true })
   // links and the selection are drawn last, above everything
   tileMap.addLayer(LAYER_OVERLAY, { name: 'Overlay', type: 'OBJECT', data: [] })
 
