@@ -2,7 +2,7 @@ import type { GameConfig } from '@fmlabs/world'
 import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/world'
 import { SAMPLES } from './isocontainers.samples.ts'
 import { toEnvironments } from './isocontainers.import.ts'
-import { API_BASE, apiGet, loadFromApi, loadHiddenHosts } from './isocontainers.api.ts'
+import { API_BASE, apiGet, loadHiddenHosts, loadSnapshot, openLive } from './isocontainers.api.ts'
 import type { ContainersSpec } from './isocontainers.types.ts'
 import { parseRules, type StyleRule } from './isocontainers.styles.ts'
 import isoContainersWorldBuilder from './isocontainers.world.ts'
@@ -49,19 +49,14 @@ async function loadSpec(params: URLSearchParams): Promise<{
   if (params.has('api')) {
     const base = params.get('api') || API_BASE
     try {
-      const { spec, failed, hosts, available } = await loadFromApi(
+      // opens from the last snapshot, or with the first host that loads; the others follow
+      const { spec, ...live } = await openLive(
         apiGet(base),
         base,
         loadHiddenHosts(),
+        loadSnapshot(base),
       )
-      if (failed.length) console.warn('isocontainers: hosts not loaded', failed)
-      return {
-        spec,
-        current: 'api',
-        source: base,
-        live: { base, hosts, available },
-        error: failed.length ? `${failed.length} host(s) not loaded: ${failed[0]}` : undefined,
-      }
+      return { spec, current: 'api', source: base, live: { base, ...live } }
     } catch (e) {
       console.warn('isocontainers: API not loaded, showing a sample', e)
       error = `API not loaded: ${(e as Error).message}`

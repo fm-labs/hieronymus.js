@@ -1,12 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ApiError,
   apiGet,
   engineInfo,
   hostCaption,
-  loadFromApi,
   loadHost,
+  loadSnapshot,
+  openLive,
+  saveSnapshot,
   type ApiGet,
+  type LiveSnapshot,
 } from '../examples/src/worlds/isocontainers/isocontainers.api'
 import { buildContainersModel } from '../examples/src/worlds/isocontainers/isocontainers.layout'
 
@@ -81,9 +84,11 @@ const fake =
   }
 
 describe('isocontainers api', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
   it('loads the connected hosts as environments', async () => {
-    const { spec, failed } = await loadFromApi(fake(API))
-    expect(failed).toEqual([])
+    const { spec, loading } = await openLive(fake(API))
+    expect(loading.size).toBe(0)
     expect(spec.id).toBe('api')
     expect(spec.environments.map((e) => e.name)).toEqual(['local'])
     const env = spec.environments[0]
@@ -114,24 +119,39 @@ describe('isocontainers api', () => {
     const api = { ...API }
     delete api['/containers/local/df']
     delete api['/containers/local/info']
-    const { spec } = await loadFromApi(fake(api))
+    const { spec } = await openLive(fake(api))
     expect(spec.environments[0].caption).toBe('2 containers')
     expect(spec.environments[0].volumes!.every((v) => !v.size)).toBe(true)
   })
 
-  it('leaves out a host that fails, and fails when none loads', async () => {
-    const two = {
+  it('opens with the first host that loads; the others follow, and fails when none loads', async () => {
+    let release!: () => void
+    const held = new Promise<void>((resolve) => (release = resolve))
+    const three = {
       ...API,
-      '/containers/hosts': [{ id: 'local' }, { id: 'broken' }],
+      '/containers/hosts': [{ id: 'slow' }, { id: 'local' }, { id: 'broken' }],
+      '/containers/slow/containers': [],
+      '/containers/slow/networks': [],
+      '/containers/slow/volumes': [],
     }
-    const { spec, failed } = await loadFromApi(fake(two))
-    expect(spec.environments).toHaveLength(1)
-    expect(failed).toHaveLength(1)
-    expect(failed[0]).toMatch(/^broken: /)
+    // the slow host answers only once released: the stack doesn't wait for it
+    const get: ApiGet = async (path) => {
+      if (path.startsWith('/containers/slow/')) await held
+      return fake(three)(path)
+    }
+    const { spec, hosts, loading, snapshot } = await openLive(get)
+    expect(spec.environments.map((e) => e.name)).toEqual(['local'])
+    expect(hosts).toEqual([{ alias: 'local', name: 'local' }])
+    expect(snapshot).toBeUndefined()
+    expect([...loading.keys()]).toEqual(['slow', 'broken'])
+    await expect(loading.get('broken')).rejects.toThrow('404')
+    release()
+    expect((await loading.get('slow'))!.name).toBe('slow')
+
     await expect(
-      loadFromApi(fake({ ...API, '/containers/hosts': [{ id: 'broken' }] })),
+      openLive(fake({ ...API, '/containers/hosts': [{ id: 'broken' }] })),
     ).rejects.toThrow('404')
-    await expect(loadFromApi(fake({ '/containers/hosts': [] }))).rejects.toThrow('no connected')
+    await expect(openLive(fake({ '/containers/hosts': [] }))).rejects.toThrow('no connected')
   })
 
   it('skips the hosts switched off, but always loads one', async () => {
@@ -141,15 +161,74 @@ describe('isocontainers api', () => {
     }
     const asked: string[] = []
     const get: ApiGet = (path) => (asked.push(path), fake(two)(path))
-    const { spec, hosts, available, failed } = await loadFromApi(get, '/mc-api', new Set(['other']))
-    expect(failed).toEqual([])
+    const { spec, hosts, available, loading } = await openLive(get, '/mc-api', new Set(['other']))
+    expect(loading.size).toBe(0)
     expect(spec.environments.map((e) => e.name)).toEqual(['local'])
     expect(hosts).toEqual([{ alias: 'local', name: 'local' }])
     expect(available.map((h) => h.id)).toEqual(['local', 'other'])
     expect(asked.some((p) => p.startsWith('/containers/other/'))).toBe(false)
     // all switched off: the first is loaded anyway
-    const all = await loadFromApi(fake(two), '/mc-api', new Set(['local', 'other']))
+    const all = await openLive(fake(two), '/mc-api', new Set(['local', 'other']))
     expect(all.hosts.map((h) => h.alias)).toEqual(['local'])
+  })
+
+  it('opens from a snapshot at once, and loads the hosts again behind it', async () => {
+    const before = await loadHost(fake(API), { id: 'local' })
+    const snapshot: LiveSnapshot = {
+      available: [{ id: 'local' }, { id: 'gone' }],
+      environments: {
+        local: { time: Date.UTC(2026, 9, 27, 9, 30), env: { ...before, containers: [] } },
+        gone: { time: Date.UTC(2026, 9, 27, 9, 0), env: { ...before, name: 'gone' } },
+      },
+    }
+    const asked: string[] = []
+    const get: ApiGet = (path) => (asked.push(path), fake(API)(path))
+    const start = await openLive(get, '/mc-api', new Set(), snapshot)
+    // nothing of a host was asked for yet: the map shows the snapshot
+    expect(asked).toEqual(['/containers/hosts'])
+    expect(start.spec.environments.map((e) => e.name)).toEqual(['local', 'gone'])
+    expect(start.spec.environments[0].containers).toEqual([])
+    expect(start.spec.subtitle).toMatch(/snapshot of .*, refreshing$/)
+    expect(start.snapshot).toBe(Date.UTC(2026, 9, 27, 9, 0))
+    // loaded again: the host with its containers; the host the API no longer lists fails
+    expect((await start.loading.get('local'))!.containers).toHaveLength(2)
+    await expect(start.loading.get('gone')).rejects.toThrow('no longer a connected host')
+    expect((await start.listing)!.map((h) => h.id)).toEqual(['local'])
+    // the hosts switched off are left out of it; a snapshot without the hosts to show is not used
+    const other = await openLive(fake(API), '/mc-api', new Set(['local']), snapshot)
+    expect(other.hosts.map((h) => h.alias)).toEqual(['gone'])
+    const none = await openLive(fake(API), '/mc-api', new Set(), {
+      available: [{ id: 'local' }],
+      environments: {},
+    })
+    expect(none.snapshot).toBeUndefined()
+  })
+
+  it('keeps a snapshot of each host, by the API', () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+    })
+    expect(loadSnapshot('/mc-api')).toBeUndefined()
+    const env = { name: 'local', containers: [] }
+    saveSnapshot('/mc-api', [{ id: 'local' }, { id: 'b' }], 'local', env)
+    saveSnapshot('/mc-api', [{ id: 'local' }, { id: 'b' }], 'b', { name: 'b' })
+    expect(Object.keys(loadSnapshot('/mc-api')!.environments)).toEqual(['local', 'b'])
+    expect(loadSnapshot('/other')).toBeUndefined()
+    // a host the API no longer lists is dropped
+    saveSnapshot('/mc-api', [{ id: 'local' }])
+    const snapshot = loadSnapshot('/mc-api')!
+    expect(Object.keys(snapshot.environments)).toEqual(['local'])
+    expect(snapshot.environments.local.env).toEqual(env)
+    // a full storage only means no snapshot
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError')
+      },
+    })
+    expect(() => saveSnapshot('/mc-api', [{ id: 'local' }], 'local', env)).not.toThrow()
   })
 
   it('tries a request again after a server error', async () => {
@@ -168,6 +247,25 @@ describe('isocontainers api', () => {
       return fake(API)(path)
     }
     await expect(loadHost(missing, { id: 'local' }, 0)).rejects.toThrow('404')
+    // nor after an unreachable node (502), which would only take as long again
+    let tries = 0
+    const unreachable: ApiGet = async (path) => {
+      if (path === '/containers/local/containers') {
+        tries++
+        throw new ApiError(`${path}: 502 Node is unreachable`, 502)
+      }
+      return fake(API)(path)
+    }
+    await expect(loadHost(unreachable, { id: 'local' }, 0)).rejects.toThrow('502')
+    expect(tries).toBe(1)
+  })
+
+  it('gives up a request that takes too long', async () => {
+    const hanging = ((_url: string, init?: RequestInit) =>
+      new Promise((_resolve, reject) =>
+        init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)),
+      )) as typeof fetch
+    await expect(apiGet('/x', hanging, 20)('/a')).rejects.toThrow('/x/a: no answer in 0.02 s')
   })
 
   it('says what is wrong with a response', async () => {

@@ -27,8 +27,12 @@ import { EngineEvents, LiveChanges, engineLine, type DockerEvent } from './isoco
 import {
   apiGet,
   liveHeadline,
+  loadHiddenHosts,
   loadHost,
   saveHiddenHosts,
+  saveSnapshot,
+  shownHosts,
+  snapshotNote,
   type ApiHost,
   type LiveHost,
 } from './isocontainers.api.ts'
@@ -47,6 +51,7 @@ import {
   type Container,
   type ContainersSpec,
   type Entity,
+  type EnvironmentSpec,
   type Environment,
   type Network,
   type Volume,
@@ -75,9 +80,19 @@ export type IsoContainersSystemOptions = {
   source?: string
   /**
    * The live stack: the API and its hosts shown, whose engine events are streamed into the log, and
-   * all its connected hosts (to switch on and off)
+   * all its connected hosts (to switch on and off). The map opens before every host has loaded:
+   * `loading` are the loads still running, by alias (each adds its host, or replaces the one on
+   * the map); `snapshot` is the time of the snapshot the map opened from, and `listing` the list
+   * of hosts asked for again behind it.
    */
-  live?: { base: string; hosts: LiveHost[]; available?: ApiHost[] }
+  live?: {
+    base: string
+    hosts: LiveHost[]
+    available?: ApiHost[]
+    loading?: Map<string, Promise<EnvironmentSpec>>
+    snapshot?: number
+    listing?: Promise<ApiHost[]>
+  }
   /** Why the stack asked for (API, files) didn't load: shown at the start */
   error?: string
   /** Select and fly to a container (or network, volume) at the start */
@@ -258,6 +273,18 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
   private engineEvents = new Map<string, EngineEvents>()
   /** The live hosts being loaded, by alias: switched on, not on the map yet */
   private loadingHosts = new Set<string>()
+  /** The live hosts on the map from the snapshot, not loaded again yet (no events until they are) */
+  private staleHosts = new Set<string>()
+  /** The live hosts on the map from the snapshot that failed to load again: offline */
+  private offlineHosts = new Set<string>()
+  /** The live hosts switched off by the user (a host that failed to load is not one of them) */
+  private hiddenHosts = new Set<string>()
+  /**
+   * The event streams open once the hosts that were loading at the start are in: the API holds its
+   * other requests while streams are open, so the loads go first
+   */
+  private streamsOpen = false
+  private stopped = false
   /** The containers that come and go on the live hosts */
   private liveChanges?: LiveChanges
   private speedIndex = 2
@@ -370,6 +397,7 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     this.$toast?.remove()
     this.$status?.remove()
     this.logView?.remove()
+    this.stopped = true
     for (const events of this.engineEvents.values()) events.close()
     this.engineEvents.clear()
     this.liveChanges?.close()
@@ -424,7 +452,133 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
         this.updateHud()
       },
     })
-    for (const host of live.hosts) if (this.environment(host.name)) this.connectEngine(host)
+    if (live.snapshot) for (const h of live.hosts) this.staleHosts.add(h.alias)
+    else
+      for (const h of live.hosts) {
+        const env = this.world.model.spec.environments.find((e) => e.name === h.name)
+        if (env) saveSnapshot(live.base, live.available ?? [], h.alias, env)
+      }
+    this.hiddenHosts = loadHiddenHosts()
+    const { loading, listing } = live
+    this.awaitHosts()
+    void Promise.allSettled([...(loading?.values() ?? []), listing]).then(() => {
+      if (!this.stopped) this.openStreams()
+    })
+  }
+
+  /** Stream the events of the hosts on the map that loaded from the API */
+  private openStreams() {
+    this.streamsOpen = true
+    for (const host of this.options.live!.hosts)
+      if (
+        this.environment(host.name) &&
+        !this.staleHosts.has(host.alias) &&
+        !this.offlineHosts.has(host.alias) &&
+        !this.engineEvents.has(host.alias)
+      )
+        this.connectEngine(host)
+  }
+
+  /** The hosts still loading when the map opened: each is added (or refreshed) as it comes in */
+  private awaitHosts() {
+    const live = this.options.live!
+    const { loading, listing } = live
+    live.loading = live.listing = undefined
+    for (const [alias, load] of loading ?? []) {
+      this.loadingHosts.add(alias)
+      load
+        .then(
+          (env) => !this.stopped && this.addHost(alias, env),
+          (e) => !this.stopped && this.hostFailed(alias, e as Error),
+        )
+        .finally(() => {
+          this.loadingHosts.delete(alias)
+          if (!this.stopped) this.renderExplorer()
+        })
+    }
+    listing?.then(
+      (available) => {
+        if (this.stopped) return
+        live.available = available
+        // hosts to show that the snapshot didn't have (new, or never loaded)
+        const on = new Set([...live.hosts.map((h) => h.alias), ...this.loadingHosts])
+        for (const h of shownHosts(available, this.hiddenHosts))
+          if (!on.has(h.id)) void this.toggleHost(h.id)
+        this.renderExplorer()
+      },
+      (e) => {
+        if (this.stopped) return
+        this.log.push({
+          source: 'world',
+          level: 'warn',
+          actor: 'engine',
+          text: `the API did not list its hosts (${(e as Error).message}); the map shows the snapshot`,
+        })
+      },
+    )
+  }
+
+  /** A note on the live stack's subtitle while some hosts show their snapshot */
+  private liveNote(): string | undefined {
+    const { snapshot } = this.options.live ?? {}
+    if (this.staleHosts.size && snapshot) return snapshotNote(snapshot)
+    if (this.offlineHosts.size) return `${this.offlineHosts.size} offline, from the snapshot`
+    return undefined
+  }
+
+  /** A live host loaded: built into the city (in the order of the API's list), its events streamed */
+  private addHost(alias: string, env: EnvironmentSpec) {
+    const live = this.options.live!
+    const spec = this.world.model.spec
+    const host: LiveHost = { alias, name: env.name }
+    const order = (name: string) => live.available!.findIndex((h) => (h.name || h.id) === name)
+    const refreshed = spec.environments.some((e) => e.name === env.name)
+    spec.environments = [...spec.environments.filter((e) => e.name !== env.name), env].sort(
+      (a, b) => order(a.name) - order(b.name),
+    )
+    live.hosts = [...live.hosts.filter((h) => h.alias !== alias), host].sort(
+      (a, b) => order(a.name) - order(b.name),
+    )
+    this.staleHosts.delete(alias)
+    this.offlineHosts.delete(alias)
+    Object.assign(spec, liveHeadline(spec.environments, this.liveNote()))
+    saveSnapshot(live.base, live.available ?? [], alias, env)
+    this.rebuild(spec, refreshed ? env.name : undefined)
+    if (this.streamsOpen) this.connectEngine(host)
+    const containers = env.containers?.length ?? 0
+    if (refreshed) this.say(`host ${host.name} loaded again: ${containers} containers`)
+    else {
+      this.say(`host ${host.name} shown: ${containers} containers`)
+      this.fitView()
+    }
+  }
+
+  /** A live host did not load: one from the snapshot stays on the map, offline; another is left out */
+  private hostFailed(alias: string, e: Error) {
+    const live = this.options.live!
+    const host = live.hosts.find((h) => h.alias === alias)
+    const name = host?.name ?? live.available?.find((h) => h.id === alias)?.name ?? alias
+    if (host && this.staleHosts.delete(alias)) {
+      this.offlineHosts.add(alias)
+      const spec = this.world.model.spec
+      Object.assign(spec, liveHeadline(spec.environments, this.liveNote()))
+      this.log.push({
+        source: 'world',
+        level: 'warn',
+        actor: 'engine',
+        host: name,
+        text: `host ${name} not loaded (${e.message}); its plate shows the snapshot, without events`,
+      })
+      this.toast(`HOST ${name.toUpperCase()} OFFLINE: SNAPSHOT SHOWN`, { color: COLORS.amber })
+      return
+    }
+    this.log.push({
+      source: 'world',
+      level: 'error',
+      actor: 'you',
+      text: `host ${name} not loaded: ${e.message}`,
+    })
+    this.toast(`HOST ${name.toUpperCase()} NOT LOADED`, { color: COLORS.red })
   }
 
   /** Stream a live host's engine events: into the log, and the changes onto the map */
@@ -487,60 +641,44 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       this.engineEvents.delete(alias)
       live.hosts = live.hosts.filter((h) => h !== shown)
       spec.environments = spec.environments.filter((e) => e.name !== shown.name)
+      this.staleHosts.delete(alias)
+      this.offlineHosts.delete(alias)
       this.say(`hide host ${shown.name}; its events are closed`)
-      Object.assign(spec, liveHeadline(spec.environments))
-      this.saveHosts()
+      Object.assign(spec, liveHeadline(spec.environments, this.liveNote()))
+      this.hideHost(alias, true)
       this.rebuild(spec)
       this.fitView()
       return
     }
-    const host: LiveHost = { alias, name: api.name || alias }
+    const name = api.name || alias
     this.loadingHosts.add(alias)
-    this.say(`show host ${host.name}: loading`)
+    this.hideHost(alias, false)
+    this.say(`show host ${name}: loading`)
     this.renderExplorer()
     try {
       const env = await loadHost(apiGet(live.base), api)
-      // in the order of the API's list
-      const order = (name: string) => live.available!.findIndex((h) => (h.name || h.id) === name)
-      spec.environments = [...spec.environments.filter((e) => e.name !== env.name), env].sort(
-        (a, b) => order(a.name) - order(b.name),
-      )
-      live.hosts = [...live.hosts, host].sort((a, b) => order(a.name) - order(b.name))
-      Object.assign(spec, liveHeadline(spec.environments))
-      this.saveHosts()
-      this.rebuild(spec)
-      this.connectEngine(host)
-      this.say(
-        `host ${host.name} shown: ${env.containers?.length ?? 0} containers; listening to its events`,
-      )
-      this.fitView()
+      if (!this.stopped) this.addHost(alias, env)
     } catch (e) {
-      const message = (e as Error).message
-      this.log.push({
-        source: 'world',
-        level: 'error',
-        actor: 'you',
-        text: `host ${host.name} not loaded: ${message}`,
-      })
-      this.toast(`HOST ${host.name.toUpperCase()} NOT LOADED`, { color: COLORS.red })
+      if (!this.stopped) this.hostFailed(alias, e as Error)
     } finally {
       this.loadingHosts.delete(alias)
       this.renderExplorer()
     }
   }
 
-  /** Remember the live hosts switched off, for the next load */
-  private saveHosts() {
-    const live = this.options.live!
-    const on = new Set(live.hosts.map((h) => h.alias))
-    saveHiddenHosts(new Set((live.available ?? []).map((h) => h.id).filter((id) => !on.has(id))))
+  /** Remember a live host switched off (or on again), for the next load */
+  private hideHost(alias: string, hidden: boolean) {
+    if (hidden) this.hiddenHosts.add(alias)
+    else this.hiddenHosts.delete(alias)
+    saveHiddenHosts(this.hiddenHosts)
   }
 
   /**
    * The live stack changed (containers came or went): build the world again from the spec, keeping
    * what changes over time (states, load, counts), the selection, the open host and the regions shown.
+   * The containers of a host loaded again (`fresh`, its key) take their states from the new spec.
    */
-  private rebuild(spec: ContainersSpec) {
+  private rebuild(spec: ContainersSpec, fresh?: string) {
     const { scene } = this.world
     const old = rebuildWorld(this.world, spec)
     const model = this.world.model
@@ -548,7 +686,10 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
     const before = new Map(old.containers.map((c) => [c.key, c]))
     for (const c of model.containers) {
       const o = before.get(c.key)
-      if (o) {
+      if (o && c.env.key === fresh) {
+        const { cpu, mem, requests, errors, flash } = o
+        Object.assign(c, { cpu, mem, requests, errors, flash })
+      } else if (o) {
         const { state, health, exitCode, transition, cpu, mem, requests, errors, flash } = o
         Object.assign(c, { state, health, exitCode, transition, cpu, mem, requests, errors, flash })
       } else if (c.state === 'running') {
@@ -1285,11 +1426,12 @@ export class IsoContainersSystem extends AbstractGameSystem implements IGameSyst
       .map((h) => {
         const name = h.name || h.id
         const loading = this.loadingHosts.has(h.id)
+        const offline = this.offlineHosts.has(h.id)
         const shown = on.has(h.id) || loading
-        const color = COLORS.green
+        const color = offline ? COLORS.amber : COLORS.green
         return (
           `<button class="isocontainers-host" data-alias="${escapeHtml(h.id)}" ` +
-          `title="${shown ? 'Hide' : 'Show'} ${escapeHtml(name)}: ${shown ? 'its plate goes and its events are closed' : 'loaded from the API, with its live events'}" ` +
+          `title="${offline ? `${escapeHtml(name)} did not load: its plate shows the snapshot. ` : ''}${shown ? 'Hide' : 'Show'} ${escapeHtml(name)}: ${shown ? 'its plate goes and its events are closed' : 'loaded from the API, with its live events'}" ` +
           `style="display:flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:12px;cursor:${loading ? 'progress' : 'pointer'};` +
           `font:600 10px ${FONT.mono};letter-spacing:0.5px;text-transform:uppercase;max-width:100%;` +
           `color:${shown ? color : COLORS.faint};background:${shown ? hexAlpha(color, 0.1) : 'transparent'};` +

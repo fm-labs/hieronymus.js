@@ -39,14 +39,24 @@ export class ApiError extends Error {
   }
 }
 
-/** An ApiGet on fetch, with errors that say what to do */
-export function apiGet(base = API_BASE, fetchFn: typeof fetch = fetch): ApiGet {
+/** How long a request may take before it is given up (an unreachable node takes ~15 s to fail) */
+export const API_TIMEOUT_MS = 10_000
+
+/** An ApiGet on fetch, with errors that say what to do; a request is given up after `timeoutMs` */
+export function apiGet(
+  base = API_BASE,
+  fetchFn: typeof fetch = fetch,
+  timeoutMs = API_TIMEOUT_MS,
+): ApiGet {
   return async (path) => {
     const url = `${base}${path}`
+    const signal = AbortSignal.timeout(timeoutMs)
+    const timedOut = () => new ApiError(`${url}: no answer in ${timeoutMs / 1000} s`, 504)
     let response: Response
     try {
-      response = await fetchFn(url, { headers: { accept: 'application/json' } })
+      response = await fetchFn(url, { headers: { accept: 'application/json' }, signal })
     } catch (e) {
+      if (signal.aborted) throw timedOut()
       throw new ApiError(`${url}: the API is not reachable (${(e as Error).message})`)
     }
     if (response.status === 401 || response.status === 403)
@@ -65,7 +75,12 @@ export function apiGet(base = API_BASE, fetchFn: typeof fetch = fetch): ApiGet {
     // without the dev proxy, the dev server answers with the app's index.html
     if (!response.headers.get('content-type')?.includes('json'))
       throw new ApiError(`${url}: no API here (is the Vite dev proxy for ${base} running?)`)
-    return response.json()
+    try {
+      return await response.json()
+    } catch (e) {
+      if (signal.aborted) throw timedOut()
+      throw e
+    }
   }
 }
 
@@ -145,10 +160,11 @@ export async function loadHost(
   const alias = `/containers/${encodeURIComponent(host.id)}`
   const optional = (path: string) => get(`${alias}${path}`).catch(() => undefined)
   // on a cold cache the API answers parallel requests to one host with 500s (its docker client is
-  // shared), so the lists are asked for one after another, and a server error is tried again once
+  // shared), so the lists are asked for one after another, and a 500 is tried again once; a 502,
+  // 503 or 504 (the node is unreachable, or too slow) is not: it would only take as long again
   const required = (path: string) =>
     get(`${alias}${path}`).catch(async (e) => {
-      if (!(e instanceof ApiError) || !e.status || e.status < 500) throw e
+      if (!(e instanceof ApiError) || e.status !== 500) throw e
       await new Promise((resolve) => setTimeout(resolve, retryDelay))
       return get(`${alias}${path}`)
     })
@@ -172,7 +188,10 @@ export async function loadHost(
 }
 
 /** The title and subtitle of the live stack, from its hosts */
-export function liveHeadline(environments: EnvironmentSpec[]): { title: string; subtitle: string } {
+export function liveHeadline(
+  environments: EnvironmentSpec[],
+  note?: string,
+): { title: string; subtitle: string } {
   const containers = environments.reduce((n, e) => n + (e.containers?.length ?? 0), 0)
   const running = environments.reduce(
     (n, e) => n + (e.containers?.filter((c) => c.state === 'running').length ?? 0),
@@ -180,7 +199,7 @@ export function liveHeadline(environments: EnvironmentSpec[]): { title: string; 
   )
   return {
     title: environments.length > 1 ? `${environments.length} hosts.` : `${environments[0]?.name}.`,
-    subtitle: `Live: ${containers} containers, ${running} running`,
+    subtitle: `Live: ${containers} containers, ${running} running${note ? ` · ${note}` : ''}`,
   }
 }
 
@@ -208,43 +227,173 @@ export function saveHiddenHosts(aliases: Set<string>) {
 }
 
 /**
- * The connected hosts of the API, as a spec: all of them but those switched off (`hidden`, by alias;
- * when that is all of them, the first is loaded anyway). A host that fails to load is left out (and
- * reported); when none loads, the first error is thrown. `available` lists every connected host.
+ * The last load of each host, by the API's base: shown at once on the next load, while the hosts
+ * load again. The environments are kept by alias, with the time each was loaded.
  */
-export async function loadFromApi(
-  get: ApiGet,
-  base = API_BASE,
-  hidden: Set<string> = new Set(),
-): Promise<{ spec: ContainersSpec; failed: string[]; hosts: LiveHost[]; available: ApiHost[] }> {
+export type LiveSnapshot = {
+  available: ApiHost[]
+  environments: Record<string, { time: number; env: EnvironmentSpec }>
+}
+
+const SNAPSHOT_STORAGE = 'isocontainers.snapshot.v1'
+const snapshotKey = (base: string) => `${SNAPSHOT_STORAGE}:${base}`
+
+export function loadSnapshot(base: string): LiveSnapshot | undefined {
+  try {
+    const value = JSON.parse(localStorage.getItem(snapshotKey(base)) ?? 'null')
+    return isRecord(value) && Array.isArray(value.available) && isRecord(value.environments)
+      ? (value as LiveSnapshot)
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Keep a host's environment (and the list of hosts) for the next load */
+export function saveSnapshot(
+  base: string,
+  available: ApiHost[],
+  alias?: string,
+  env?: EnvironmentSpec,
+) {
+  try {
+    const snapshot = loadSnapshot(base) ?? { available, environments: {} }
+    snapshot.available = available
+    if (alias && env) snapshot.environments[alias] = { time: Date.now(), env }
+    // hosts the API no longer lists are dropped
+    const listed = new Set(available.map((h) => h.id))
+    for (const a of Object.keys(snapshot.environments))
+      if (!listed.has(a)) delete snapshot.environments[a]
+    localStorage.setItem(snapshotKey(base), JSON.stringify(snapshot))
+  } catch {
+    // no storage, or full: the next load waits for the API
+  }
+}
+
+/** The connected hosts of the API */
+export async function listHosts(get: ApiGet, base = API_BASE): Promise<ApiHost[]> {
   const available = list(await get('/containers/hosts')).filter(
     (h): h is ApiHost & Json => typeof h.id === 'string' && h.connected !== false,
   )
   if (!available.length) throw new ApiError(`${base}: no connected container hosts`)
+  return available
+}
+
+/** The hosts to show: all but those switched off; when that is all of them, the first */
+export function shownHosts(available: ApiHost[], hidden: Set<string>): ApiHost[] {
   const shown = available.filter((h) => !hidden.has(h.id))
-  const hosts = shown.length ? shown : available.slice(0, 1)
-  const results = await Promise.allSettled(hosts.map((h) => loadHost(get, h)))
-  const environments = results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
-  const failed = results.flatMap((r, i) =>
-    r.status === 'rejected' ? [`${hosts[i].id}: ${(r.reason as Error).message}`] : [],
-  )
-  const loaded = hosts.flatMap((h, i) =>
-    results[i].status === 'fulfilled' ? [{ alias: h.id, name: h.name || h.id }] : [],
-  )
-  if (!environments.length)
-    throw results.find((r): r is PromiseRejectedResult => r.status === 'rejected')!.reason
+  return shown.length ? shown : available.slice(0, 1)
+}
+
+/** The live stack of these environments */
+export function liveSpec(environments: EnvironmentSpec[], note?: string): ContainersSpec {
   return {
-    spec: {
-      id: 'api',
-      ...liveHeadline(environments),
-      description:
-        'Loaded from the mission-control API. The containers, networks, volumes and their states are ' +
-        'real, and the log shows the live engine events; the traffic, cpu and memory are simulated. ' +
-        'Reload the page to load the latest state.',
-      environments,
-    },
-    failed,
-    hosts: loaded,
+    id: 'api',
+    ...liveHeadline(environments, note),
+    description:
+      'Loaded from the mission-control API. The containers, networks, volumes and their states are ' +
+      'real, and the log shows the live engine events; the traffic, cpu and memory are simulated. ' +
+      'Reload the page to load the latest state.',
+    environments,
+  }
+}
+
+const clock = (time: number) =>
+  new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+/** The note of a stack shown from a snapshot */
+export const snapshotNote = (time: number) => `snapshot of ${clock(time)}, refreshing`
+
+/**
+ * How the live stack opens, without waiting for the slowest host:
+ * - `hosts` are on the map at once, `loading` are the loads still running (by alias), to be added
+ *   (or, for a host on the map, to replace it) as they come in;
+ * - `snapshot` is the time of the oldest snapshot shown, when the map opened from one;
+ * - `listing` is the list of hosts being asked for again, when the map opened from a snapshot.
+ */
+export type LiveStart = {
+  spec: ContainersSpec
+  available: ApiHost[]
+  hosts: LiveHost[]
+  loading: Map<string, Promise<EnvironmentSpec>>
+  snapshot?: number
+  listing?: Promise<ApiHost[]>
+}
+
+/** The first of the loads to succeed, with its index; when all fail, the first error */
+function firstLoaded<T>(loads: Promise<T>[]): Promise<{ index: number; env: T }> {
+  return new Promise((resolve, reject) => {
+    const errors: unknown[] = []
+    let failed = 0
+    loads.forEach((p, index) =>
+      p.then(
+        (env) => resolve({ index, env }),
+        (e) => {
+          errors[index] = e
+          if (++failed === loads.length) reject(errors.find((x) => x !== undefined) ?? e)
+        },
+      ),
+    )
+  })
+}
+
+const liveHost = (h: ApiHost): LiveHost => ({ alias: h.id, name: h.name || h.id })
+
+/**
+ * Open the live stack. With a snapshot of the hosts to show, it opens from that at once, and every
+ * host loads again behind it. Without one, it lists the hosts, loads those to show (all but
+ * `hidden`) side by side, and opens with the first that loads; the others follow. When none loads,
+ * the first error is thrown.
+ */
+export async function openLive(
+  get: ApiGet,
+  base = API_BASE,
+  hidden: Set<string> = new Set(),
+  snapshot?: LiveSnapshot,
+): Promise<LiveStart> {
+  if (snapshot) {
+    const shown = shownHosts(snapshot.available, hidden).filter((h) => snapshot.environments[h.id])
+    if (shown.length) {
+      const listing = listHosts(get, base)
+      // each host loads again once the API has listed it (a host no longer listed is not loaded)
+      const loading = new Map(
+        shown.map((h) => [
+          h.id,
+          listing.then((available) => {
+            const host = available.find((a) => a.id === h.id)
+            if (!host) throw new ApiError(`${h.id}: no longer a connected host of ${base}`, 404)
+            return loadHost(get, host)
+          }),
+        ]),
+      )
+      for (const p of loading.values()) p.catch(() => undefined)
+      listing.catch(() => undefined)
+      const time = Math.min(...shown.map((h) => snapshot.environments[h.id].time))
+      return {
+        spec: liveSpec(
+          shown.map((h) => snapshot.environments[h.id].env),
+          snapshotNote(time),
+        ),
+        available: snapshot.available,
+        hosts: shown.map(liveHost),
+        loading,
+        snapshot: time,
+        listing,
+      }
+    }
+  }
+  const available = await listHosts(get, base)
+  const shown = shownHosts(available, hidden)
+  const loads = shown.map((h) => loadHost(get, h))
+  for (const p of loads) p.catch(() => undefined)
+  // the first to load opens the map
+  const first = await firstLoaded(loads)
+  return {
+    spec: liveSpec([first.env]),
     available,
+    hosts: [liveHost(shown[first.index])],
+    loading: new Map(
+      shown.flatMap((h, i) => (i === first.index ? [] : [[h.id, loads[i]] as const])),
+    ),
   }
 }

@@ -369,6 +369,7 @@ Today every value that changes over time is **simulated**. A real source changes
 | Flags switch, host links switch, log switch | `localStorage['isocontainers.flags.v1']`, `['isocontainers.links.v1']`, `['isocontainers.log.v1']` |
 | The log's lines (the last 500) | `IsoContainersSystem.log` (`LogStream`) |
 | Live hosts switched off (not loaded, no event stream) | `localStorage['isocontainers.hosts.v1']` (`[alias, …]`) |
+| Last load of each live host, for an instant start | `localStorage['isocontainers.snapshot.v1:<base>']` (`{ available, environments: { alias: { time, env } } }`) |
 | Regions switched off, by stack | `localStorage['isocontainers.regions.v1']` (`{ [stack]: [region, …] }`); their hosts in `scene.hidden` |
 | The host open in the side pane, the one under the pointer, the pane's tab | `scene.openHost`, `scene.hoveredHost`, `IsoContainersSystem.hostTab` |
 | The plate under the pointer and how lit its rim is | `scene.hoveredPlate`, `scene.plates` (eased by the system each frame) |
@@ -478,15 +479,35 @@ With more than one connected host, the explorer has a HOSTS chip per host. A hos
 not loaded and its event stream is not opened: clicking its chip off closes the stream and takes
 its plate away (a rebuild), and clicking it on loads it (`loadHost()`), builds it into the city and
 opens its stream. The hosts switched off are kept in `localStorage['isocontainers.hosts.v1']` and
-skipped on the next load (`loadFromApi(get, base, hidden)`); one host always stays on.
+skipped on the next load (`openLive(get, base, hidden, snapshot)`); one host always stays on.
 
-When a host fails, the others still load and a message says which one failed. When nothing loads
-(the API is down, the key is wrong, no proxy), the first sample opens with a message saying why.
+### Opening without waiting
+
+The map does not wait for the slowest host (an unreachable node takes ~15 s to fail):
+
+- **From a snapshot.** Each host's environment is kept when it loads, in
+  `localStorage['isocontainers.snapshot.v1:<base>']` (`saveSnapshot()`), with the list of hosts.
+  On the next load, the map opens from it at once; the subtitle says `snapshot of HH:MM,
+  refreshing`, and every host loads again behind it (its chip shows `…`). A host that loads
+  replaces its plate, with the states from the API, and its events stream from then on. A host
+  that fails stays on the map from the snapshot, offline: its chip turns amber and it has no
+  events.
+- **Without one.** The hosts load side by side, and the map opens with the first that loads; the
+  others are added as they come in.
+
+`openLive()` returns the hosts on the map and the loads still running (`loading`, by alias); the
+system adds each as it comes in. The event streams open only once those loads are in: while streams are open,
+the mc API holds its other requests (seen: 14–30 s), so the loads go first. A host that fails to
+load is not counted as switched off: it is tried again on the next load. Each request is given up after 10 s (`API_TIMEOUT_MS`), and only
+a 500 (the API's cold cache) is tried again, not a 502 or 504 (an unreachable node). A host whose
+load fails is left out, with a message; when none loads (the API is down, the key is wrong, no
+proxy), the first sample opens with a message saying why.
 
 ### Live engine events
 
 Once the live stack is shown, the system opens `GET /containers/{alias}/events/stream` for each
-loaded host (`loadFromApi` returns the hosts' aliases) and writes each docker event into the log
+loaded host (`openLive` returns the hosts' aliases), once it has loaded from the API (not while it
+shows its snapshot), and writes each docker event into the log
 as an `engine` line. The stream is ndjson, one docker event a line; `EngineEvents` reads it with
 `fetch` (through the same proxy, so the key stays on the dev server) and connects again when it
 ends or fails, after 2, 4, 8, … up to 30 seconds. A `world` line says when a host's stream is
