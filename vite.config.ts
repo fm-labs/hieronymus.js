@@ -12,9 +12,9 @@ export default defineConfig({
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: resolve(`${__dirname}`, 'lib/index.ts'),
-      name: 'HieronymusJS',
+      name: 'hieronymus',
       // the proper extensions will be added
-      fileName: 'hieronymus.js',
+      fileName: 'hieronymus',
     },
     // rollupOptions: {
     //   external: ['react', 'react/jsx-runtime'],

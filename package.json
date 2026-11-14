@@ -1,7 +1,7 @@
 {
   "name": "@fmlabs/hieronymus",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "dist/hieronymus-lib.umd.cjs",
   "module": "dist/hieronymus-lib.js",
