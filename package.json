@@ -1,10 +1,10 @@
 {
-  "name": "@fmlabs/hieronimo",
+  "name": "@fmlabs/hieronymus",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/world-lib.umd.cjs",
-  "module": "dist/world-lib.js",
+  "main": "dist/hieronymus-lib.umd.cjs",
+  "module": "dist/hieronymus-lib.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -12,38 +12,38 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/world-lib.js",
-      "require": "./dist/world-lib.umd.cjs"
+      "import": "./dist/hieronymus-lib.js",
+      "require": "./dist/hieronymus-lib.umd.cjs"
     }
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc --p ./tsconfig.build.json && vite build",
     "build:watch": "vite build --watch",
-    "examples": "pnpm --filter @fmlabs/hieronimo-examples dev",
+    "examples": "pnpm --filter @fmlabs/hieronymus-examples dev",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview",
     "test": "vitest --silent=false --reporter=verbose"
   },
   "devDependencies": {
-    "@types/node": "^20.10.5",
-    "@types/pako": "^2.0.3",
+    "@types/node": "^20.19.43",
+    "@types/pako": "^2.0.4",
     "@types/pug": "^2.0.10",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.1",
-    "pako": "^2.1.0",
-    "prettier": "^3.1.1",
-    "pug": "^3.0.2",
-    "sass": "^1.72.0",
-    "tsc-watch": "^6.0.4",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8",
-    "vite-plugin-dts": "^3.5.3",
-    "vite-plugin-lib-inject-css": "^2.0.0",
-    "vitest": "^1.1.0"
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-prettier": "^5.5.7",
+    "pako": "^2.2.0",
+    "prettier": "^3.10.1",
+    "pug": "^3.0.4",
+    "sass": "^1.108.2",
+    "tsc-watch": "^6.3.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vite-plugin-dts": "^3.9.1",
+    "vite-plugin-lib-inject-css": "^2.2.2",
+    "vitest": "^1.6.1"
   }
 }

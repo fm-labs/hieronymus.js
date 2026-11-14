@@ -1,15 +1,15 @@
-# hieronimo.js
+# hieronymus.js
 
 A small HTML5 canvas game engine for 2D (orthogonal) and isometric tile-based games, written in TypeScript.
 
-- `lib/` – the engine, built as the `@fmlabs/hieronimo` library into `dist/`
+- `lib/` – the engine, built as the `@fmlabs/hieronymus` library into `dist/`
 - `examples/` – a demo app with example worlds that uses the built library (see [examples/README.md](examples/README.md))
 - `src/` – a small dev page (the `dev` world) that imports `lib/` directly
 - `test/` – unit tests (vitest)
 - `docs/` – engine documentation (MkDocs)
 
-The repository is a pnpm workspace: the root package `@fmlabs/hieronimo` is the library, `examples/` is the
-`@fmlabs/hieronimo-examples` package that depends on it.
+The repository is a pnpm workspace: the root package `@fmlabs/hieronymus` is the library, `examples/` is the
+`@fmlabs/hieronymus-examples` package that depends on it.
 
 ## Getting Started
 
@@ -41,15 +41,15 @@ Some example worlds need local data that is not in the repository, see [examples
 (`world-lib.umd.cjs`) and a single bundled type declaration file (`index.d.ts`). Demo assets are not included.
 
 ```typescript
-import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronimo'
-import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronymus'
+import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronymus'
 ```
 
 Everything an app can use is exported from `lib/index.ts`; deep imports into `lib/` are not part of the
 package. All engine types (`IGame`, `IGameSystem`, `ITileMap`, `IGameComponent`, …) are regular exports.
 Inside `lib/` they are imported from `lib/game.types` (`import type { IGame } from '../game.types'`).
 
-In another pnpm workspace package, depend on it with `"@fmlabs/hieronimo": "workspace:*"` (as `examples/` does).
+In another pnpm workspace package, depend on it with `"@fmlabs/hieronymus": "workspace:*"` (as `examples/` does).
 
 ## Scripts
 
@@ -65,7 +65,7 @@ Run in the repository root:
 | `pnpm lint`        | Lint the project                                 |
 
 The tests that cover example worlds import them from `examples/src/worlds/`. 
-In tests `@fmlabs/hieronimo` resolves to `lib/index.ts`, so they run against the library source and need no build.
+In tests `@fmlabs/hieronymus` resolves to `lib/index.ts`, so they run against the library source and need no build.
 
 ## Documentation
 

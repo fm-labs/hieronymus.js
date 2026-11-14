@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent, MoveDirection } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent, MoveDirection } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import type { SnakeCellKind } from '../snake/SnakeSystem.ts'
 
 export interface IsoSnakeCellComponentProps extends GameComponentProperties {

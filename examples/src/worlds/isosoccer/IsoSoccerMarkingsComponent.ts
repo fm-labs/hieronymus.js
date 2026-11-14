@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { cellPoint, strokeLine } from './isosoccer.draw.ts'
 import { PITCH_LENGTH as L, PITCH_WIDTH as W } from './isosoccer.match.ts'
 

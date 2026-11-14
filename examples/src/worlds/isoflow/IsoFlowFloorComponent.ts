@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import type { FlowGroup, FlowModel } from './isoflow.types.ts'
 import { COLORS, FONT, isVisible, roundRect, type FlowScene } from './isoflow.draw.ts'
 

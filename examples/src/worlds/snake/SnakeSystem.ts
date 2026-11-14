@@ -1,5 +1,11 @@
-import type { IGame, IGameComponent, IGameSystem, ITileMap, MoveDirection } from '@fmlabs/hieronimo'
-import { AbstractGameSystem } from '@fmlabs/hieronimo'
+import type {
+  IGame,
+  IGameComponent,
+  IGameSystem,
+  ITileMap,
+  MoveDirection,
+} from '@fmlabs/hieronymus'
+import { AbstractGameSystem } from '@fmlabs/hieronymus'
 import { createSnakeState, queueDirection, stepSnake, type SnakeState } from './snake.logic.ts'
 
 export type SnakeCellKind = 'head' | 'body' | 'food'

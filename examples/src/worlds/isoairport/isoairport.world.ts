@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
-import { TileMap } from '@fmlabs/hieronimo'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronymus'
+import { TileMap } from '@fmlabs/hieronymus'
 import { roadDirections } from '../isocity/isocity.traffic.ts'
 import { nightAmount, type VegasScene } from '../isovegas/isovegas.map.ts'
 import { IsoVegasSelectionComponent } from '../isovegas/IsoVegasSelectionComponent.ts'

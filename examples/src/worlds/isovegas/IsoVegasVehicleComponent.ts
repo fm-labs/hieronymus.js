@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { DIRECTION_VECTORS, type Direction } from '../isocity/isocity.traffic.ts'
 import { IsoPainter, isoOffset } from './isovegas.draw.ts'
 import type { VegasScene } from './isovegas.map.ts'

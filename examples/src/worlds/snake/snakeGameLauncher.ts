@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/hieronimo'
-import { Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
+import type { GameConfig } from '@fmlabs/hieronymus'
+import { Game, InputSystem, TileMapSystem } from '@fmlabs/hieronymus'
 import snakeWorldBuilder, { LAYER_FOOD, LAYER_SNAKE } from './snake.world.ts'
 import { SnakeSystem } from './SnakeSystem.ts'
 import { SnakeCellComponent } from './SnakeCellComponent.ts'

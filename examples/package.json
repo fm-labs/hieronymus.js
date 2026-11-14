@@ -1,5 +1,5 @@
 {
-  "name": "@fmlabs/hieronimo-examples",
+  "name": "@fmlabs/hieronymus-examples",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,11 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fmlabs/hieronimo": "workspace:*"
+    "@fmlabs/hieronymus": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
-    "cloudia-common": "link:../../cloudia-common",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }

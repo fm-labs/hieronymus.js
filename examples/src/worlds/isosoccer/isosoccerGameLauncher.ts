@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/hieronimo'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
+import type { GameConfig } from '@fmlabs/hieronymus'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronymus'
 import isoSoccerWorldBuilder, { LAYER_MOVERS } from './isosoccer.world.ts'
 import { IsoSoccerSystem } from './IsoSoccerSystem.ts'
 

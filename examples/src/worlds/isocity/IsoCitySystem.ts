@@ -1,5 +1,5 @@
-import type { IGame, IGameSystem, ITileMap } from '@fmlabs/hieronimo'
-import { AbstractGameSystem } from '@fmlabs/hieronimo'
+import type { IGame, IGameSystem, ITileMap } from '@fmlabs/hieronymus'
+import { AbstractGameSystem } from '@fmlabs/hieronymus'
 import { IsoCityVehicleComponent } from './IsoCityVehicleComponent.ts'
 import {
   createVehicle,

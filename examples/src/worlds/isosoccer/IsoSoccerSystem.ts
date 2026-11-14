@@ -1,5 +1,5 @@
-import type { IGame, IGameSystem } from '@fmlabs/hieronimo'
-import { AbstractGameSystem } from '@fmlabs/hieronimo'
+import type { IGame, IGameSystem } from '@fmlabs/hieronymus'
+import { AbstractGameSystem } from '@fmlabs/hieronymus'
 import { IsoSoccerBallComponent } from './IsoSoccerBallComponent.ts'
 import { IsoSoccerPlayerComponent } from './IsoSoccerPlayerComponent.ts'
 import { noise } from './isosoccer.draw.ts'

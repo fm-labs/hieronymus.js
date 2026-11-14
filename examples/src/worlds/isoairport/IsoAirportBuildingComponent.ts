@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { IsoPainter, isoOffset } from './isoairport.draw.ts'
 import type { BuildingPiece } from './isoairport.map.ts'
 import { BUILDING_DRAWINGS } from './isoairport.structures.ts'

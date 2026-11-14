@@ -1,15 +1,15 @@
 # Examples
 
-Example worlds built on the `hieronimo` engine. 
-It uses the `@fmlabs/hieronimo` package.
+Example worlds built on the `hieronymus` engine. 
+It uses the `@fmlabs/hieronymus` package.
 
 ```typescript
-import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronimo'
-import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronymus'
+import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronymus'
 ```
 
 `examples/` is a pnpm workspace package (see `../pnpm-workspace.yaml`). Its dependency
-`"@fmlabs/hieronimo": "workspace:*"` links `node_modules/@fmlabs/hieronimo` to the repository root, and the root
+`"@fmlabs/hieronymus": "workspace:*"` links `node_modules/@fmlabs/hieronymus` to the repository root, and the root
 `package.json` `exports` point at `dist/world-lib.js` and `dist/index.d.ts`.
 
 ## Getting Started
@@ -52,7 +52,7 @@ Available worlds: `snake`,
 
 1. Create `src/worlds/<name>/` with a `<name>GameLauncher.ts` that exports
    `<name>GameLauncher(app: HTMLDivElement): Promise<Game>`.
-2. Import everything engine related from `@fmlabs/hieronimo`. Never import from `../lib/`.
+2. Import everything engine related from `@fmlabs/hieronymus`. Never import from `../lib/`.
 3. Register the launcher in `gameLaunchers` in `src/main.ts`.
 
 If a world needs something from the engine that is not exported, export it from `../lib/index.ts`
@@ -61,7 +61,7 @@ and rebuild the library.
 
 ## Scripts
 
-Run in `examples/` (or from the root with `pnpm --filter @fmlabs/hieronimo-examples <script>`):
+Run in `examples/` (or from the root with `pnpm --filter @fmlabs/hieronymus-examples <script>`):
 
 | Command        | Description                                    |
 | -------------- | ---------------------------------------------- |
@@ -72,4 +72,4 @@ Run in `examples/` (or from the root with `pnpm --filter @fmlabs/hieronimo-examp
 ## Tests
 
 The world tests live in the repository root (`../test/`) and run with `pnpm test` there. They resolve
-`@fmlabs/hieronimo` to `../lib/index.ts`, so they test against the library source and need no build.
+`@fmlabs/hieronymus` to `../lib/index.ts`, so they test against the library source and need no build.

@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { LANE_OFFSET, type Direction } from '../isocity/isocity.traffic.ts'
 import { IsoPainter, mix, noise, type Point } from './isovienna.draw.ts'
 import type { Ground, ViennaScene } from './isovienna.map.ts'

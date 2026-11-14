@@ -1,5 +1,5 @@
-import type { IGame, IGameSystem } from '@fmlabs/hieronimo'
-import { AbstractGameSystem } from '@fmlabs/hieronimo'
+import type { IGame, IGameSystem } from '@fmlabs/hieronymus'
+import { AbstractGameSystem } from '@fmlabs/hieronymus'
 import { lineage } from './isoflow.layout.ts'
 import { FlowSimulation } from './isoflow.sim.ts'
 import { KIND_LABELS, type FlowNode, type FlowSpec } from './isoflow.types.ts'

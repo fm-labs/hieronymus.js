@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { drawIsoBox } from '../isocity/isocity.draw.ts'
 import { drawFaceRect, shadeHex } from '../isocasino/isocasino.draw.ts'
 import { cellPoint, noise, TEAM_COLORS, type SoccerScene } from './isosoccer.draw.ts'

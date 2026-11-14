@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/hieronimo'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
+import type { GameConfig } from '@fmlabs/hieronymus'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronymus'
 import isoCityWorldBuilder, { CITY_MAP, cityRoadMap, LAYER_VEHICLES } from './isocity.world.ts'
 import { IsoCitySystem } from './IsoCitySystem.ts'
 

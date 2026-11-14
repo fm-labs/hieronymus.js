@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/hieronimo'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
+import type { GameConfig } from '@fmlabs/hieronymus'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronymus'
 import isoAirportWorldBuilder, { LAYER_SKY, LAYER_VEHICLES } from './isoairport.world.ts'
 import { IsoAirportSystem } from './IsoAirportSystem.ts'
 

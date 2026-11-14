@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import { IsoPainter, isoOffset } from './isovienna.draw.ts'
 import { FLOODLIT, LANDMARK_DRAWINGS } from './isovienna.landmarks.ts'
 import type { LandmarkKind, ViennaScene } from './isovienna.map.ts'

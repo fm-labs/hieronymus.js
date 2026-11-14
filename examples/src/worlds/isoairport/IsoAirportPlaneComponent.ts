@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
-import { AbstractGameComponent } from '@fmlabs/hieronimo'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronymus'
+import { AbstractGameComponent } from '@fmlabs/hieronymus'
 import type { Vec } from './isoairport.airside.ts'
 import { drawPlane, IsoPainter, type PlaneKind } from './isoairport.draw.ts'
 import type { Phase } from './isoairport.flights.ts'

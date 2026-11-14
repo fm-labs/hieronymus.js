@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/hieronimo'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
+import type { GameConfig } from '@fmlabs/hieronymus'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronymus'
 import isoViennaWorldBuilder, { LAYER_VEHICLES } from './isovienna.world.ts'
 import { IsoViennaSystem } from './IsoViennaSystem.ts'
 

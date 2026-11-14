@@ -7,7 +7,7 @@ export default mergeConfig(
   defineConfig({
     resolve: {
       // tests of the example worlds run against the lib source, not the built dist/
-      alias: { '@fmlabs/hieronimo': resolve(__dirname, 'lib/index.ts') },
+      alias: { '@fmlabs/hieronymus': resolve(__dirname, 'lib/index.ts') },
     },
     test: {
       // ...

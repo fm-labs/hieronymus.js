@@ -1,4 +1,4 @@
-import type { Grid2DPosition, MoveDirection } from '@fmlabs/hieronimo'
+import type { Grid2DPosition, MoveDirection } from '@fmlabs/hieronymus'
 
 /**
  * Pure snake game rules, independent of the engine (no rendering, no input, no timing).

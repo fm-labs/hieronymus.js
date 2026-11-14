@@ -1,5 +1,5 @@
-import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
-import { TileMap } from '@fmlabs/hieronimo'
+import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronymus'
+import { TileMap } from '@fmlabs/hieronymus'
 import { SnakeBoardComponent } from './SnakeBoardComponent.ts'
 
 export const SNAKE_COLUMNS = 20

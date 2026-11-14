@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
-import { TileComponent, TileMap } from '@fmlabs/hieronimo'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronymus'
+import { TileComponent, TileMap } from '@fmlabs/hieronymus'
 import { IsoCityBuildingComponent, type BuildingKind } from './IsoCityBuildingComponent.ts'
 import { IsoCityRoadComponent } from './IsoCityRoadComponent.ts'
 import { roadDirections, type RoadMap } from './isocity.traffic.ts'

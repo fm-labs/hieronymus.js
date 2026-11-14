@@ -1,5 +1,5 @@
-import type { IGame } from '@fmlabs/hieronimo'
-import { Game } from '@fmlabs/hieronimo'
+import type { IGame } from '@fmlabs/hieronymus'
+import { Game } from '@fmlabs/hieronymus'
 
 type GameLauncher = (app: HTMLDivElement) => Promise<Game>
 
