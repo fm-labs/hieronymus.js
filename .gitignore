@@ -1,3 +1,4 @@
+/bak/
 /build/
 /dist/
 /submodules/
@@ -19,6 +20,7 @@ node_modules
 dist
 dist-ssr
 *.local
+*.bak
 
 # Editor directories and files
 .vscode/*
