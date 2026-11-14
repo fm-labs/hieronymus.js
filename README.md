@@ -64,8 +64,8 @@ Run in the repository root:
 | `pnpm test`        | Run the unit tests (vitest)                      |
 | `pnpm lint`        | Lint the project                                 |
 
-The tests that cover example worlds import them from `examples/src/worlds/`. In tests `@fmlabs/hieronimo`
-resolves to `lib/index.ts`, so they run against the library source and need no build.
+The tests that cover example worlds import them from `examples/src/worlds/`. 
+In tests `@fmlabs/hieronimo` resolves to `lib/index.ts`, so they run against the library source and need no build.
 
 ## Documentation
 

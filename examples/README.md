@@ -1,7 +1,7 @@
-# World Examples
+# Examples
 
-A demo app with example worlds built on the world engine. It uses the engine the way any other app would:
-as the `@fmlabs/hieronimo` package, i.e. the **compiled library in `../dist/`**, not the `../lib/` source.
+Example worlds built on the `hieronimo` engine. 
+It uses the `@fmlabs/hieronimo` package.
 
 ```typescript
 import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronimo'
@@ -44,21 +44,9 @@ Every change in `lib/` rebuilds `dist/`. Reload the page to pick it up.
 Each world lives in `src/worlds/<name>/` and is registered in `src/main.ts` with a lazily loaded launcher
 (`<name>GameLauncher.ts`). A world that is missing local data only fails when it is selected.
 
-Available worlds: `dev`, `aws`, `awsgraph`, `roulette`, `vienna`, `container`, `casino`, `chess`, `snake`,
-`isosnake`, `isoislands`, `isocity`, `isocasino`, `isovegas`, `isovienna`, `isoairport`, `isosoccer`,
-`isoaws`, `flow`, `isoflow`, `isocontainers`.
+Available worlds: `snake`,
+`isosnake`, `isoislands`, `isocity`, `isocasino`, `isovegas`, `isovienna`, `isoairport`, `isosoccer`, `flow`, `isoflow`.
 
-Some worlds and assets need files that are not in the repository:
-
-| World / asset                         | Requires                                                            |
-| ------------------------------------- | ------------------------------------------------------------------- |
-| `aws`, `awsgraph`                     | the sibling repository `../../cloudia-common` (linked as a package) |
-| `casino`                              | `src/worlds/casino/gameidx-web.json` (gitignored)                   |
-| `container`                           | `src/worlds/container/container.json` (gitignored)                  |
-| `public/assets/sprites/kenney-assets` | a symlink to `../../kenney-assets/assets` (gitignored)              |
-| `public/assets/fonts`, `public/aws`   | local font and AWS icon files (gitignored)                          |
-
-Some launchers read extra query parameters, e.g. `?inventory=<url>` for the inventory based worlds.
 
 ### Adding a world
 
@@ -70,14 +58,6 @@ Some launchers read extra query parameters, e.g. `?inventory=<url>` for the inve
 If a world needs something from the engine that is not exported, export it from `../lib/index.ts`
 and rebuild the library.
 
-## Mission-control API (isocontainers)
-
-The `isocontainers` world can show live data (`?world=isocontainers&api`). The dev server proxies
-`/mc-api/...` to the mission-control API and adds the API key, so the key never reaches the browser.
-
-```bash
-cp .env.example .env.local   # then set MC_API_URL and MC_API_KEY
-```
 
 ## Scripts
 
