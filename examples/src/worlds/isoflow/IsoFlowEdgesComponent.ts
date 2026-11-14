@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 import type { FlowEdge, FlowModel, GridPoint } from './isoflow.types.ts'
 import { subPath } from './isoflow.layout.ts'
 import { edgeGlows } from './isoflow.sim.ts'

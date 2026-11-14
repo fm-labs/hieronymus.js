@@ -1,5 +1,5 @@
 {
-  "name": "@fmlabs/world-examples",
+  "name": "@fmlabs/hieronimo-examples",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fmlabs/world": "workspace:*"
+    "@fmlabs/hieronimo": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",

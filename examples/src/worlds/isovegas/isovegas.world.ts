@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/world'
-import { TileMap } from '@fmlabs/world'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { TileMap } from '@fmlabs/hieronimo'
 import { roadDirections } from '../isocity/isocity.traffic.ts'
 import { IsoVegasGroundComponent } from './IsoVegasGroundComponent.ts'
 import { IsoVegasLandmarkComponent } from './IsoVegasLandmarkComponent.ts'

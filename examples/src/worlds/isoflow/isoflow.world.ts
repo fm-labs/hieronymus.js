@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/world'
-import { TileMap } from '@fmlabs/world'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { TileMap } from '@fmlabs/hieronimo'
 import { IsoFlowEdgesComponent } from './IsoFlowEdgesComponent.ts'
 import { IsoFlowFloorComponent } from './IsoFlowFloorComponent.ts'
 import { IsoFlowNodeComponent } from './IsoFlowNodeComponent.ts'

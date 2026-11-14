@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/world'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/world'
+import type { GameConfig } from '@fmlabs/hieronimo'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
 import isoVegasWorldBuilder, { LAYER_VEHICLES } from './isovegas.world.ts'
 import { IsoVegasSystem } from './IsoVegasSystem.ts'
 

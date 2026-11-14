@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/world'
-import { IsoCubeComponent, TileComponent, TileMap } from '@fmlabs/world'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { IsoCubeComponent, TileComponent, TileMap } from '@fmlabs/hieronimo'
 import { parseIslandMap, SAND, WATER, type IslandMap } from './isoislands.generator.ts'
 
 export const ISOISLANDS_TILE_SIZE = 64

@@ -1,14 +1,11 @@
-import type { IGame } from '@fmlabs/world'
-import { Game } from '@fmlabs/world'
+import type { IGame } from '@fmlabs/hieronimo'
+import { Game } from '@fmlabs/hieronimo'
 
 type GameLauncher = (app: HTMLDivElement) => Promise<Game>
 
 // Launchers are loaded lazily, so a world with missing local data (e.g. gitignored json files)
 // only fails when it is selected, instead of breaking the whole app.
 const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
-  container: async () =>
-    (await import('./worlds/container/containerGameLauncher.ts')).containerGameLauncher,
-  chess: async () => (await import('./worlds/chess/chessGameLauncher.ts')).chessGameLauncher,
   snake: async () => (await import('./worlds/snake/snakeGameLauncher.ts')).snakeGameLauncher,
   isosnake: async () =>
     (await import('./worlds/isosnake/isosnakeGameLauncher.ts')).isosnakeGameLauncher,
@@ -26,12 +23,9 @@ const gameLaunchers: Record<string, () => Promise<GameLauncher>> = {
     (await import('./worlds/isoairport/isoairportGameLauncher.ts')).isoairportGameLauncher,
   isosoccer: async () =>
     (await import('./worlds/isosoccer/isosoccerGameLauncher.ts')).isosoccerGameLauncher,
-  isoaws: async () => (await import('./worlds/isoaws/isoawsGameLauncher.ts')).isoawsGameLauncher,
   flow: async () => (await import('./worlds/flow/flowGameLauncher.ts')).flowGameLauncher,
   isoflow: async () =>
     (await import('./worlds/isoflow/isoflowGameLauncher.ts')).isoflowGameLauncher,
-  isocontainers: async () =>
-    (await import('./worlds/isocontainers/isocontainersGameLauncher.ts')).isocontainersGameLauncher,
 }
 
 // read the 'world' query parameter

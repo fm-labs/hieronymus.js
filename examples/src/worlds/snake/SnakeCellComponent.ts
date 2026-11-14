@@ -1,9 +1,5 @@
-import type {
-  GameComponentProperties,
-  IGameComponent,
-  MoveDirection,
-} from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent, MoveDirection } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 
 export interface SnakeCellComponentProps extends GameComponentProperties {
   size: number

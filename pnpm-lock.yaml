@@ -65,7 +65,7 @@ importers:
 
   examples:
     dependencies:
-      '@fmlabs/world':
+      '@fmlabs/hieronimo':
         specifier: workspace:*
         version: link:..
     devDependencies:

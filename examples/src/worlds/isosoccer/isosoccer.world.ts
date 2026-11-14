@@ -1,5 +1,5 @@
-import type { ITileMap, TileMapConfig } from '@fmlabs/world'
-import { TileMap } from '@fmlabs/world'
+import type { ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
+import { TileMap } from '@fmlabs/hieronimo'
 import { IsoSoccerGoalComponent } from './IsoSoccerGoalComponent.ts'
 import { IsoSoccerGroundComponent } from './IsoSoccerGroundComponent.ts'
 import { IsoSoccerMarkingsComponent } from './IsoSoccerMarkingsComponent.ts'

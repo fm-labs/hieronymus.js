@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 // they are not exposed to the browser (that takes the VITE_ prefix)
 const env = loadEnv('development', process.cwd(), 'MC_')
 
-// The demo app. It uses the world library as the '@fmlabs/world' package, i.e. the built ../dist,
+// The demo app. It uses the world library as the '@fmlabs/hieronimo' package, i.e. the built ../dist,
 // so run `pnpm build` (or `pnpm build:watch`) in the root first.
 // https://vitejs.dev/config/
 export default defineConfig({

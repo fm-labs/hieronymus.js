@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 import { strokeLine, TEAM_COLORS } from './isosoccer.draw.ts'
 import type { Team, Vec } from './isosoccer.match.ts'
 

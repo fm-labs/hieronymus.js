@@ -1,5 +1,5 @@
-import type { IGame, IGameSystem } from '@fmlabs/world'
-import { AbstractGameSystem } from '@fmlabs/world'
+import type { IGame, IGameSystem } from '@fmlabs/hieronimo'
+import { AbstractGameSystem } from '@fmlabs/hieronimo'
 import {
   createVehicle,
   DIRECTION_VECTORS,

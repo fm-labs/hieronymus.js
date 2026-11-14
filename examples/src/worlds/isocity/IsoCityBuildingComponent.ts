@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 import { drawIsoBox, drawIsoShadow, isoBoxTop, shadeColor } from './isocity.draw.ts'
 
 /** A point between a and b, t = 0 at a and 1 at b */

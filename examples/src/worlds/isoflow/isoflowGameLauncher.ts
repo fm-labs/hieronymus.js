@@ -1,5 +1,5 @@
-import type { GameConfig } from '@fmlabs/world'
-import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/world'
+import type { GameConfig } from '@fmlabs/hieronimo'
+import { CameraSystem, Game, InputSystem, TileMapSystem } from '@fmlabs/hieronimo'
 import { SAMPLES } from './isoflow.samples.ts'
 import type { FlowSpec } from './isoflow.types.ts'
 import { FlowProjection } from './isoflow.draw.ts'

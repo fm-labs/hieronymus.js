@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 import { cellPoint, fillPolygon, heightPx, strokeLine } from './isosoccer.draw.ts'
 import { CROSSBAR } from './isosoccer.match.ts'
 

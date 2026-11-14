@@ -1,15 +1,15 @@
 # World Examples
 
 A demo app with example worlds built on the world engine. It uses the engine the way any other app would:
-as the `@fmlabs/world` package, i.e. the **compiled library in `../dist/`**, not the `../lib/` source.
+as the `@fmlabs/hieronimo` package, i.e. the **compiled library in `../dist/`**, not the `../lib/` source.
 
 ```typescript
-import { Game, TileMap, TileMapSystem } from '@fmlabs/world'
-import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/world'
+import { Game, TileMap, TileMapSystem } from '@fmlabs/hieronimo'
+import type { IGame, ITileMap, TileMapConfig } from '@fmlabs/hieronimo'
 ```
 
 `examples/` is a pnpm workspace package (see `../pnpm-workspace.yaml`). Its dependency
-`"@fmlabs/world": "workspace:*"` links `node_modules/@fmlabs/world` to the repository root, and the root
+`"@fmlabs/hieronimo": "workspace:*"` links `node_modules/@fmlabs/hieronimo` to the repository root, and the root
 `package.json` `exports` point at `dist/world-lib.js` and `dist/index.d.ts`.
 
 ## Getting Started
@@ -64,7 +64,7 @@ Some launchers read extra query parameters, e.g. `?inventory=<url>` for the inve
 
 1. Create `src/worlds/<name>/` with a `<name>GameLauncher.ts` that exports
    `<name>GameLauncher(app: HTMLDivElement): Promise<Game>`.
-2. Import everything engine related from `@fmlabs/world`. Never import from `../lib/`.
+2. Import everything engine related from `@fmlabs/hieronimo`. Never import from `../lib/`.
 3. Register the launcher in `gameLaunchers` in `src/main.ts`.
 
 If a world needs something from the engine that is not exported, export it from `../lib/index.ts`
@@ -81,7 +81,7 @@ cp .env.example .env.local   # then set MC_API_URL and MC_API_KEY
 
 ## Scripts
 
-Run in `examples/` (or from the root with `pnpm --filter @fmlabs/world-examples <script>`):
+Run in `examples/` (or from the root with `pnpm --filter @fmlabs/hieronimo-examples <script>`):
 
 | Command        | Description                                    |
 | -------------- | ---------------------------------------------- |
@@ -92,4 +92,4 @@ Run in `examples/` (or from the root with `pnpm --filter @fmlabs/world-examples 
 ## Tests
 
 The world tests live in the repository root (`../test/`) and run with `pnpm test` there. They resolve
-`@fmlabs/world` to `../lib/index.ts`, so they test against the library source and need no build.
+`@fmlabs/hieronimo` to `../lib/index.ts`, so they test against the library source and need no build.

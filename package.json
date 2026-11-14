@@ -1,5 +1,5 @@
 {
-  "name": "@fmlabs/world",
+  "name": "@fmlabs/hieronimo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,7 +20,7 @@
     "dev": "vite",
     "build": "tsc --p ./tsconfig.build.json && vite build",
     "build:watch": "vite build --watch",
-    "examples": "pnpm --filter @fmlabs/world-examples dev",
+    "examples": "pnpm --filter @fmlabs/hieronimo-examples dev",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview",

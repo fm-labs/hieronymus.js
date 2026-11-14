@@ -1,5 +1,5 @@
-import type { GameComponentProperties, IGameComponent } from '@fmlabs/world'
-import { AbstractGameComponent } from '@fmlabs/world'
+import type { GameComponentProperties, IGameComponent } from '@fmlabs/hieronimo'
+import { AbstractGameComponent } from '@fmlabs/hieronimo'
 import { IsoPainter, shade } from './isovegas.draw.ts'
 import { drawPalm } from './isovegas.landmarks.ts'
 import type { PropKind, VegasScene } from './isovegas.map.ts'
