@@ -1,10 +1,10 @@
 {
   "name": "@fmlabs/hieronymus",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
-  "main": "dist/hieronymus-lib.umd.cjs",
-  "module": "dist/hieronymus-lib.js",
+  "main": "dist/hieronymus.umd.cjs",
+  "module": "dist/hieronymus.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -12,8 +12,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/hieronymus-lib.js",
-      "require": "./dist/hieronymus-lib.umd.cjs"
+      "import": "./dist/hieronymus.js",
+      "require": "./dist/hieronymus.umd.cjs"
     }
   },
   "scripts": {
